@@ -3703,38 +3703,40 @@ function App() {
         deleteSelected()
       }
 
+      const isZ = event.code === 'KeyZ' || (event.key && event.key.toLowerCase() === 'z') || (event.key && (event.key === 'я' || event.key === 'Я'))
+      const isY = event.code === 'KeyY' || (event.key && event.key.toLowerCase() === 'y') || (event.key && (event.key === 'н' || event.key === 'Н'))
+
       // Ctrl+Z или Cmd+Z - Undo
-      if ((event.ctrlKey || event.metaKey) && event.code === 'KeyZ' && !event.shiftKey) {
+      if ((event.ctrlKey || event.metaKey) && isZ && !event.shiftKey) {
         if (!isInputFocused) {
           event.preventDefault()
           event.stopPropagation()
           event.stopImmediatePropagation()
-          console.log('⌨️ Ctrl+Z (KeyZ) обработан - отмена действия')
           handleUndo()
           return false
         }
       }
 
       // Ctrl+Shift+Z или Cmd+Shift+Z - Redo
-      if ((event.ctrlKey || event.metaKey) && event.code === 'KeyZ' && event.shiftKey) {
+      if ((event.ctrlKey || event.metaKey) && isZ && event.shiftKey) {
         if (!isInputFocused) {
           event.preventDefault()
           event.stopPropagation()
-          console.log('⌨️ Ctrl+Shift+Z (KeyZ) обработан - повтор действия')
+          event.stopImmediatePropagation()
           handleRedo()
+          return false
         }
-        return false
       }
 
       // Ctrl+Y или Cmd+Y - Redo
-      if ((event.ctrlKey || event.metaKey) && event.code === 'KeyY') {
+      if ((event.ctrlKey || event.metaKey) && isY) {
         if (!isInputFocused) {
           event.preventDefault()
           event.stopPropagation()
-          console.log('⌨️ Ctrl+Y (KeyY) обработан - повтор действия')
+          event.stopImmediatePropagation()
           handleRedo()
+          return false
         }
-        return false
       }
 
     }
