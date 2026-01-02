@@ -5,13 +5,9 @@ interface FilePanelProps {
   onLoad: (file: File) => void
   onExportDrawIO: () => void
   onSaveLayout?: () => void
-  onUndo?: () => void
-  onRedo?: () => void
-  canUndo?: boolean
-  canRedo?: boolean
 }
 
-export default function FilePanel({ onSave, onLoad, onExportDrawIO, onSaveLayout, onUndo, onRedo, canUndo, canRedo }: FilePanelProps) {
+export default function FilePanel({ onSave, onLoad, onExportDrawIO, onSaveLayout }: FilePanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,68 +50,6 @@ export default function FilePanel({ onSave, onLoad, onExportDrawIO, onSaveLayout
       <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff', marginRight: '10px', whiteSpace: 'nowrap' }}>
         Файлы:
       </h3>
-      {onUndo && onRedo && (
-        <>
-          <button
-            onClick={onUndo}
-            disabled={!canUndo}
-            style={{
-              padding: '12px',
-              backgroundColor: canUndo ? '#666' : '#333',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: canUndo ? 'pointer' : 'not-allowed',
-              fontSize: '14px',
-              fontWeight: '500',
-              transition: 'background-color 0.2s',
-              opacity: canUndo ? 1 : 0.5,
-            }}
-            onMouseEnter={(e) => {
-              if (canUndo) {
-                e.currentTarget.style.backgroundColor = '#555'
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (canUndo) {
-                e.currentTarget.style.backgroundColor = '#666'
-              }
-            }}
-            title="Отменить (Ctrl+Z)"
-          >
-            ↶ Отменить
-          </button>
-          <button
-            onClick={onRedo}
-            disabled={!canRedo}
-            style={{
-              padding: '12px',
-              backgroundColor: canRedo ? '#666' : '#333',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: canRedo ? 'pointer' : 'not-allowed',
-              fontSize: '14px',
-              fontWeight: '500',
-              transition: 'background-color 0.2s',
-              opacity: canRedo ? 1 : 0.5,
-            }}
-            onMouseEnter={(e) => {
-              if (canRedo) {
-                e.currentTarget.style.backgroundColor = '#555'
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (canRedo) {
-                e.currentTarget.style.backgroundColor = '#666'
-              }
-            }}
-            title="Повторить (Ctrl+Shift+Z)"
-          >
-            ↷ Повторить
-          </button>
-        </>
-      )}
       <input
         ref={fileInputRef}
         type="file"
@@ -249,4 +183,3 @@ export default function FilePanel({ onSave, onLoad, onExportDrawIO, onSaveLayout
     </div>
   )
 }
-

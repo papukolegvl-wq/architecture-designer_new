@@ -4579,10 +4579,7 @@ function App() {
         onLoad={handleLoad}
         onExportDrawIO={() => saveToDrawIOFile(nodes, edges)}
         onSaveLayout={handleSaveLayout}
-        onUndo={handleUndo}
-        onRedo={handleRedo}
-        canUndo={canUndo}
-        canRedo={canRedo}
+
       />
       <div
         ref={reactFlowWrapper}
