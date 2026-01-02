@@ -5,7 +5,7 @@ import { ConnectionType, ComponentData, EdgePathType } from '../types'
 interface ConnectionPanelProps {
   edge: Edge
   nodes: Node[]
-  onUpdate: (edgeId: string, connectionType: ConnectionType, dataDescription?: string, pathType?: EdgePathType, sourceAngle?: number, targetAngle?: number) => void
+  onUpdate: (edgeId: string, connectionType: ConnectionType, dataDescription?: string, pathType?: EdgePathType) => void
   onDelete: () => void
 }
 
@@ -33,12 +33,7 @@ export default function ConnectionPanel({
   const [pathType, setPathType] = useState<EdgePathType>(
     (edge.data?.pathType as EdgePathType) || 'step'
   )
-  const [sourceAngle, setSourceAngle] = useState<number>(
-    (edge.data?.sourceAngle as number) || 0
-  )
-  const [targetAngle, setTargetAngle] = useState<number>(
-    (edge.data?.targetAngle as number) || 0
-  )
+
 
   useEffect(() => {
     const edgeType = edge.data?.connectionType as ConnectionType
@@ -53,29 +48,22 @@ export default function ConnectionPanel({
     if (path) {
       setPathType(path)
     }
-    const srcAngle = edge.data?.sourceAngle as number
-    if (srcAngle !== undefined) {
-      setSourceAngle(srcAngle)
-    }
-    const tgtAngle = edge.data?.targetAngle as number
-    if (tgtAngle !== undefined) {
-      setTargetAngle(tgtAngle)
-    }
+
   }, [edge])
 
   const handleChange = (newType: ConnectionType) => {
     setConnectionType(newType)
-    onUpdate(edge.id, newType, dataDescription, pathType, sourceAngle, targetAngle)
+    onUpdate(edge.id, newType, dataDescription, pathType)
   }
 
   const handleDescriptionChange = (newDescription: string) => {
     setDataDescription(newDescription)
-    onUpdate(edge.id, connectionType, newDescription, pathType, sourceAngle, targetAngle)
+    onUpdate(edge.id, connectionType, newDescription, pathType)
   }
 
   const handlePathTypeChange = (newPathType: EdgePathType) => {
     setPathType(newPathType)
-    onUpdate(edge.id, connectionType, dataDescription, newPathType, sourceAngle, targetAngle)
+    onUpdate(edge.id, connectionType, dataDescription, newPathType)
   }
 
   // Определяем доступные типы связи на основе соединенных компонентов
@@ -294,142 +282,7 @@ export default function ConnectionPanel({
         </div>
       </div>
 
-      {/* Angle Control Section */}
-      <div style={{ marginBottom: '15px', borderTop: '1px solid #555', paddingTop: '15px' }}>
-        <label
-          style={{
-            display: 'block',
-            marginBottom: '12px',
-            fontSize: '14px',
-            fontWeight: '500',
-            color: '#ccc',
-          }}
-        >
-          Углы подключения:
-        </label>
 
-        {/* Source Angle Control */}
-        <div style={{ marginBottom: '12px' }}>
-          <div style={{ fontSize: '13px', color: '#aaa', marginBottom: '6px' }}>
-            Исходная точка:
-          </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              onClick={() => {
-                const newAngle = (sourceAngle - 90 + 360) % 360
-                setSourceAngle(newAngle)
-                onUpdate(edge.id, connectionType, dataDescription, pathType, newAngle, targetAngle)
-              }}
-              style={{
-                flex: 1,
-                padding: '8px',
-                backgroundColor: '#3d3d3d',
-                color: '#fff',
-                border: '1px solid #555',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '13px',
-                transition: 'background-color 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#4d4d4d'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#3d3d3d'
-              }}
-            >
-              ↶ Влево
-            </button>
-            <button
-              onClick={() => {
-                const newAngle = (sourceAngle + 90) % 360
-                setSourceAngle(newAngle)
-                onUpdate(edge.id, connectionType, dataDescription, pathType, newAngle, targetAngle)
-              }}
-              style={{
-                flex: 1,
-                padding: '8px',
-                backgroundColor: '#3d3d3d',
-                color: '#fff',
-                border: '1px solid #555',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '13px',
-                transition: 'background-color 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#4d4d4d'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#3d3d3d'
-              }}
-            >
-              Вправо ↷
-            </button>
-          </div>
-        </div>
-
-        {/* Target Angle Control */}
-        <div style={{ marginBottom: '8px' }}>
-          <div style={{ fontSize: '13px', color: '#aaa', marginBottom: '6px' }}>
-            Целевая точка:
-          </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              onClick={() => {
-                const newAngle = (targetAngle - 90 + 360) % 360
-                setTargetAngle(newAngle)
-                onUpdate(edge.id, connectionType, dataDescription, pathType, sourceAngle, newAngle)
-              }}
-              style={{
-                flex: 1,
-                padding: '8px',
-                backgroundColor: '#3d3d3d',
-                color: '#fff',
-                border: '1px solid #555',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '13px',
-                transition: 'background-color 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#4d4d4d'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#3d3d3d'
-              }}
-            >
-              ↶ Влево
-            </button>
-            <button
-              onClick={() => {
-                const newAngle = (targetAngle + 90) % 360
-                setTargetAngle(newAngle)
-                onUpdate(edge.id, connectionType, dataDescription, pathType, sourceAngle, newAngle)
-              }}
-              style={{
-                flex: 1,
-                padding: '8px',
-                backgroundColor: '#3d3d3d',
-                color: '#fff',
-                border: '1px solid #555',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '13px',
-                transition: 'background-color 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#4d4d4d'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#3d3d3d'
-              }}
-            >
-              Вправо ↷
-            </button>
-          </div>
-        </div>
-      </div>
       <button
         onClick={onDelete}
         style={{
