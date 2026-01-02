@@ -804,10 +804,12 @@ function App() {
 
         if (significantChanges) {
           setTimeout(() => {
-            historyManagerRef.current.pushState(nodes, edges)
-            setCanUndo(historyManagerRef.current.canUndo())
-            setCanRedo(historyManagerRef.current.canRedo())
-          }, 100)
+            if (!isHistoryActionRef.current) {
+              historyManagerRef.current.pushState(nodesRef.current, edgesRef.current)
+              setCanUndo(historyManagerRef.current.canUndo())
+              setCanRedo(historyManagerRef.current.canRedo())
+            }
+          }, 150)
         }
       }
 
@@ -910,11 +912,11 @@ function App() {
         // Сохраняем в историю с небольшой задержкой, чтобы убедиться что стейт обновился
         setTimeout(() => {
           if (!isHistoryActionRef.current) {
-            historyManagerRef.current.pushState(nodes, edges)
+            historyManagerRef.current.pushState(nodesRef.current, edgesRef.current)
             setCanUndo(historyManagerRef.current.canUndo())
             setCanRedo(historyManagerRef.current.canRedo())
           }
-        }, 100)
+        }, 150)
       }
     },
     [onEdgesChange, nodes, edges, setCanUndo, setCanRedo]
@@ -1014,16 +1016,19 @@ function App() {
     reactFlowInstanceRef.current = reactFlowInstance
   }, [reactFlowInstance])
   const nodesRef = useRef<Node[]>(nodes)
+  const edgesRef = useRef<Edge[]>(edges)
   const setLinkConfigNodeRef = useRef(setLinkConfigNode)
 
   // Обновляем refs при изменении
   useEffect(() => {
     nodesRef.current = nodes
-  }, [nodes])
+    edgesRef.current = edges
+  }, [nodes, edges])
 
   useEffect(() => {
     setLinkConfigNodeRef.current = setLinkConfigNode
   }, [])
+
 
   // Инициализируем историю при первой загрузке
   useEffect(() => {
@@ -1068,7 +1073,7 @@ function App() {
             const expectedType = data?.type === 'business-domain' ? 'business-domain' : 'system'
             const restored = {
               ...node,
-              type: expectedType as const,
+              type: expectedType as any,
               width: node.width || 600,
               height: node.height || 400,
               style: node.style || { zIndex: -1 },
@@ -1707,11 +1712,11 @@ function App() {
         // Сохраняем в историю после создания связи
         setTimeout(() => {
           if (!isHistoryActionRef.current) {
-            historyManagerRef.current.pushState(nodes, updated)
+            historyManagerRef.current.pushState(nodesRef.current, edgesRef.current)
             setCanUndo(historyManagerRef.current.canUndo())
             setCanRedo(historyManagerRef.current.canRedo())
           }
-        }, 100)
+        }, 150)
 
         return updated
       })
@@ -1790,11 +1795,11 @@ function App() {
         // Сохраняем в историю после создания связи
         setTimeout(() => {
           if (!isHistoryActionRef.current) {
-            historyManagerRef.current.pushState(nodes, updated)
+            historyManagerRef.current.pushState(nodesRef.current, edgesRef.current)
             setCanUndo(historyManagerRef.current.canUndo())
             setCanRedo(historyManagerRef.current.canRedo())
           }
-        }, 100)
+        }, 150)
 
         return updated
       })
@@ -1978,11 +1983,12 @@ function App() {
       // Сохраняем в историю после изменения
       setTimeout(() => {
         if (!isHistoryActionRef.current) {
-          historyManagerRef.current.pushState(updated, edges)
+          historyManagerRef.current.pushState(nodesRef.current, edgesRef.current)
           setCanUndo(historyManagerRef.current.canUndo())
           setCanRedo(historyManagerRef.current.canRedo())
         }
-      }, 100)
+      }, 150)
+
 
       return updated
     })
@@ -3019,11 +3025,11 @@ function App() {
         // Сохраняем в историю после удаления связи
         setTimeout(() => {
           if (!isHistoryActionRef.current) {
-            historyManagerRef.current.pushState(nodes, updated)
+            historyManagerRef.current.pushState(nodesRef.current, edgesRef.current)
             setCanUndo(historyManagerRef.current.canUndo())
             setCanRedo(historyManagerRef.current.canRedo())
           }
-        }, 100)
+        }, 150)
 
         return updated
       })
@@ -3373,11 +3379,12 @@ function App() {
     // Сохраняем в историю после разгруппировки
     setTimeout(() => {
       if (!isHistoryActionRef.current) {
-        historyManagerRef.current.pushState(nodes, edges)
+        historyManagerRef.current.pushState(nodesRef.current, edgesRef.current)
         setCanUndo(historyManagerRef.current.canUndo())
         setCanRedo(historyManagerRef.current.canRedo())
       }
-    }, 100)
+    }, 150)
+
 
     // Снимаем выделение
     setSelectedNodeIds([])
