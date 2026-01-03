@@ -197,11 +197,16 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
   const [label, setLabel] = useState(data.label)
   const inputRef = useRef<HTMLInputElement>(null)
   const zoom = useStore((s) => s.transform[2])
-  const connectedHandleIds = useStore((s) =>
-    s.edges
-      .filter((e) => e.source === id || e.target === id)
-      .map((e) => (e.source === id ? e.sourceHandle : e.targetHandle))
-  );
+  const connectedHandleIds = useStore((s) => {
+    // Оптимизированный селектор: фильтруем только те грани, которые связаны с этим узлом
+    const ids: string[] = []
+    for (const e of s.edges) {
+      if (e.source === id && e.sourceHandle) ids.push(e.sourceHandle)
+      if (e.target === id && e.targetHandle) ids.push(e.targetHandle)
+    }
+    return ids
+  }, (a, b) => JSON.stringify(a) === JSON.stringify(b));
+
   const isConnecting = useStore((s) => !!s.connectionStartHandle);
   const isSimple = zoom < 0.4
   const isMedium = zoom < 0.7
@@ -825,12 +830,16 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
 
           const isTargetConnected = connectedHandleIds.includes(targetId);
           const isSourceConnected = connectedHandleIds.includes(sourceId);
-          const shouldRender = isHovered || isTargetConnected || isSourceConnected || isConnecting;
+
+          // ОПТИМИЗАЦИЯ: Рендерим handle только если необходимо
+          const shouldRender = isHovered || isConnecting || isCenter || isTargetConnected || isSourceConnected;
+
+          if (!shouldRender) return null;
 
           const style: React.CSSProperties = {
             [isHorizontal ? 'left' : 'top']: `${p}%`,
             [pos]: '-5px',
-            opacity: shouldRender ? (isHovered || isConnecting ? (isCenter ? 0.8 : 0.4) : (isTargetConnected || isSourceConnected ? 0.6 : 0)) : 0,
+            opacity: isHovered || isConnecting ? (isCenter ? 0.8 : 0.4) : (isTargetConnected || isSourceConnected ? 0.6 : 0),
             borderRadius: '50%',
             width: isCenter ? '12px' : '8px',
             height: isCenter ? '12px' : '8px',
@@ -839,7 +848,7 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
             cursor: 'crosshair',
             transform: isHorizontal ? 'translateX(-50%)' : 'translateY(-50%)',
             zIndex: isCenter ? 30 : 25,
-            pointerEvents: shouldRender ? 'all' : 'none',
+            pointerEvents: 'all',
           };
 
           return (
@@ -862,15 +871,17 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
       )}
 
       {/* BACKWARD COMPATIBILITY: Добавляем handles со старым форматом ID для существующих edges */}
-      {/* Старый формат: "left-source", "top-target" и т.д. (без номера позиции) */}
       {([Position.Top, Position.Bottom, Position.Left, Position.Right] as Position[]).map((pos) => {
         const oldTargetId = `${pos}-target`;
         const oldSourceId = `${pos}-source`;
 
-        // Проверяем, подключен ли хоть один handle со старым ID
         const isTargetConnected = connectedHandleIds.includes(oldTargetId);
         const isSourceConnected = connectedHandleIds.includes(oldSourceId);
-        const shouldRender = isHovered || isTargetConnected || isSourceConnected || isConnecting;
+
+        // Рендерим только если подключено или в режиме поиска связей
+        const shouldRender = isTargetConnected || isSourceConnected || (isHovered && isConnecting);
+
+        if (!shouldRender) return null;
 
         const isHorizontal = pos === Position.Top || pos === Position.Bottom;
         const style: React.CSSProperties = {
@@ -881,8 +892,8 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
           cursor: 'crosshair',
           transform: isHorizontal ? 'translateX(-50%)' : 'translateY(-50%)',
           zIndex: 30,
-          opacity: shouldRender ? 1 : 0,
-          pointerEvents: shouldRender ? 'all' : 'none',
+          opacity: 1,
+          pointerEvents: 'all',
         };
 
         return (

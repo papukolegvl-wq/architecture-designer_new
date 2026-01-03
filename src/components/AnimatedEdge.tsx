@@ -927,8 +927,8 @@ function AnimatedEdge({
         {/* Подсказка при наведении на линию */}
         <title>{selected ? 'Кликните на линию для добавления вершины изгиба. Перетащите вершины для изменения траектории.' : 'Кликните на линию для выделения и редактирования вершин изгиба.'}</title>
 
-        {/* Вершины изгиба линии - видны только при выделении линии */}
-        {selected && waypointsRef.current.map((wp) => (
+        {/* Вершины изгиба линии - видны только при выделении линии и зуме */}
+        {selected && zoom > 0.4 && waypointsRef.current.map((wp) => (
           <g key={wp.id}>
             {/* Внешний круг для лучшей видимости */}
             <circle
@@ -1019,8 +1019,8 @@ function AnimatedEdge({
           </g>
         ))}
 
-        {/* Узлы редактирования на концах линии (source и target) - только при выделении */}
-        {selected && (
+        {/* Узлы редактирования на концах линии (source и target) - только при выделении и достаточном зуме */}
+        {selected && zoom > 0.4 && (
           <>
 
             {/* Узлы редактирования на концах линии (source и target) - всегда видимые при выделении */}
@@ -1173,8 +1173,8 @@ function AnimatedEdge({
         </EdgeLabelRenderer>
       )}
 
-      {/* Relationship labels for table connections */}
-      {data?.relationshipType && (
+      {/* Relationship labels for table connections (only at sufficient zoom) */}
+      {data?.relationshipType && zoom > 0.5 && (
         <EdgeLabelRenderer>
           <div
             style={{
@@ -1219,4 +1219,4 @@ function AnimatedEdge({
 // Мемоизируем компонент для оптимизации производительности
 // НЕ мемоизируем слишком строго, чтобы анимация работала
 // Export directly without memo to ensure updates are not blocked
-export default AnimatedEdge
+export default memo(AnimatedEdge)

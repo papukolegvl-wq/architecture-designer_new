@@ -2134,8 +2134,9 @@ function App() {
     setVectorDBNode(null)
   }, [updateNodesWithHistory])
 
-  const handleDatabaseConfigUpdate = useCallback(
-    (nodeId: string, config: { dbType: DatabaseType; nosqlType?: NoSQLType; vendor?: DatabaseVendor }) => {
+  // Универсальный обработчик обновления конфигурации компонента
+  const handleComponentConfigUpdate = useCallback(
+    (nodeId: string, configKey: keyof ComponentData, configValue: any) => {
       updateNodesWithHistory((nds) =>
         nds.map((node) => {
           if (node.id === nodeId) {
@@ -2143,11 +2144,7 @@ function App() {
               ...node,
               data: {
                 ...node.data,
-                databaseConfig: {
-                  dbType: config.dbType,
-                  nosqlType: config.nosqlType,
-                  vendor: config.vendor,
-                },
+                [configKey]: configValue,
               },
             }
           }
@@ -2156,72 +2153,83 @@ function App() {
       )
     },
     [updateNodesWithHistory]
+  )
+
+  const handleDatabaseConfigUpdate = useCallback(
+    (nodeId: string, config: { dbType: DatabaseType; nosqlType?: NoSQLType; vendor?: DatabaseVendor }) => {
+      handleComponentConfigUpdate(nodeId, 'databaseConfig', config)
+    },
+    [handleComponentConfigUpdate]
   )
 
   const handleServiceConfigUpdate = useCallback(
     (nodeId: string, config: { language: ServiceLanguage }) => {
-      updateNodesWithHistory((nds) =>
-        nds.map((node) => {
-          if (node.id === nodeId) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                serviceConfig: {
-                  language: config.language,
-                },
-              },
-            }
-          }
-          return node
-        })
-      )
+      handleComponentConfigUpdate(nodeId, 'serviceConfig', config)
     },
-    [updateNodesWithHistory]
+    [handleComponentConfigUpdate]
   )
 
   const handleFrontendConfigUpdate = useCallback(
     (nodeId: string, config: { framework: FrontendFramework }) => {
-      updateNodesWithHistory((nds) =>
-        nds.map((node) => {
-          if (node.id === nodeId) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                frontendConfig: {
-                  framework: config.framework,
-                },
-              },
-            }
-          }
-          return node
-        })
-      )
+      handleComponentConfigUpdate(nodeId, 'frontendConfig', config)
     },
-    [updateNodesWithHistory]
+    [handleComponentConfigUpdate]
   )
 
   const handleDataWarehouseConfigUpdate = useCallback(
     (nodeId: string, config: { vendor: DataWarehouseVendor }) => {
-      updateNodesWithHistory((nds) =>
-        nds.map((node) => {
-          if (node.id === nodeId) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                dataWarehouseConfig: {
-                  vendor: config.vendor,
-                },
-              },
-            }
-          }
-          return node
-        })
-      )
+      handleComponentConfigUpdate(nodeId, 'dataWarehouseConfig', config)
     },
-    [updateNodesWithHistory]
+    [handleComponentConfigUpdate]
+  )
+
+  const handleCDNConfigUpdate = useCallback(
+    (nodeId: string, config: { vendor: CDNVendor }) => {
+      handleComponentConfigUpdate(nodeId, 'cdnConfig', config)
+    },
+    [handleComponentConfigUpdate]
+  )
+
+  const handleLambdaConfigUpdate = useCallback(
+    (nodeId: string, config: { vendor: LambdaVendor }) => {
+      handleComponentConfigUpdate(nodeId, 'lambdaConfig', config)
+    },
+    [handleComponentConfigUpdate]
+  )
+
+  const handleObjectStorageConfigUpdate = useCallback(
+    (nodeId: string, config: { vendor: ObjectStorageVendor }) => {
+      handleComponentConfigUpdate(nodeId, 'objectStorageConfig', config)
+    },
+    [handleComponentConfigUpdate]
+  )
+
+  const handleAuthServiceConfigUpdate = useCallback(
+    (nodeId: string, config: { vendor: AuthServiceVendor }) => {
+      handleComponentConfigUpdate(nodeId, 'authServiceConfig', config)
+    },
+    [handleComponentConfigUpdate]
+  )
+
+  const handleFirewallConfigUpdate = useCallback(
+    (nodeId: string, config: { vendor: FirewallVendor }) => {
+      handleComponentConfigUpdate(nodeId, 'firewallConfig', config)
+    },
+    [handleComponentConfigUpdate]
+  )
+
+  const handleLoadBalancerConfigUpdate = useCallback(
+    (nodeId: string, config: { vendor: LoadBalancerVendor }) => {
+      handleComponentConfigUpdate(nodeId, 'loadBalancerConfig', config)
+    },
+    [handleComponentConfigUpdate]
+  )
+
+  const handleCacheConfigUpdate = useCallback(
+    (nodeId: string, config: { cacheType: CacheType }) => {
+      handleComponentConfigUpdate(nodeId, 'cacheConfig', config)
+    },
+    [handleComponentConfigUpdate]
   )
 
   const handleDataWarehouseDataUpdate = useCallback(
@@ -2249,25 +2257,9 @@ function App() {
 
   const handleMessageBrokerConfigUpdate = useCallback(
     (nodeId: string, config: { vendor: MessageBrokerVendor; deliveryType: MessageDeliveryType }) => {
-      updateNodesWithHistory((nds) =>
-        nds.map((node) => {
-          if (node.id === nodeId) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                messageBrokerConfig: {
-                  vendor: config.vendor,
-                  deliveryType: config.deliveryType,
-                },
-              },
-            }
-          }
-          return node
-        })
-      )
+      handleComponentConfigUpdate(nodeId, 'messageBrokerConfig', config)
     },
-    [updateNodesWithHistory]
+    [handleComponentConfigUpdate]
   )
 
   const handleMessageBrokerMessagesUpdate = useCallback(
@@ -2301,348 +2293,46 @@ function App() {
     [updateNodesWithHistory]
   )
 
-  const handleCDNConfigUpdate = useCallback(
-    (nodeId: string, config: { vendor: CDNVendor }) => {
-      updateNodesWithHistory((nds) =>
-        nds.map((node) => {
-          if (node.id === nodeId) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                cdnConfig: {
-                  vendor: config.vendor,
-                },
-              },
-            }
-          }
-          return node
-        })
-      )
-    },
-    [updateNodesWithHistory]
-  )
-
-  const handleLambdaConfigUpdate = useCallback(
-    (nodeId: string, config: { vendor: LambdaVendor }) => {
-      updateNodesWithHistory((nds) =>
-        nds.map((node) => {
-          if (node.id === nodeId) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                lambdaConfig: {
-                  vendor: config.vendor,
-                },
-              },
-            }
-          }
-          return node
-        })
-      )
-    },
-    [updateNodesWithHistory]
-  )
-
-  const handleObjectStorageConfigUpdate = useCallback(
-    (nodeId: string, config: { vendor: ObjectStorageVendor }) => {
-      updateNodesWithHistory((nds) =>
-        nds.map((node) => {
-          if (node.id === nodeId) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                objectStorageConfig: {
-                  vendor: config.vendor,
-                },
-              },
-            }
-          }
-          return node
-        })
-      )
-    },
-    [updateNodesWithHistory]
-  )
-
-  const handleAuthServiceConfigUpdate = useCallback(
-    (nodeId: string, config: { vendor: AuthServiceVendor }) => {
-      updateNodesWithHistory((nds) =>
-        nds.map((node) => {
-          if (node.id === nodeId) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                authServiceConfig: {
-                  vendor: config.vendor,
-                },
-              },
-            }
-          }
-          return node
-        })
-      )
-    },
-    [updateNodesWithHistory]
-  )
-
-  const handleFirewallConfigUpdate = useCallback(
-    (nodeId: string, config: { vendor: FirewallVendor }) => {
-      updateNodesWithHistory((nds) =>
-        nds.map((node) => {
-          if (node.id === nodeId) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                firewallConfig: {
-                  vendor: config.vendor,
-                },
-              },
-            }
-          }
-          return node
-        })
-      )
-    },
-    [updateNodesWithHistory]
-  )
-
-  const handleLoadBalancerConfigUpdate = useCallback(
-    (nodeId: string, config: { vendor: LoadBalancerVendor }) => {
-      updateNodesWithHistory((nds) =>
-        nds.map((node) => {
-          if (node.id === nodeId) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                loadBalancerConfig: {
-                  vendor: config.vendor,
-                },
-              },
-            }
-          }
-          return node
-        })
-      )
-    },
-    [updateNodesWithHistory]
-  )
-
   const handleApiGatewayConfigUpdate = useCallback(
-    (nodeId: string, config: {
-      vendor: ApiGatewayVendor
-      rateLimiting?: boolean
-      authentication?: boolean
-      requestTransformation?: boolean
-      responseTransformation?: boolean
-      caching?: boolean
-      loadBalancing?: boolean
-      circuitBreaker?: boolean
-      apiVersioning?: boolean
-    }) => {
-      updateNodesWithHistory((nds) =>
-        nds.map((node) => {
-          if (node.id === nodeId) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                apiGatewayConfig: {
-                  vendor: config.vendor,
-                  rateLimiting: config.rateLimiting,
-                  authentication: config.authentication,
-                  requestTransformation: config.requestTransformation,
-                  responseTransformation: config.responseTransformation,
-                  caching: config.caching,
-                  loadBalancing: config.loadBalancing,
-                  circuitBreaker: config.circuitBreaker,
-                  apiVersioning: config.apiVersioning,
-                },
-              },
-            }
-          }
-          return node
-        })
-      )
+    (nodeId: string, config: any) => {
+      handleComponentConfigUpdate(nodeId, 'apiGatewayConfig', config)
     },
-    [setNodes]
+    [handleComponentConfigUpdate]
   )
 
   const handleProxyConfigUpdate = useCallback(
-    (nodeId: string, config: {
-      vendor: any
-      proxyType?: 'forward' | 'reverse' | 'transparent'
-      rulesCount?: number
-    }) => {
-      updateNodesWithHistory((nds) =>
-        nds.map((node) => {
-          if (node.id === nodeId) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                proxyConfig: {
-                  vendor: config.vendor,
-                  proxyType: config.proxyType,
-                  rulesCount: config.rulesCount,
-                },
-              },
-            }
-          }
-          return node
-        })
-      )
+    (nodeId: string, config: any) => {
+      handleComponentConfigUpdate(nodeId, 'proxyConfig', config)
     },
-    [updateNodesWithHistory]
+    [handleComponentConfigUpdate]
   )
 
   const handleVPNGatewayConfigUpdate = useCallback(
-    (nodeId: string, config: {
-      vendor: any
-      connectionCount?: number
-      protocol?: 'ipsec' | 'ssl' | 'wireguard'
-    }) => {
-      updateNodesWithHistory((nds) =>
-        nds.map((node) => {
-          if (node.id === nodeId) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                vpnGatewayConfig: {
-                  vendor: config.vendor,
-                  connectionCount: config.connectionCount,
-                  protocol: config.protocol,
-                },
-              },
-            }
-          }
-          return node
-        })
-      )
+    (nodeId: string, config: any) => {
+      handleComponentConfigUpdate(nodeId, 'vpnGatewayConfig', config)
     },
-    [updateNodesWithHistory]
+    [handleComponentConfigUpdate]
   )
 
   const handleBackupServiceConfigUpdate = useCallback(
-    (nodeId: string, config: {
-      vendor: BackupServiceVendor
-      backupFrequency?: 'daily' | 'weekly' | 'monthly' | 'continuous'
-      retentionPeriod?: string
-      backupType?: 'full' | 'incremental' | 'differential'
-    }) => {
-      updateNodesWithHistory((nds) =>
-        nds.map((node) => {
-          if (node.id === nodeId) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                backupServiceConfig: {
-                  vendor: config.vendor,
-                  backupFrequency: config.backupFrequency,
-                  retentionPeriod: config.retentionPeriod,
-                  backupType: config.backupType,
-                },
-              },
-            }
-          }
-          return node
-        })
-      )
+    (nodeId: string, config: any) => {
+      handleComponentConfigUpdate(nodeId, 'backupServiceConfig', config)
     },
-    [updateNodesWithHistory]
+    [handleComponentConfigUpdate]
   )
 
   const handleQueueConfigUpdate = useCallback(
-    (nodeId: string, config: {
-      vendor: QueueVendor
-      queueType?: 'fifo' | 'standard' | 'priority'
-      visibilityTimeout?: number
-      messageRetention?: number
-    }) => {
-      updateNodesWithHistory((nds) =>
-        nds.map((node) => {
-          if (node.id === nodeId) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                queueConfig: {
-                  vendor: config.vendor,
-                  queueType: config.queueType,
-                  visibilityTimeout: config.visibilityTimeout,
-                  messageRetention: config.messageRetention,
-                },
-              },
-            }
-          }
-          return node
-        })
-      )
+    (nodeId: string, config: any) => {
+      handleComponentConfigUpdate(nodeId, 'queueConfig', config)
     },
-    [updateNodesWithHistory]
+    [handleComponentConfigUpdate]
   )
 
   const handleESBConfigUpdate = useCallback(
-    (nodeId: string, config: {
-      vendor: ESBVendor
-      messageRouting?: boolean
-      protocolTransformation?: boolean
-      dataTransformation?: boolean
-      serviceOrchestration?: boolean
-      eventDriven?: boolean
-    }) => {
-      updateNodesWithHistory((nds) =>
-        nds.map((node) => {
-          if (node.id === nodeId) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                esbConfig: {
-                  vendor: config.vendor,
-                  messageRouting: config.messageRouting,
-                  protocolTransformation: config.protocolTransformation,
-                  dataTransformation: config.dataTransformation,
-                  serviceOrchestration: config.serviceOrchestration,
-                  eventDriven: config.eventDriven,
-                },
-              },
-            }
-          }
-          return node
-        })
-      )
+    (nodeId: string, config: any) => {
+      handleComponentConfigUpdate(nodeId, 'esbConfig', config)
     },
-    [updateNodesWithHistory]
-  )
-
-  const handleCacheConfigUpdate = useCallback(
-    (nodeId: string, config: { cacheType: CacheType }) => {
-      updateNodesWithHistory((nds) =>
-        nds.map((node) => {
-          if (node.id === nodeId) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                cacheConfig: {
-                  cacheType: config.cacheType,
-                },
-              },
-            }
-          }
-          return node
-        })
-      )
-    },
-    [updateNodesWithHistory]
+    [handleComponentConfigUpdate]
   )
 
   const handleClassConfigUpdate = useCallback(
@@ -4658,20 +4348,19 @@ function App() {
     // Создаем Set с ID всех дочерних узлов свернутых систем
     const hiddenNodeIds = new Set<string>()
 
-    nodes.forEach((node) => {
+    for (const node of nodes) {
       const nodeData = node.data as ComponentData
       if (nodeData.type === 'system' || nodeData.type === 'external-system' || nodeData.type === 'business-domain') {
-        const isCollapsed = nodeData.systemConfig?.collapsed || false
-        if (isCollapsed) {
-          const childNodes = nodeData.systemConfig?.childNodes || []
-          childNodes.forEach((childId) => {
+        if (nodeData.systemConfig?.collapsed) {
+          const childNodes = nodeData.systemConfig.childNodes || []
+          for (const childId of childNodes) {
             hiddenNodeIds.add(childId)
-          })
+          }
         }
       }
-    })
+    }
 
-    // Фильтруем узлы, скрывая дочерние узлы свернутых систем
+    if (hiddenNodeIds.size === 0) return nodes;
     return nodes.filter((node) => !hiddenNodeIds.has(node.id))
   }, [nodes])
 
@@ -4680,16 +4369,19 @@ function App() {
     // Создаем Map: systemId -> Set of childNodeIds для свернутых систем
     const collapsedSystemChildren = new Map<string, Set<string>>()
 
-    nodes.forEach((node) => {
+    for (const node of nodes) {
       const nodeData = node.data as ComponentData
       if (nodeData.type === 'system' || nodeData.type === 'external-system' || nodeData.type === 'business-domain') {
-        const isCollapsed = nodeData.systemConfig?.collapsed || false
-        if (isCollapsed) {
-          const childNodes = nodeData.systemConfig?.childNodes || []
+        if (nodeData.systemConfig?.collapsed) {
+          const childNodes = nodeData.systemConfig.childNodes || []
           collapsedSystemChildren.set(node.id, new Set(childNodes))
         }
       }
-    })
+    }
+
+    if (collapsedSystemChildren.size === 0) {
+      return edges.filter(e => !(e as any).hidden);
+    }
 
     // Фильтруем связи
     return edges.filter((edge) => {
@@ -4699,16 +4391,14 @@ function App() {
       }
 
       // Проверяем, не находятся ли оба конца связи внутри одной свернутой системы
-      for (const [systemId, childNodes] of collapsedSystemChildren.entries()) {
+      for (const [systemId, childNodes] of collapsedSystemChildren) {
         // СНАЧАЛА проверяем, перенаправлена ли связь на систему - такие связи всегда показываем
         if (edge.source === systemId || edge.target === systemId) {
           return true
         }
 
         // Затем проверяем, находятся ли оба узла внутри системы - такие связи скрываем
-        const sourceInSystem = childNodes.has(edge.source)
-        const targetInSystem = childNodes.has(edge.target)
-        if (sourceInSystem && targetInSystem) {
+        if (childNodes.has(edge.source) && childNodes.has(edge.target)) {
           return false
         }
       }
