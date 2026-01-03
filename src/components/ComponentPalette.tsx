@@ -38,13 +38,17 @@ import {
   MessageCircle,
   Link as LinkIcon,
   Package,
+  Brain,
+  Bot,
+  Workflow,
+  Sparkles,
 } from 'lucide-react'
 
 interface ComponentPaletteProps {
   onComponentClick: (type: ComponentType) => void
 }
 
-type ComponentCategory = 'all' | 'infrastructure' | 'data' | 'security' | 'development' | 'monitoring' | 'integration' | 'communication' | 'text'
+type ComponentCategory = 'all' | 'infrastructure' | 'data' | 'security' | 'development' | 'monitoring' | 'integration' | 'communication' | 'text' | 'ai'
 
 interface Component {
   type: ComponentType
@@ -98,7 +102,6 @@ const components: Component[] = [
   { type: 'class', label: 'Класс', icon: <Code size={24} />, color: '#845ef7', category: 'development' },
   { type: 'batch-processor', label: 'Пакетный обработчик', icon: <Cpu size={24} />, color: '#845ef7', category: 'development' },
   { type: 'etl-service', label: 'ETL сервис', icon: <Database size={24} />, color: '#20c997', category: 'development' },
-  { type: 'ml-ai-service', label: 'ML/AI сервис', icon: <Cpu size={24} />, color: '#ff6b6b', category: 'development' },
   { type: 'blockchain', label: 'Блокчейн', icon: <LinkIcon size={24} />, color: '#333', category: 'development' },
 
   // Мониторинг
@@ -133,6 +136,16 @@ const components: Component[] = [
 
   // Текст и аннотации
   { type: 'note', label: 'Заметка', icon: <FileText size={24} />, color: '#ffd666', category: 'text' },
+
+  // AI / ML
+  { type: 'llm-model', label: 'LLM модель', icon: <Brain size={24} />, color: '#ae3ec9', category: 'ai' },
+  { type: 'vector-database', label: 'Векторная БД', icon: <Database size={24} />, color: '#748ffc', category: 'ai' },
+  { type: 'ai-agent', label: 'AI Агент', icon: <Bot size={24} />, color: '#f03e3e', category: 'ai' },
+  { type: 'ml-training', label: 'Обучение моделей', icon: <Activity size={24} />, color: '#fcc419', category: 'ai' },
+  { type: 'ml-inference', label: 'Инференс', icon: <Cpu size={24} />, color: '#37b24d', category: 'ai' },
+  { type: 'ml-data-pipeline', label: 'ML Дата-пайплайн', icon: <Workflow size={24} />, color: '#4dabf7', category: 'ai' },
+  { type: 'ml-ai-service', label: 'ML/AI сервис', icon: <Sparkles size={24} />, color: '#fab005', category: 'ai' },
+  { type: 'gpu-cluster', label: 'GPU кластер', icon: <Server size={24} />, color: '#228be6', category: 'ai' },
 ]
 
 const categoryLabels: Record<ComponentCategory, string> = {
@@ -145,6 +158,7 @@ const categoryLabels: Record<ComponentCategory, string> = {
   integration: 'Интеграция',
   communication: 'Коммуникации',
   text: 'Текст',
+  ai: 'AI / ML',
 }
 
 export default function ComponentPalette({ onComponentClick }: ComponentPaletteProps) {

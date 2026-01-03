@@ -96,7 +96,6 @@ export default function AIAssistantPanel({
 
   // Обработка перетаскивания
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (isMinimized) return
     // Не начинаем тащить, если кликнули по кнопкам или инпутам
     if ((e.target as HTMLElement).closest('button, input, textarea')) return
 
