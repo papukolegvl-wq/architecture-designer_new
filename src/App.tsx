@@ -61,7 +61,7 @@ import VPNGatewayConfigPanel from './components/VPNGatewayConfigPanel'
 import { Lock, Unlock } from 'lucide-react'
 import { AIGeneratedArchitecture } from './utils/geminiService'
 import { ComponentType, ConnectionType, ComponentData, DatabaseType, NoSQLType, ReplicationApproach, ReplicationTool, CacheType, ServiceLanguage, FrontendFramework, DataWarehouseVendor, DatabaseVendor, MessageBrokerVendor, MessageDeliveryType, CDNVendor, LambdaVendor, ObjectStorageVendor, AuthServiceVendor, FirewallVendor, LoadBalancerVendor, ApiGatewayVendor, ESBVendor, DatabaseTable, ObjectStorageDirection, ComponentLink, EdgePathType, BackupServiceVendor, QueueVendor, ProxyVendor, VPNGatewayVendor } from './types'
-import { saveToFile, loadFromFile } from './utils/fileUtils'
+import { saveToFile, loadFromFile, getPersistedHandle } from './utils/fileUtils'
 import { saveToDrawIOFile } from './utils/drawioExport'
 import { HistoryManager } from './utils/historyManager'
 
@@ -308,6 +308,10 @@ function App() {
   useEffect(() => {
     localStorage.setItem('architecture-designer-active-tab', activeWorkspaceId)
   }, [activeWorkspaceId])
+  // Тип обновления истории
+  type HistoryUpdateType = 'standard' | 'immediate' | 'skip' | 'reset'
+  const historyUpdateTypeRef = useRef<HistoryUpdateType>('standard')
+
   const historyManagerRef = useRef(new HistoryManager())
   const isHistoryActionRef = useRef(false)
   const edgesToPreserveRef = useRef<Edge[]>([]) // Ref для хранения edges, которые нужно сохранить при удалении узлов
@@ -475,6 +479,8 @@ function App() {
       if (newWorkspace) {
         setTimeout(() => {
           setActiveWorkspaceId(tabId)
+          // Сбрасываем историю для новой вкладки (будет инициализирована при следующем рендере через useEffect)
+          historyUpdateTypeRef.current = 'reset'
           setNodes(newWorkspace.nodes)
           setEdges(newWorkspace.edges)
         }, 0)
@@ -509,6 +515,7 @@ function App() {
     // Переключаемся на новую вкладку
     setActiveWorkspaceId(newId)
     // Task 1: Гарантируем пустое состояние новой вкладки
+    historyUpdateTypeRef.current = 'reset'
     setNodes([])
     setEdges([])
     setTimeout(() => {
@@ -794,22 +801,17 @@ function App() {
 
       onNodesChange(changes)
 
-      // Сохраняем в историю только при значимых изменениях (добавление, удаление, изменение позиции)
+      // Сохраняем в историю
       if (!isHistoryActionRef.current) {
-        const significantChanges = changes.some((change: any) =>
-          change.type === 'add' ||
-          change.type === 'remove' ||
-          (change.type === 'position' && change.dragging === false)
-        )
+        const isRemove = changes.some((c: any) => c.type === 'remove')
+        const isAdd = changes.some((c: any) => c.type === 'add')
+        const isDragStop = changes.some((c: any) => c.type === 'position' && c.dragging === false)
 
-        if (significantChanges) {
-          setTimeout(() => {
-            if (!isHistoryActionRef.current) {
-              historyManagerRef.current.pushState(nodesRef.current, edgesRef.current)
-              setCanUndo(historyManagerRef.current.canUndo())
-              setCanRedo(historyManagerRef.current.canRedo())
-            }
-          }, 150)
+        if (isRemove || isAdd || isDragStop) {
+          historyUpdateTypeRef.current = 'immediate'
+        } else {
+          // Для остальных случаев (например, начало перетаскивания) используем стандартный debounce
+          historyUpdateTypeRef.current = 'standard'
         }
       }
 
@@ -909,14 +911,7 @@ function App() {
       // поэтому полагаемся на обработчик onNodeDragStop для истории перемещений)
 
       if (hasMeaningfulChanges) {
-        // Сохраняем в историю с небольшой задержкой, чтобы убедиться что стейт обновился
-        setTimeout(() => {
-          if (!isHistoryActionRef.current) {
-            historyManagerRef.current.pushState(nodesRef.current, edgesRef.current)
-            setCanUndo(historyManagerRef.current.canUndo())
-            setCanRedo(historyManagerRef.current.canRedo())
-          }
-        }, 150)
+        // История теперь сохраняется централизованно через useEffect([nodes, edges])
       }
     },
     [onEdgesChange, nodes, edges, setCanUndo, setCanRedo]
@@ -927,6 +922,7 @@ function App() {
     const state = historyManagerRef.current.undo()
     if (state) {
       isHistoryActionRef.current = true
+      historyUpdateTypeRef.current = 'skip'
       setNodes(state.nodes)
       setEdges(state.edges)
       setCanUndo(historyManagerRef.current.canUndo())
@@ -941,6 +937,7 @@ function App() {
     const state = historyManagerRef.current.redo()
     if (state) {
       isHistoryActionRef.current = true
+      historyUpdateTypeRef.current = 'skip'
       setNodes(state.nodes)
       setEdges(state.edges)
       setCanUndo(historyManagerRef.current.canUndo())
@@ -1030,15 +1027,66 @@ function App() {
   }, [])
 
 
+
+
   // Инициализируем историю при первой загрузке
   useEffect(() => {
-    if (nodes.length > 0 && historyManagerRef.current.getCurrentState() === null) {
-      historyManagerRef.current.initialize(nodes, edges)
+    if (historyManagerRef.current.getCurrentState() === null && nodesRef.current.length > 0) {
+      // Если узлы уже есть при загрузке (например из LS), инициализируем ими
+      historyManagerRef.current.initialize(nodesRef.current, edgesRef.current)
       setCanUndo(historyManagerRef.current.canUndo())
       setCanRedo(historyManagerRef.current.canRedo())
     }
-  }, []) // Только при монтировании
+  }, [])
+
+  // Загружаем сохраненный дескриптор файла при старте
+  useEffect(() => {
+    getPersistedHandle().then(handle => {
+      if (handle) {
+        console.log('Восстановлен дескриптор файла из хранилища')
+        fileHandleRef.current = handle
+      }
+    })
+  }, [])
+
   const [isSpacePressed, setIsSpacePressed] = useState(false)
+
+  // Универсальное сохранение истории при любых изменениях nodes/edges
+  useEffect(() => {
+    const updateType = historyUpdateTypeRef.current
+
+    // Если это undo/redo или загрузка файла (которая сама обрабатывает историю/сброс), пропускаем
+    if (updateType === 'skip' || isFileLoadRef.current) {
+      // После пропуска возвращаем в стандартный режим
+      historyUpdateTypeRef.current = 'standard'
+      return
+    }
+
+    if (updateType === 'reset') {
+      console.log('Resetting history for new context')
+      historyManagerRef.current.initialize(nodes, edges)
+      setCanUndo(historyManagerRef.current.canUndo())
+      setCanRedo(historyManagerRef.current.canRedo())
+      historyUpdateTypeRef.current = 'standard'
+      return
+    }
+
+    const saveState = () => {
+      historyManagerRef.current.pushState(nodes, edges)
+      setCanUndo(historyManagerRef.current.canUndo())
+      setCanRedo(historyManagerRef.current.canRedo())
+      // Возвращаем в стандартный режим после сохранения
+      historyUpdateTypeRef.current = 'standard'
+    }
+
+    if (updateType === 'immediate') {
+      saveState()
+    } else {
+      // 'standard' - debounce
+      const timeoutId = setTimeout(saveState, 500)
+      return () => clearTimeout(timeoutId)
+    }
+  }, [nodes, edges])
   const [pendingConnection, setPendingConnection] = useState<{
     source: Node
     target: Node
@@ -1113,6 +1161,53 @@ function App() {
       window.removeEventListener('openSchemaEditor', handleOpenSchema as EventListener)
     }
   }, [nodes])
+
+  // Обработчик горячих клавиш для Undo/Redo и управления
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Игнорируем, если фокус в поле ввода (но пропускаем для Escape если нужно)
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+        return
+      }
+
+      const isCtrl = event.ctrlKey || event.metaKey
+      const isShift = event.shiftKey
+      const key = event.key.toLowerCase()
+      const code = event.code
+
+      // Ctrl + Z = Undo (поддержка разных раскладок через code и русский 'я')
+      if (isCtrl && !isShift && (key === 'z' || key === 'я' || code === 'KeyZ')) {
+        event.preventDefault()
+        handleUndo()
+      }
+
+      // Ctrl + Y или Ctrl + Shift + Z = Redo
+      if ((isCtrl && !isShift && (key === 'y' || key === 'н' || code === 'KeyY')) ||
+        (isCtrl && isShift && (key === 'z' || key === 'я' || code === 'KeyZ'))) {
+        event.preventDefault()
+        handleRedo()
+      }
+
+      // Пробел для панорамирования
+      if (code === 'Space' && !isSpacePressed) {
+        // Мы не делаем preventDefault для пробела везде, только если нужно
+        setIsSpacePressed(true)
+      }
+    }
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.code === 'Space') {
+        setIsSpacePressed(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+    }
+  }, [handleUndo, handleRedo, isSpacePressed])
 
   const addComponent = useCallback(
     (type: ComponentType, position?: { x: number; y: number }) => {
@@ -1202,6 +1297,8 @@ function App() {
         }),
       }
       setNodes((nds) => {
+        // Явно указываем, что это дискретное действие, требующее немедленного сохранения
+        historyUpdateTypeRef.current = 'immediate'
         const updated = [...nds, newNode]
         // Отправляем событие о добавлении узла для обновления систем
         setTimeout(() => {
@@ -1220,8 +1317,22 @@ function App() {
     [addComponent]
   )
 
-  const handleSave = useCallback(() => {
-    saveToFile(nodes, edges)
+  // Храним handle файла, чтобы не спрашивать каждый раз
+  const fileHandleRef = useRef<any>(null)
+
+  const handleSave = useCallback(async () => {
+    try {
+      const handle = await saveToFile(nodes, edges, fileHandleRef.current)
+      if (handle) {
+        fileHandleRef.current = handle
+        // Добавляем уведомление, чтобы пользователь видел, что что-то произошло
+        console.log('Файл успешно сохранен')
+        alert('Файл сохранен!')
+      }
+    } catch (err) {
+      console.error('Ошибка при сохранении:', err)
+      alert('Ошибка при сохранении файла. Попробуйте еще раз.')
+    }
   }, [nodes, edges])
 
   const handleSaveLayout = useCallback(() => {
@@ -1977,22 +2088,8 @@ function App() {
 
   // Вспомогательная функция для обновления узлов с сохранением в историю
   const updateNodesWithHistory = useCallback((updater: (nds: Node[]) => Node[]) => {
-    setNodes((nds) => {
-      const updated = updater(nds)
-
-      // Сохраняем в историю после изменения
-      setTimeout(() => {
-        if (!isHistoryActionRef.current) {
-          historyManagerRef.current.pushState(nodesRef.current, edgesRef.current)
-          setCanUndo(historyManagerRef.current.canUndo())
-          setCanRedo(historyManagerRef.current.canRedo())
-        }
-      }, 150)
-
-
-      return updated
-    })
-  }, [setNodes, edges])
+    setNodes((nds) => updater(nds))
+  }, [setNodes])
 
   const handleDatabaseConfigUpdate = useCallback(
     (nodeId: string, config: { dbType: DatabaseType; nosqlType?: NoSQLType; vendor?: DatabaseVendor }) => {

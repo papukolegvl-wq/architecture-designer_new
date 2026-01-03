@@ -1,7 +1,7 @@
 import React, { useRef } from 'react'
 
 interface FilePanelProps {
-  onSave: () => void
+  onSave: () => void | Promise<void>
   onLoad: (file: File) => void
   onExportDrawIO: () => void
   onSaveLayout?: () => void

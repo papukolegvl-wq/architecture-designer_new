@@ -11,6 +11,19 @@ export class HistoryManager {
   private maxHistorySize: number = 50
 
   pushState(nodes: Node[], edges: Edge[]) {
+    const nodesCopy = JSON.parse(JSON.stringify(nodes))
+    const edgesCopy = JSON.parse(JSON.stringify(edges))
+
+    // Проверяем, отличается ли новое состояние от текущего
+    const currentState = this.getCurrentState()
+    if (currentState) {
+      const isNodesSame = JSON.stringify(currentState.nodes) === JSON.stringify(nodesCopy)
+      const isEdgesSame = JSON.stringify(currentState.edges) === JSON.stringify(edgesCopy)
+      if (isNodesSame && isEdgesSame) {
+        return
+      }
+    }
+
     // Удаляем все состояния после текущего индекса (если мы не в конце истории)
     if (this.currentIndex < this.history.length - 1) {
       this.history = this.history.slice(0, this.currentIndex + 1)
@@ -18,8 +31,8 @@ export class HistoryManager {
 
     // Добавляем новое состояние
     this.history.push({
-      nodes: JSON.parse(JSON.stringify(nodes)), // Глубокое копирование
-      edges: JSON.parse(JSON.stringify(edges)),
+      nodes: nodesCopy,
+      edges: edgesCopy,
     })
 
     // Ограничиваем размер истории

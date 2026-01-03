@@ -75,7 +75,7 @@ export default function AIAssistantPanel({
     }
   })
   const [isInitialized, setIsInitialized] = useState(isGeminiInitialized())
-  const [mode, setMode] = useState<AssistantMode>('chat')
+  const [mode, setMode] = useState<AssistantMode>('generate')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([])
@@ -526,8 +526,7 @@ export default function AIAssistantPanel({
         <ErrorBoundary>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMinimized ? 0 : '20px' }}>
             <h2 style={{ fontSize: isMinimized ? '14px' : '20px', fontWeight: 'bold', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '10px', userSelect: 'none' }}>
-              <Sparkles size={isMinimized ? 16 : 24} color="#4dabf7" />
-              {isMinimized ? 'Ассистент' : 'AI Ассистент'}
+              {isMinimized ? 'Ассистент' : 'Ассистент'}
             </h2>
             <div style={{ display: 'flex', gap: '4px' }}>
               <button
@@ -575,27 +574,6 @@ export default function AIAssistantPanel({
 
               {/* Режимы работы */}
               <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
-                <button
-                  onClick={() => {
-                    setMode('chat')
-                    setInputValue('')
-                  }}
-                  style={{
-                    padding: '8px 16px',
-                    backgroundColor: mode === 'chat' ? '#4dabf7' : '#1e1e1e',
-                    color: '#fff',
-                    border: '1px solid #4dabf7',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                  }}
-                >
-                  <HelpCircle size={16} />
-                  Вопросы
-                </button>
                 <button
                   onClick={() => {
                     setMode('generate')
