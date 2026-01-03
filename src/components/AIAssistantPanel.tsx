@@ -57,6 +57,7 @@ interface AIAssistantPanelProps {
   nodes: Node[]
   edges: Edge[]
   onClose: () => void
+  onGenerateArchitecture?: () => void
 }
 
 type AssistantMode = 'chat' | 'generate' | 'learning'
@@ -77,6 +78,7 @@ export default function AIAssistantPanel({
   const [isInitialized, setIsInitialized] = useState(isGeminiInitialized())
   const [mode, setMode] = useState<AssistantMode>('generate')
   const [loading, setLoading] = useState(false)
+  const [loadingCase, setLoadingCase] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([])
   const [inputValue, setInputValue] = useState('')
@@ -159,9 +161,172 @@ export default function AIAssistantPanel({
     { id: 'cost', label: 'Экономичность', description: 'Оптимизация стоимости инфраструктуры' },
     { id: 'availability', label: 'Доступность', description: 'Обеспечение высокой доступности сервисов' },
     { id: 'monitoring', label: 'Мониторинг', description: 'Добавление систем мониторинга и логирования' },
+    { id: 'fault-tolerance', label: 'Отказоустойчивость', description: 'Способность системы продолжать работу при сбоях' },
+    { id: 'elasticity', label: 'Эластичность', description: 'Способность автоматически адаптироваться к изменяющейся нагрузке' },
+    { id: 'interoperability', label: 'Интероперабельность', description: 'Способность взаимодействовать с другими системами' },
+    { id: 'testability', label: 'Тестируемость', description: 'Возможность эффективно тестировать систему' },
+    { id: 'portability', label: 'Переносимость', description: 'Способность работать в различных средах' },
+    { id: 'observability', label: 'Наблюдаемость', description: 'Возможность понимать внутреннее состояние системы' },
+    { id: 'compliance', label: 'Соответствие стандартам', description: 'Соблюдение законодательных и отраслевых требований (GDPR, HIPAA)' },
   ]
 
   const [selectedAttributes, setSelectedAttributes] = useState<string[]>([])
+
+  // Helper function to render structured content blocks
+  const renderStructuredContent = (content: string) => {
+    const blocks: { type: string, content: string }[] = [];
+    const regex = /<BLOCK:(ANSWER|RECOMMENDATIONS|ISSUES)>([\s\S]*?)<\/BLOCK:\1>/g;
+    let match;
+    let lastIndex = 0;
+    let foundBlocks = false;
+
+    while ((match = regex.exec(content)) !== null) {
+      foundBlocks = true;
+      if (match.index > lastIndex) {
+        const text = content.substring(lastIndex, match.index).trim();
+        if (text) blocks.push({ type: 'TEXT', content: text });
+      }
+      blocks.push({ type: match[1], content: match[2].trim() });
+      lastIndex = regex.lastIndex;
+    }
+
+    if (lastIndex < content.length) {
+      const text = content.substring(lastIndex).trim();
+      if (text) blocks.push({ type: 'TEXT', content: text });
+    }
+
+    const formatText = (text: string) => {
+      // 1. Tokenize into logical blocks (paragraphs, list items) to handle soft wraps
+      const rawLines = text.split('\n');
+      const logicalBlocks: { type: 'list' | 'text' | 'spacer', content: string }[] = [];
+
+      let currentBlock: { type: 'list' | 'text' | 'spacer', content: string } | null = null;
+
+      const listRegex = /^(\* |- |\d+\.\s)/;
+
+      rawLines.forEach((line) => {
+        const trimmed = line.trim();
+
+        if (!trimmed) {
+          // Empty line -> finalize current block and add spacer
+          if (currentBlock) {
+            logicalBlocks.push(currentBlock);
+            currentBlock = null;
+          }
+          logicalBlocks.push({ type: 'spacer', content: '' });
+          return;
+        }
+
+        const isListStart = listRegex.test(trimmed);
+
+        if (isListStart) {
+          // New list item -> finalize current block and start new list block
+          if (currentBlock) {
+            logicalBlocks.push(currentBlock);
+          }
+          currentBlock = { type: 'list', content: trimmed };
+        } else {
+          // Continuation of previous block or new paragraph
+          if (currentBlock && currentBlock.type !== 'spacer') {
+            // Append to current block (soft wrap), treating newline as space
+            currentBlock.content += ' ' + trimmed;
+          } else {
+            // New text paragraph
+            currentBlock = { type: 'text', content: trimmed };
+          }
+        }
+      });
+
+      // Push remaining block
+      if (currentBlock) {
+        logicalBlocks.push(currentBlock);
+      }
+
+      // 2. Render blocks
+      return logicalBlocks.map((block, i) => {
+        if (block.type === 'spacer') {
+          return <div key={i} style={{ height: '8px' }} />;
+        }
+
+        // Parse bold **text** within the full block content
+        // We capture both **text** and strict *text* if needed, but current focus is **
+        const parts = block.content.split(/(\*\*.*?\*\*)/g);
+        const formattedContent = parts.map((part, index) => {
+          if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
+            return <strong key={index} style={{ color: '#fff', fontWeight: '700' }}>{part.slice(2, -2)}</strong>;
+          }
+          return part;
+        });
+
+        if (block.type === 'list') {
+          // Determine list style
+          const isBullet = block.content.startsWith('* ') || block.content.startsWith('- ');
+          let displayContent = formattedContent;
+
+          // Remove the marker from display content if we use custom bullet
+          // Note: formattedContent is an array of strings/elements. We need to strip marker from the first element if it's a string.
+          if (isBullet) {
+            const firstPart = parts[0];
+            // If first part is the marker text
+            if (firstPart && !firstPart.startsWith('**')) {
+              // It's plain text, strip the first 2 chars (* )
+              const stripped = firstPart.substring(2);
+              // Reconstruct formatted content array
+              displayContent = [stripped, ...formattedContent.slice(1)];
+            }
+
+            return (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '4px', paddingLeft: '8px' }}>
+                <span style={{ color: '#4dabf7', lineHeight: '1.5', fontSize: '14px' }}>•</span>
+                <span style={{ flex: 1, lineHeight: '1.5' }}>{displayContent}</span>
+              </div>
+            );
+          }
+
+          // For numbered lists, we keep the number but maybe style it?
+          // Current request didn't ask for stylized numbers, just cleaning up *
+          return (
+            <div key={i} style={{ marginBottom: '4px', lineHeight: '1.5' }}>{formattedContent}</div>
+          );
+        }
+
+        return <div key={i} style={{ marginBottom: '4px', lineHeight: '1.5' }}>{formattedContent}</div>;
+      });
+    };
+
+    if (!foundBlocks) {
+      return <div style={{ color: '#eee', fontSize: '14px' }}>{formatText(content)}</div>;
+    }
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {blocks.map((block, i) => {
+          if (block.type === 'TEXT') return <div key={i} style={{ color: '#eee', fontSize: '14px' }}>{formatText(block.content)}</div>;
+
+          let style = {};
+          let title = '';
+
+          if (block.type === 'ANSWER') {
+            style = { borderLeft: '3px solid #4dabf7', paddingLeft: '10px' };
+            title = 'Ответ';
+          } else if (block.type === 'RECOMMENDATIONS') {
+            style = { backgroundColor: '#51cf6615', border: '1px solid #51cf6640', borderRadius: '6px', padding: '10px' };
+            title = '💡 Рекомендации';
+          } else if (block.type === 'ISSUES') {
+            style = { backgroundColor: '#ff6b6b15', border: '1px solid #ff6b6b40', borderRadius: '6px', padding: '10px' };
+            title = '⚠️ Замечания / Ошибки';
+          }
+
+          return (
+            <div key={i} style={style}>
+              {title && <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '6px', textTransform: 'uppercase', opacity: 0.8 }}>{title}</div>}
+              <div style={{ color: '#eee', fontSize: '14px' }}>{formatText(block.content)}</div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   const handleInitialize = () => {
     if (!apiKey.trim()) {
@@ -212,6 +377,59 @@ export default function AIAssistantPanel({
       setLoading(false)
     }
   }
+
+  // ... (keeping other handlers same until render) ...
+
+
+
+  // ... skip to render ...
+
+  // Inside render function, specifically Improvement section:
+  /*
+                {mode === 'generate' && improvementRecommendations && (
+                  <div style={{ padding: '16px', backgroundColor: '#1e1e1e', borderRadius: '8px', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    
+                    // ... buttons ...
+                    
+                    </div>
+                    <div style={{
+                      color: loading ? '#888' : '#ccc',
+                      fontSize: '14px',
+                      overflow: 'auto',
+                      maxHeight: '500px',
+                      padding: '16px',
+                      backgroundColor: '#2d2d2d',
+                      borderRadius: '6px',
+                      border: '1px solid #444',
+                      // Removed whiteSpace and lineHeight as they are now handled by renderStructuredContent
+                      position: 'relative',
+                      transition: 'color 0.3s',
+                    }}>
+                      {loading && (
+                        <div style={{
+                           // ... loader ...
+                        }}>
+                           // ...
+                        </div>
+                      )}
+                      
+                      {renderStructuredContent(improvementRecommendations)}
+                      
+                    </div>
+                // ...
+  */
+
+  // Inside chat render:
+  /*
+                      {chatMessages.map((msg, idx) => (
+                        <div key={idx} ...>
+                           ...
+                           {renderStructuredContent(msg.content)}
+                        </div>
+                      ))}
+  */
+
 
   const handleCopyRecommendations = () => {
     if (improvementRecommendations) {
@@ -371,8 +589,8 @@ export default function AIAssistantPanel({
   }
 
   const handleStartLearning = async (diff?: 'beginner' | 'intermediate' | 'advanced' | 'god') => {
-    const targetDiff = diff || difficulty
-    setLoading(true)
+    const targetDiff = diff || 'beginner'
+    setLoadingCase(true)
     setError(null)
     setEvaluation(null)
     try {
@@ -382,7 +600,7 @@ export default function AIAssistantPanel({
     } catch (err: any) {
       setError(err.message || 'Ошибка при генерации кейса')
     } finally {
-      setLoading(false)
+      setLoadingCase(false)
     }
   }
 
@@ -626,30 +844,163 @@ export default function AIAssistantPanel({
               {/* Контент в зависимости от режима */}
               <div style={{ flex: 1, overflowY: 'auto', marginBottom: '20px', minHeight: '200px' }}>
                 {mode === 'chat' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {chatMessages.map((msg, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          padding: '12px',
-                          backgroundColor: msg.role === 'user' ? '#1e1e1e' : '#2d2d2d',
-                          borderRadius: '8px',
-                          alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                          maxWidth: '80%',
-                        }}
-                      >
-                        <div style={{ fontSize: '12px', color: '#888', marginBottom: '4px' }}>
-                          {msg.role === 'user' ? 'Вы' : 'AI'}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minHeight: '100%' }}>
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '10px' }}>
+                      {chatMessages.length === 0 && (
+                        <div style={{ textAlign: 'center', color: '#888', padding: '20px' }}>
+                          <MessageSquare size={32} style={{ marginBottom: '10px', opacity: 0.5 }} />
+                          <p>Начните диалог с AI ассистентом...</p>
                         </div>
-                        <div style={{ color: '#fff', whiteSpace: 'pre-wrap' }}>{msg.content}</div>
+                      )}
+
+                      {chatMessages.map((msg, idx) => {
+                        // Функция для парсинга структурированного ответа
+                        const renderContent = (content: string) => {
+                          const blocks: { type: string, content: string }[] = [];
+                          const regex = /<BLOCK:(ANSWER|RECOMMENDATIONS|ISSUES)>([\s\S]*?)<\/BLOCK:\1>/g;
+                          let match;
+                          let lastIndex = 0;
+                          let foundBlocks = false;
+
+                          while ((match = regex.exec(content)) !== null) {
+                            foundBlocks = true;
+                            // Добавляем текст между блоками (если есть)
+                            if (match.index > lastIndex) {
+                              const text = content.substring(lastIndex, match.index).trim();
+                              if (text) blocks.push({ type: 'TEXT', content: text });
+                            }
+                            blocks.push({ type: match[1], content: match[2].trim() });
+                            lastIndex = regex.lastIndex;
+                          }
+
+                          // Добавляем остаток текста
+                          if (lastIndex < content.length) {
+                            const text = content.substring(lastIndex).trim();
+                            if (text) blocks.push({ type: 'TEXT', content: text });
+                          }
+
+                          if (!foundBlocks) {
+                            return <div style={{ color: '#eee', whiteSpace: 'pre-wrap', lineHeight: '1.5', fontSize: '14px' }}>{content}</div>;
+                          }
+
+                          return (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              {blocks.map((block, i) => {
+                                if (block.type === 'TEXT') return <div key={i} style={{ color: '#eee', whiteSpace: 'pre-wrap', fontSize: '14px' }}>{block.content}</div>;
+
+                                let style = {};
+                                let title = '';
+
+                                if (block.type === 'ANSWER') {
+                                  style = { borderLeft: '3px solid #4dabf7', paddingLeft: '10px' };
+                                  title = 'Ответ';
+                                } else if (block.type === 'RECOMMENDATIONS') {
+                                  style = { backgroundColor: '#51cf6615', border: '1px solid #51cf6640', borderRadius: '6px', padding: '10px' };
+                                  title = '💡 Рекомендации';
+                                } else if (block.type === 'ISSUES') {
+                                  style = { backgroundColor: '#ff6b6b15', border: '1px solid #ff6b6b40', borderRadius: '6px', padding: '10px' };
+                                  title = '⚠️ Замечания / Ошибки';
+                                }
+
+                                return (
+                                  <div key={i} style={style}>
+                                    {title && <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '6px', textTransform: 'uppercase', opacity: 0.8 }}>{title}</div>}
+                                    <div style={{ color: '#eee', whiteSpace: 'pre-wrap', lineHeight: '1.5', fontSize: '14px' }}>{block.content}</div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        };
+
+                        return (
+                          <div
+                            key={idx}
+                            style={{
+                              padding: '12px 16px',
+                              backgroundColor: msg.role === 'user' ? '#2d2d2d' : '#1e1e1e',
+                              borderRadius: msg.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
+                              alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                              maxWidth: '85%',
+                              border: msg.role === 'user' ? '1px solid #444' : '1px solid #4dabf730',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            }}
+                          >
+                            <div style={{ fontSize: '11px', color: msg.role === 'user' ? '#888' : '#4dabf7', marginBottom: '4px', fontWeight: 'bold' }}>
+                              {msg.role === 'user' ? 'ВЫ' : 'AI ASSISTANT'}
+                            </div>
+                            {renderContent(msg.content)}
+                          </div>
+                        )
+                      })}
+
+                      {loading && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#aaa', padding: '10px' }}>
+                          <Loader2 size={18} className="animate-spin" color="#4dabf7" />
+                          <span style={{ fontSize: '13px' }}>AI печатает...</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{
+                      position: 'sticky',
+                      bottom: '-20px', // Compensate parent padding 
+                      margin: '0 -20px -20px -20px', // Stretch to edges
+                      padding: '16px',
+                      backgroundColor: '#252525',
+                      borderTop: '1px solid #333',
+                      zIndex: 10
+                    }}>
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
+                        <textarea
+                          value={inputValue}
+                          onChange={(e) => setInputValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleChat();
+                            }
+                          }}
+                          placeholder="Ваш вопрос об архитектуре..."
+                          style={{
+                            flex: 1,
+                            padding: '12px',
+                            backgroundColor: '#1a1a1a',
+                            border: '1px solid #444',
+                            borderRadius: '12px',
+                            color: '#fff',
+                            fontSize: '14px',
+                            resize: 'none',
+                            minHeight: '46px',
+                            maxHeight: '120px',
+                            fontFamily: 'inherit',
+                            lineHeight: '1.4',
+                          }}
+                        />
+                        <button
+                          onClick={handleChat}
+                          disabled={loading || !inputValue.trim()}
+                          style={{
+                            width: '46px',
+                            height: '46px',
+                            backgroundColor: loading || !inputValue.trim() ? '#333' : '#4dabf7',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '12px',
+                            cursor: loading || !inputValue.trim() ? 'not-allowed' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s',
+                          }}
+                        >
+                          {loading ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
+                        </button>
                       </div>
-                    ))}
-                    {loading && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#4dabf7' }}>
-                        <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                        <span>AI думает...</span>
+                      <div style={{ fontSize: '10px', color: '#666', marginTop: '6px', textAlign: 'center' }}>
+                        Shift+Enter для новой строки • Enter для отправки
                       </div>
-                    )}
+                    </div>
                   </div>
                 )}
 
@@ -748,8 +1099,7 @@ export default function AIAssistantPanel({
                       backgroundColor: '#2d2d2d',
                       borderRadius: '6px',
                       border: '1px solid #444',
-                      whiteSpace: 'pre-wrap',
-                      lineHeight: '1.6',
+                      // whiteSpace and lineHeight handled by renderStructuredContent
                       position: 'relative',
                       transition: 'color 0.3s',
                     }}>
@@ -773,7 +1123,7 @@ export default function AIAssistantPanel({
                           </div>
                         </div>
                       )}
-                      {improvementRecommendations}
+                      {renderStructuredContent(improvementRecommendations)}
                     </div>
                     <p style={{ color: '#888', fontSize: '11px', marginTop: '12px', marginBottom: 0 }}>
                       💡 Используйте эти рекомендации для ручного улучшения архитектуры. Добавьте предложенные компоненты и соединения на рабочую область.
@@ -946,44 +1296,59 @@ export default function AIAssistantPanel({
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     {!currentCase ? (
                       <div style={{ textAlign: 'center', padding: '40px 20px', backgroundColor: '#1e1e1e', borderRadius: '12px', border: '1px dashed #444' }}>
-                        <GraduationCap size={48} color="#4dabf7" style={{ marginBottom: '16px', opacity: 0.5 }} />
-                        <h3 style={{ color: '#fff', marginBottom: '12px' }}>Архитектурный тренажер</h3>
-                        <p style={{ color: '#aaa', fontSize: '14px', marginBottom: '24px', maxWidth: '400px', margin: '0 auto 24px' }}>
-                          Выберите уровень сложности и получите бизнес-кейс. Спроектируйте архитектуру и узнайте оценку эксперта.
-                        </p>
-                        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-                          {(['beginner', 'intermediate', 'advanced', 'god'] as const).map((diff) => (
-                            <button
-                              key={diff}
-                              onClick={() => handleStartLearning(diff)}
-                              style={{
-                                padding: '10px 20px',
-                                backgroundColor: diff === 'god' ? '#ae3ec920' : '#4dabf720',
-                                color: diff === 'god' ? '#ae3ec9' : '#4dabf7',
-                                border: `1px solid ${diff === 'god' ? '#ae3ec9' : '#4dabf7'}`,
-                                borderRadius: '8px',
-                                cursor: 'pointer',
-                                fontSize: '13px',
-                                fontWeight: '600',
-                                transition: 'all 0.2s',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '6px'
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = diff === 'god' ? '#ae3ec940' : '#4dabf740';
-                                if (diff === 'god') e.currentTarget.style.boxShadow = '0 0 15px rgba(174, 62, 201, 0.4)';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = diff === 'god' ? '#ae3ec920' : '#4dabf720';
-                                e.currentTarget.style.boxShadow = 'none';
-                              }}
-                            >
-                              {diff === 'god' && <Sparkles size={14} />}
-                              {diff === 'beginner' ? 'Начальный' : diff === 'intermediate' ? 'Средний' : diff === 'advanced' ? 'Продвинутый' : 'Бог архитектуры'}
-                            </button>
-                          ))}
-                        </div>
+                        {loadingCase ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '20px' }}>
+                            <Loader2 size={48} className="animate-spin" color="#4dabf7" />
+                            <div>
+                              <h3 style={{ color: '#fff', marginBottom: '8px' }}>Генерация кейса...</h3>
+                              <p style={{ color: '#888', fontSize: '14px', maxWidth: '300px', margin: '0 auto' }}>
+                                ИИ придумывает интересную задачу для вашего уровня. Это может занять несколько секунд.
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <GraduationCap size={48} color="#4dabf7" style={{ marginBottom: '16px', opacity: 0.5 }} />
+                            <h3 style={{ color: '#fff', marginBottom: '12px' }}>Архитектурный тренажер</h3>
+                            <p style={{ color: '#aaa', fontSize: '14px', marginBottom: '24px', maxWidth: '400px', margin: '0 auto 24px' }}>
+                              Выберите уровень сложности и получите бизнес-кейс. Спроектируйте архитектуру и узнайте оценку эксперта.
+                            </p>
+                            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                              {(['beginner', 'intermediate', 'advanced', 'god'] as const).map((diff) => (
+                                <button
+                                  key={diff}
+                                  onClick={() => handleStartLearning(diff)}
+                                  disabled={loadingCase}
+                                  style={{
+                                    padding: '10px 20px',
+                                    backgroundColor: diff === 'god' ? '#ae3ec920' : '#4dabf720',
+                                    color: diff === 'god' ? '#ae3ec9' : '#4dabf7',
+                                    border: `1px solid ${diff === 'god' ? '#ae3ec9' : '#4dabf7'}`,
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    fontSize: '13px',
+                                    fontWeight: '600',
+                                    transition: 'all 0.2s',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px'
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = diff === 'god' ? '#ae3ec940' : '#4dabf740';
+                                    if (diff === 'god') e.currentTarget.style.boxShadow = '0 0 15px rgba(174, 62, 201, 0.4)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = diff === 'god' ? '#ae3ec920' : '#4dabf720';
+                                    e.currentTarget.style.boxShadow = 'none';
+                                  }}
+                                >
+                                  {diff === 'god' && <Sparkles size={14} />}
+                                  {diff === 'beginner' ? 'Начальный' : diff === 'intermediate' ? 'Средний' : diff === 'advanced' ? 'Продвинутый' : 'Бог архитектуры'}
+                                </button>
+                              ))}
+                            </div>
+                          </>
+                        )}
                       </div>
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>

@@ -67,6 +67,7 @@ export type ComponentType =
   | 'group'
   | 'system-component'
   | 'note'
+  | 'table'
 
 export type ConnectionType = 'rest' | 'grpc' | 'async' | 'database-connection' | 'database-replication' | 'cache-connection' | 'dependency' | 'composition' | 'aggregation' | 'method-call' | 'inheritance' | 'bidirectional' | 'async-bidirectional'
 
@@ -133,6 +134,10 @@ export interface TableColumn {
   primaryKey?: boolean
   unique?: boolean
   defaultValue?: string
+  foreignKey?: {
+    targetTableId: string
+    targetColumnName: string
+  }
 }
 
 export interface TableRow {
@@ -173,8 +178,16 @@ export interface DatabaseConfig {
 
 export type CacheType = 'distributed' | 'in-memory'
 
+export type CacheVendor =
+  | 'redis'
+  | 'memcached'
+  | 'hazelcast'
+  | 'ehcache'
+  | 'infinispan'
+
 export interface CacheConfig {
   cacheType?: CacheType
+  vendor?: CacheVendor
 }
 
 export type ServiceLanguage =
@@ -203,6 +216,7 @@ export type DataWarehouseVendor =
   | 'databricks'
   | 'synapse'
   | 'teradata'
+  | 'clickhouse'
 
 export type ObjectStorageVendor =
   | 's3'
@@ -596,6 +610,16 @@ export type SMSGatewayVendor =
   | 'messagebird'
   | 'plivo'
 
+export type OrchestratorVendor =
+  | 'kubernetes'
+  | 'docker-swarm'
+  | 'openshift'
+  | 'nomad'
+  | 'ecs'
+  | 'eks'
+  | 'aks'
+  | 'gke'
+
 export type ProxyVendor =
   | 'nginx'
   | 'haproxy'
@@ -641,6 +665,17 @@ export type BusinessIntelligenceVendor =
   | 'looker'
   | 'metabase'
   | 'superset'
+
+export type VectorDatabaseVendor =
+  | 'pinecone'
+  | 'milvus'
+  | 'weaviate'
+  | 'qdrant'
+  | 'chroma'
+  | 'faiss'
+  | 'zilliz'
+  | 'elastic-vector'
+  | 'pgvector'
 
 // Конфигурации для новых компонентов
 export interface QueueConfig {
@@ -729,6 +764,12 @@ export interface ETLServiceConfig {
   dataSourceCount?: number
 }
 
+export interface OrchestratorConfig {
+  vendor?: OrchestratorVendor
+  clusterSize?: number
+  version?: string
+}
+
 export interface DataLakeConfig {
   vendor?: DataLakeVendor
   storageSize?: string
@@ -771,6 +812,13 @@ export interface VPNGatewayConfig {
   protocol?: 'ipsec' | 'ssl' | 'wireguard'
 }
 
+export interface VectorDatabaseConfig {
+  vendor?: VectorDatabaseVendor
+  dimensions?: number
+  indexType?: 'hnsw' | 'ivf' | 'flat' | 'diskann'
+  distanceMetric?: 'cosine' | 'euclidean' | 'dot-product'
+}
+
 export interface DNSServiceConfig {
   vendor?: DNSServiceVendor
   domainCount?: number
@@ -806,6 +854,7 @@ export interface ComponentData {
   comment?: string // Комментарий/аннотация к компоненту
   groupId?: string // ID группы для группировки компонентов
   status?: 'new' | 'existing' // Статус компонента: новый или существующий
+  tableConfig?: DatabaseTable
   databaseConfig?: DatabaseConfig
   cacheConfig?: CacheConfig
   serviceConfig?: ServiceConfig
@@ -851,6 +900,8 @@ export interface ComponentData {
   backupServiceConfig?: BackupServiceConfig
   analyticsServiceConfig?: AnalyticsServiceConfig
   businessIntelligenceConfig?: BusinessIntelligenceConfig
+  orchestratorConfig?: OrchestratorConfig
+  vectorDatabaseConfig?: VectorDatabaseConfig
 }
 
 export interface DatabaseReplicationConfig {
@@ -870,6 +921,7 @@ export interface Waypoint {
 
 export interface ConnectionData {
   connectionType: ConnectionType
+  relationshipType?: '1:1' | '1:n' | 'n:1' | 'n:m'
   replicationConfig?: DatabaseReplicationConfig
   // Контрольные точки для перетаскивания стрелок (массив для поддержки нескольких точек изгиба)
   waypoints?: Waypoint[]

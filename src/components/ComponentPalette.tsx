@@ -42,10 +42,12 @@ import {
   Bot,
   Workflow,
   Sparkles,
+  Lightbulb,
 } from 'lucide-react'
 
 interface ComponentPaletteProps {
   onComponentClick: (type: ComponentType) => void
+  onRecommendationClick?: () => void
 }
 
 type ComponentCategory = 'all' | 'infrastructure' | 'data' | 'security' | 'development' | 'monitoring' | 'integration' | 'communication' | 'text' | 'ai'
@@ -85,6 +87,7 @@ const components: Component[] = [
   { type: 'time-series-database', label: 'Временные ряды', icon: <Clock size={24} />, color: '#845ef7', category: 'data' },
   { type: 'data-lake', label: 'Data Lake', icon: <Warehouse size={24} />, color: '#51cf66', category: 'data' },
   { type: 'search-engine', label: 'Поисковая система', icon: <Search size={24} />, color: '#20c997', category: 'data' },
+  { type: 'table', label: 'Таблица БД', icon: <Database size={24} />, color: '#5C7CFA', category: 'data' },
 
   // Безопасность
   { type: 'firewall', label: 'Межсетевой экран', icon: <Shield size={24} />, color: '#dc3545', category: 'security' },
@@ -161,7 +164,7 @@ const categoryLabels: Record<ComponentCategory, string> = {
   ai: 'AI / ML',
 }
 
-export default function ComponentPalette({ onComponentClick }: ComponentPaletteProps) {
+export default function ComponentPalette({ onComponentClick, onRecommendationClick }: ComponentPaletteProps) {
   const [position, setPosition] = useState({ x: 20, y: 20 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
@@ -310,30 +313,58 @@ export default function ComponentPalette({ onComponentClick }: ComponentPaletteP
         >
           {isDragging ? '🖐 Перетаскивание...' : '☰ Компоненты'}
         </h2>
-        <button
-          onClick={toggleCollapse}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: '#fff',
-            cursor: 'pointer',
-            padding: '4px 8px',
-            borderRadius: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'background-color 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#333'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent'
-          }}
-          title={isCollapsed ? 'Развернуть' : 'Свернуть'}
-        >
-          {isCollapsed ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={onRecommendationClick}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#fff',
+              cursor: 'pointer',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background-color 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#333'
+              e.currentTarget.style.color = '#ffd43b'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent'
+              e.currentTarget.style.color = '#fff'
+            }}
+            title="Ассистент по выбору технологий"
+          >
+            <Lightbulb size={20} />
+          </button>
+          <button
+            onClick={toggleCollapse}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#fff',
+              cursor: 'pointer',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background-color 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#333'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent'
+            }}
+            title={isCollapsed ? 'Развернуть' : 'Свернуть'}
+          >
+            {isCollapsed ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+          </button>
+        </div>
       </div>
       {!isCollapsed && (
         <>

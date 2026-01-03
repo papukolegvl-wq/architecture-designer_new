@@ -5,7 +5,7 @@ import { ConnectionType, ComponentData } from '../types'
 interface ConnectionTypeSelectorProps {
   sourceNode: Node
   targetNode: Node
-  onSelect: (type: ConnectionType) => void
+  onSelect: (type: ConnectionType, relationshipType?: '1:1' | '1:n' | 'n:1' | 'n:m') => void
   onCancel: () => void
 }
 
@@ -40,6 +40,7 @@ export default function ConnectionTypeSelector({
   onCancel,
 }: ConnectionTypeSelectorProps) {
   const [selectedType, setSelectedType] = useState<ConnectionType | null>(null)
+  const [relationshipType, setRelationshipType] = useState<'1:1' | '1:n' | 'n:1' | 'n:m'>('1:n')
 
   const sourceData = sourceNode.data as ComponentData
   const targetData = targetNode.data as ComponentData
@@ -79,7 +80,7 @@ export default function ConnectionTypeSelector({
       }
       // Для controller-repository показываем dependency
       if ((sourceData.type === 'controller' && targetData.type === 'repository') ||
-          (sourceData.type === 'repository' && targetData.type === 'controller')) {
+        (sourceData.type === 'repository' && targetData.type === 'controller')) {
         return [
           { value: 'dependency' as ConnectionType, label: 'Зависимость', description: 'Зависимость между компонентами' },
         ]
@@ -92,9 +93,18 @@ export default function ConnectionTypeSelector({
       }))
     }
     // Для остальных соединений показываем стандартные типы (включая bidirectional и async-bidirectional)
-    const filtered = connectionTypes.filter(type => 
+    const filtered = connectionTypes.filter(type =>
       !['dependency', 'composition', 'aggregation', 'method-call', 'inheritance'].includes(type.value)
     )
+
+    // Если оба - таблицы, добавляем специальные типы для БД
+    if (sourceData.type === 'table' && targetData.type === 'table') {
+      return [
+        { value: 'database-connection' as ConnectionType, label: 'Связь таблиц', description: 'Отношение между таблицами БД' },
+        ...filtered.filter(t => t.value !== 'database-connection')
+      ]
+    }
+
     console.log('📋 Доступные типы соединений:', filtered.map(t => t.value))
     return filtered
   }, [isArchitecturalConnection, sourceData.type, targetData.type])
@@ -108,7 +118,7 @@ export default function ConnectionTypeSelector({
 
   const handleConfirm = () => {
     if (selectedType) {
-      onSelect(selectedType)
+      onSelect(selectedType, (sourceData.type === 'table' && targetData.type === 'table') ? relationshipType : undefined)
     }
   }
 
@@ -175,6 +185,33 @@ export default function ConnectionTypeSelector({
           </label>
         ))}
       </div>
+
+      {sourceData.type === 'table' && targetData.type === 'table' && selectedType === 'database-connection' && (
+        <div style={{ marginBottom: '20px' }}>
+          <h4 style={{ fontSize: '14px', color: '#fff', marginBottom: '10px' }}>Тип отношения:</h4>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {(['1:1', '1:n', 'n:1', 'n:m'] as const).map(rel => (
+              <button
+                key={rel}
+                onClick={() => setRelationshipType(rel)}
+                style={{
+                  flex: 1,
+                  padding: '8px',
+                  backgroundColor: relationshipType === rel ? '#4dabf7' : '#3d3d3d',
+                  color: '#fff',
+                  border: `1px solid ${relationshipType === rel ? '#4dabf7' : '#555'}`,
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                }}
+              >
+                {rel}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div style={{ display: 'flex', gap: '10px' }}>
         <button
           onClick={onCancel}

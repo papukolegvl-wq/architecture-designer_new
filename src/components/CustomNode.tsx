@@ -42,6 +42,7 @@ import {
   Brain,
   Bot,
   Workflow,
+  Table as TableIcon,
 } from 'lucide-react'
 
 const componentIcons: Record<string, React.ReactNode> = {
@@ -110,6 +111,7 @@ const componentIcons: Record<string, React.ReactNode> = {
   'vpn-gateway': <Shield size={32} />,
   'dns-service': <Globe size={32} />,
   'system-component': <Box size={32} />,
+  table: <TableIcon size={32} />,
 }
 
 const componentColors: Record<string, string> = {
@@ -176,13 +178,15 @@ const componentColors: Record<string, string> = {
   proxy: '#666',
   'vpn-gateway': '#dc3545',
   'dns-service': '#51cf66',
+  table: '#5C7CFA',
 }
 
 interface CustomNodeProps extends NodeProps<ComponentData> {
   onInfoClick?: (componentType: ComponentType) => void
   onLinkClick?: (link: ComponentLink) => void
   onLinkConfigClick?: (nodeId: string) => void
-  onStatusChange?: (nodeId: string, status: 'new' | 'existing' | undefined) => void
+  onCommentClick?: (nodeId: string) => void
+  onStatusChange?: (nodeId: string, status: 'new' | 'existing') => void
 }
 
 function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfigClick, onStatusChange }: CustomNodeProps) {
@@ -277,6 +281,16 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
       }
       return 'Database'
     } else if (data.type === 'cache') {
+      if (data.cacheConfig?.vendor) {
+        const vendorLabels: Record<string, string> = {
+          redis: 'Redis',
+          memcached: 'Memcached',
+          hazelcast: 'Hazelcast',
+          ehcache: 'Ehcache',
+          infinispan: 'Infinispan',
+        }
+        return vendorLabels[data.cacheConfig.vendor] || 'Cache'
+      }
       if (data.cacheConfig?.cacheType) {
         return data.cacheConfig.cacheType === 'distributed' ? 'Distributed' : 'In-Memory'
       }
@@ -611,6 +625,22 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
         return data.dnsServiceConfig.vendor
       }
       return 'DNS Service'
+    } else if (data.type === 'vector-database') {
+      if (data.vectorDatabaseConfig?.vendor) {
+        const vendorLabels: Record<string, string> = {
+          pinecone: 'Pinecone',
+          milvus: 'Milvus',
+          weaviate: 'Weaviate',
+          qdrant: 'Qdrant',
+          chroma: 'Chroma',
+          faiss: 'FAISS',
+          zilliz: 'Zilliz',
+          'elastic-vector': 'Elastic Vector',
+          pgvector: 'pgvector',
+        }
+        return vendorLabels[data.vectorDatabaseConfig.vendor] || 'Vector DB'
+      }
+      return 'Vector Database'
     }
     return data.connectionType === 'sync' ? 'Sync' : 'Async'
   }
@@ -994,6 +1024,54 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
               {(data.type === 'database' || data.type === 'repository') && (
                 <div style={{ fontSize: '11px', color: '#888' }}>
                   {data.databaseConfig?.tables?.length || 0} таблиц(ы)
+                </div>
+              )}
+
+              {data.type === 'table' && data.tableConfig?.columns && (
+                <div
+                  style={{
+                    marginTop: '12px',
+                    paddingTop: '12px',
+                    borderTop: '1px solid #333',
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '2px',
+                      maxHeight: '200px',
+                      overflowY: 'auto',
+                    }}
+                  >
+                    {data.tableConfig.columns.map((column, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          fontSize: '10px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '4px 6px',
+                          backgroundColor: '#2d2d2d',
+                          borderRadius: '4px',
+                          marginBottom: '2px',
+                          border: `1px solid ${color}20`,
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          {column.primaryKey && <Key size={10} style={{ color: '#ffd43b' }} />}
+                          {column.foreignKey && <Link2 size={10} style={{ color: '#4dabf7' }} />}
+                          <span style={{ color: '#fff', fontWeight: '500' }}>{column.name}</span>
+                        </div>
+                        <span style={{ color: '#888', fontSize: '9px' }}>{column.type}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 

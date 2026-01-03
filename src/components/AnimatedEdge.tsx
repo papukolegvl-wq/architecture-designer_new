@@ -1172,6 +1172,46 @@ function AnimatedEdge({
           </div>
         </EdgeLabelRenderer>
       )}
+
+      {/* Relationship labels for table connections */}
+      {data?.relationshipType && (
+        <EdgeLabelRenderer>
+          <div
+            style={{
+              position: 'absolute',
+              transform: `translate(-50%, -50%) translate(${sourceX + (sourcePosition === Position.Right ? 30 : sourcePosition === Position.Left ? -30 : 0)}px, ${sourceY + (sourcePosition === Position.Bottom ? 30 : sourcePosition === Position.Top ? -30 : 0)}px)`,
+              backgroundColor: '#1e1e1e',
+              color: '#fff',
+              padding: '2px 6px',
+              borderRadius: '4px',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              border: `1px solid ${edgeColor}`,
+              pointerEvents: 'none',
+              zIndex: 11,
+            }}
+          >
+            {data.relationshipType.split(':')[0]}
+          </div>
+          <div
+            style={{
+              position: 'absolute',
+              transform: `translate(-50%, -50%) translate(${targetX + (targetPosition === Position.Right ? 30 : targetPosition === Position.Left ? -30 : 0)}px, ${targetY + (targetPosition === Position.Bottom ? 30 : targetPosition === Position.Top ? -30 : 0)}px)`,
+              backgroundColor: '#1e1e1e',
+              color: '#fff',
+              padding: '2px 6px',
+              borderRadius: '4px',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              border: `1px solid ${edgeColor}`,
+              pointerEvents: 'none',
+              zIndex: 11,
+            }}
+          >
+            {data.relationshipType.split(':')[1]}
+          </div>
+        </EdgeLabelRenderer>
+      )}
     </>
   )
 }

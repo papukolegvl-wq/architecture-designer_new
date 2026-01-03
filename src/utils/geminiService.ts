@@ -355,7 +355,23 @@ ${improvementPrompt ? `Требования к улучшению: ${improvement
 
 Доступные типы соединений: rest, grpc, async, database-connection, cache-connection, database-replication.
 
-Опиши рекомендации простым и понятным языком, как будто объясняешь коллеге.`
+Опиши рекомендации простым и понятным языком, как будто объясняешь коллеге.
+
+Структурируй свой ответ, используя следующие теги:
+
+<BLOCK:RECOMMENDATIONS>
+Список конкретных рекомендаций по улучшению.
+</BLOCK:RECOMMENDATIONS>
+
+<BLOCK:ISSUES>
+Найденные проблемы, которые исправляют эти рекомендации.
+</BLOCK:ISSUES>
+
+<BLOCK:ANSWER>
+Общее объяснение и преимущества предлагаемых изменений.
+</BLOCK:ANSWER>
+
+Не пиши ничего вне этих блоков.`
 
   // Используем функцию автоматического выбора модели
   try {
@@ -377,35 +393,35 @@ export async function generateArchitectureFromDescription(
     throw new Error('Gemini не инициализирован. Укажите API ключ.')
   }
 
-  const prompt = `Ты эксперт по архитектуре программного обеспечения. На основе следующего описания создай архитектуру системы.
+  const prompt = `Ты эксперт по архитектуре программного обеспечения.На основе следующего описания создай архитектуру системы.
 
-Описание: ${description}
+    Описание: ${description}
 
 Создай архитектуру в формате JSON:
-{
-  "components": [
-    {
-      "type": "тип_компонента",
-      "name": "Название компонента",
-      "description": "Описание компонента",
-      "position": {"x": 100, "y": 100}
-    }
-  ],
-  "connections": [
-    {
-      "from": "название_компонента1",
-      "to": "название_компонента2",
-      "connectionType": "rest" | "async" | "database-connection" | ...,
-      "description": "Описание соединения"
-    }
-  ]
-}
+  {
+    "components": [
+      {
+        "type": "тип_компонента",
+        "name": "Название компонента",
+        "description": "Описание компонента",
+        "position": { "x": 100, "y": 100 }
+      }
+    ],
+      "connections": [
+        {
+          "from": "название_компонента1",
+          "to": "название_компонента2",
+          "connectionType": "rest" | "async" | "database-connection" | ...,
+          "description": "Описание соединения"
+        }
+      ]
+  }
 
-Доступные типы компонентов: service, database, message-broker, api-gateway, cache, load-balancer, frontend, auth-service, cdn, object-storage, data-warehouse, lambda, firewall, esb, monitoring, logging, queue, event-bus, и другие.
+Доступные типы компонентов: service, database, message - broker, api - gateway, cache, load - balancer, frontend, auth - service, cdn, object - storage, data - warehouse, lambda, firewall, esb, monitoring, logging, queue, event - bus, и другие.
 
-Доступные типы соединений: rest, grpc, async, database-connection, cache-connection, database-replication.
+Доступные типы соединений: rest, grpc, async, database - connection, cache - connection, database - replication.
 
-Расположи компоненты так, чтобы они логично группировались (frontend слева, backend в центре, базы данных справа).
+Расположи компоненты так, чтобы они логично группировались(frontend слева, backend в центре, базы данных справа).
 
 Верни только валидный JSON без дополнительного текста.`
 
@@ -441,14 +457,28 @@ export async function explainArchitectureDecision(
 
   const architectureDescription = architectureToText(nodes, edges)
 
-  const prompt = `Ты эксперт по архитектуре программного обеспечения. Ответь на вопрос пользователя на основе следующей архитектуры.
+  const prompt = `Ты эксперт по архитектуре программного обеспечения.Ответь на вопрос пользователя на основе следующей архитектуры.
 
-Архитектура:
+    Архитектура:
 ${architectureDescription}
 
 Вопрос пользователя: ${question}
 
-Дай развернутый и понятный ответ с объяснением.`
+Дай развернутый ответ.Структурируй его, используя следующие теги(используй только те, которые уместны):
+
+  <BLOCK: ANSWER >
+    Твой прямой ответ на вопрос и объяснения.
+</BLOCK:ANSWER>
+
+      < BLOCK: RECOMMENDATIONS >
+        Конкретные рекомендации по улучшению(если есть).
+</BLOCK:RECOMMENDATIONS>
+
+          < BLOCK: ISSUES >
+            Ошибки, риски или проблемы, найденные в архитектуре(если есть).
+</BLOCK:ISSUES>
+
+Не пиши ничего вне этих блоков.`
 
   // Используем функцию автоматического выбора модели
   try {
@@ -474,12 +504,12 @@ export async function getOptimizationSuggestions(
   const architectureDescription = architectureToText(nodes, edges)
 
   const focusPrompt = focusArea
-    ? `Особое внимание удели: ${focusArea}`
+    ? `Особое внимание удели: ${focusArea} `
     : ''
 
-  const prompt = `Ты эксперт по оптимизации архитектуры программного обеспечения. Проанализируй архитектуру и предложи конкретные способы оптимизации производительности, масштабируемости, безопасности и стоимости.
+  const prompt = `Ты эксперт по оптимизации архитектуры программного обеспечения.Проанализируй архитектуру и предложи конкретные способы оптимизации производительности, масштабируемости, безопасности и стоимости.
 
-Архитектура:
+    Архитектура:
 ${architectureDescription}
 
 ${focusPrompt}
@@ -518,19 +548,19 @@ export async function generateArchitectureCase(
     throw new Error('Gemini не инициализирован. Укажите API ключ.')
   }
 
-  const prompt = `Ты эксперт по архитектуре ПО. Создай интересную архитектурную задачу (бизнес-кейс) для обучения.
+  const prompt = `Ты эксперт по архитектуре ПО.Создай интересную архитектурную задачу(бизнес - кейс) для обучения.
 Уровень сложности: ${difficulty}.
 
 Верни ответ ТОЛЬКО в формате JSON:
-{
-  "id": "уникальный_id",
-  "title": "Название задачи",
-  "difficulty": "${difficulty}",
-  "description": "Общее описание бизнес-проблемы",
-  "businessRequirements": ["требование 1", "требование 2"],
-  "qualityAttributes": ["атрибут 1", "атрибут 2"],
-  "expectedComponents": ["тип_компонента1", "тип_компонента2"]
-}
+  {
+    "id": "уникальный_id",
+      "title": "Название задачи",
+        "difficulty": "${difficulty}",
+          "description": "Общее описание бизнес-проблемы",
+            "businessRequirements": ["требование 1", "требование 2"],
+              "qualityAttributes": ["атрибут 1", "атрибут 2"],
+                "expectedComponents": ["тип_компонента1", "тип_компонента2"]
+  }
 
 Будь креативным.
 Верни только JSON.`
@@ -576,21 +606,21 @@ export async function evaluateArchitectureSolution(
 
   const architectureDescription = architectureToText(nodes, edges)
 
-  const prompt = `Ты строгий, но справедливый архитектурный эксперт. Оцени решение пользователя для следующей задачи.
-ЗАДАЧА: ${currentCase.title}
+  const prompt = `Ты строгий, но справедливый архитектурный эксперт.Оцени решение пользователя для следующей задачи.
+    ЗАДАЧА: ${currentCase.title}
 ${currentCase.description}
 
 РЕШЕНИЕ ПОЛЬЗОВАТЕЛЯ:
 ${architectureDescription}
 
 Верни ответ ТОЛЬКО в формате JSON:
-{
-  "score": число от 0 до 100,
-  "correctDecisions": ["что сделано правильно"],
-  "missedRequirements": ["какие требования не выполнены"],
-  "optimizationSuggestions": ["советы по улучшению"],
-  "summary": "Общий вывод эксперта"
-}
+  {
+    "score": число от 0 до 100,
+      "correctDecisions": ["что сделано правильно"],
+        "missedRequirements": ["какие требования не выполнены"],
+          "optimizationSuggestions": ["советы по улучшению"],
+            "summary": "Общий вывод эксперта"
+  }
 
 Верни только JSON.`
 

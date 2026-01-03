@@ -24,10 +24,13 @@ import ContainerNode from './components/ContainerNode'
 import GroupNode from './components/GroupNode'
 import NoteNode from './components/NoteNode'
 import AnimatedEdge from './components/AnimatedEdge'
+import StatisticsPanel from './components/StatisticsPanel'
+import VectorDatabaseConfigPanel from './components/VectorDatabaseConfigPanel'
 import ConnectionPanel from './components/ConnectionPanel'
 import ConnectionTypeSelector from './components/ConnectionTypeSelector'
 import DatabaseConfigPanel from './components/DatabaseConfigPanel'
 import DatabaseSchemaEditor from './components/DatabaseSchemaEditor'
+import TableEditor from './components/TableEditor'
 import DatabaseReplicationPanel from './components/DatabaseReplicationPanel'
 import CacheConfigPanel from './components/CacheConfigPanel'
 import ServiceConfigPanel from './components/ServiceConfigPanel'
@@ -46,6 +49,8 @@ import LoadBalancerConfigPanel from './components/LoadBalancerConfigPanel'
 import ApiGatewayConfigPanel from './components/ApiGatewayConfigPanel'
 import ESBConfigPanel from './components/ESBConfigPanel'
 import ComponentInfoPanel from './components/ComponentInfoPanel'
+import ComparisonPanel from './components/ComparisonPanel'
+import RecommendationPanel from './components/RecommendationPanel'
 import FilePanel from './components/FilePanel'
 import TabsPanel from './components/TabsPanel'
 import ClassConfigPanel from './components/ClassConfigPanel'
@@ -317,6 +322,7 @@ function App() {
   const edgesToPreserveRef = useRef<Edge[]>([]) // Ref для хранения edges, которые нужно сохранить при удалении узлов
   const [canUndo, setCanUndo] = useState(false)
   const [canRedo, setCanRedo] = useState(false)
+  const [showRecommendationPanel, setShowRecommendationPanel] = useState(false)
 
   // Отключаем автоматическое удаление edges при удалении узлов для всех существующих edges
   useEffect(() => {
@@ -953,6 +959,9 @@ function App() {
   const [copiedNodes, setCopiedNodes] = useState<{ nodes: Node[]; edges: Edge[] } | null>(null)
   const [databaseConfigNode, setDatabaseConfigNode] = useState<Node | null>(null)
   const [databaseSchemaNode, setDatabaseSchemaNode] = useState<Node | null>(null)
+  const [tableEditorNode, setTableEditorNode] = useState<Node | null>(null)
+  const [vectorDBNode, setVectorDBNode] = useState<Node | null>(null)
+  const [showStatistics, setShowStatistics] = useState(false)
   const [cacheConfigNode, setCacheConfigNode] = useState<Node | null>(null)
   const [serviceConfigNode, setServiceConfigNode] = useState<Node | null>(null)
   const [frontendConfigNode, setFrontendConfigNode] = useState<Node | null>(null)
@@ -1003,6 +1012,7 @@ function App() {
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([])
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
   const [infoComponentType, setInfoComponentType] = useState<ComponentType | null>(null)
+  const [comparisonType, setComparisonType] = useState<string | null>(null)
   const reactFlowWrapper = useRef<HTMLDivElement>(null)
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null)
   const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null)
@@ -1050,6 +1060,11 @@ function App() {
   }, [])
 
   const [isSpacePressed, setIsSpacePressed] = useState(false)
+
+  const handleComparisonOpen = useCallback((type: ComponentType) => {
+    setComparisonType(type)
+    setInfoComponentType(null)
+  }, [])
 
   // Универсальное сохранение истории при любых изменениях nodes/edges
   useEffect(() => {
@@ -1230,6 +1245,7 @@ function App() {
       const isSystemType = type === 'system' || type === 'external-system' || type === 'business-domain'
       const isContainerType = type === 'container'
       const isGroupType = type === 'group'
+      const isTableType = type === 'table'
 
       // Для бизнес-домена определяем уникальный цвет
       let domainColor = '#ffa94d' // Цвет по умолчанию
@@ -1279,6 +1295,14 @@ function App() {
               isGrouped: true
             }
           }),
+          ...(isTableType && {
+            tableConfig: {
+              name: 'NewTable',
+              columns: [
+                { name: 'id', type: 'INTEGER', primaryKey: true, nullable: false }
+              ]
+            }
+          }),
         },
         ...(isSystemType && {
           width: 600,
@@ -1309,6 +1333,8 @@ function App() {
     },
     [setNodes, reactFlowInstance]
   )
+
+
 
   const handleAddComponentClick = useCallback(
     (type: ComponentType) => {
@@ -1559,7 +1585,7 @@ function App() {
                 borderRadius: '4px',
                 border: `1px solid ${getColor(connectionType || 'rest')}40`,
                 whiteSpace: 'pre-line',
-                textAlign: 'center',
+                textAlign: 'center' as any,
               },
             }
           }
@@ -1567,7 +1593,8 @@ function App() {
           const { label: _, labelStyle: __, ...edgeWithoutLabel } = edge
           return {
             ...edgeWithoutLabel,
-            data: edgeData // edgeData уже содержит pathType: 'step' если его не было
+            data: edgeData, // edgeData уже содержит pathType: 'step' если его не было
+            labelStyle: { textAlign: 'center' as any }
           }
         })
 
@@ -1680,12 +1707,10 @@ function App() {
       // Сохраняем Handle ID для привязки к конкретным сторонам компонента
       // Если Handle не указан, ReactFlow автоматически определит его на основе позиции
       // Поддерживаем привязку к верхней/нижней стороне через Handle ID: "top-source", "bottom-target" и т.д.
-      const connectionParams = {
+      const connectionParams: any = {
         ...params,
-        // Сохраняем sourceHandle и targetHandle из params для привязки к конкретным сторонам
-        // Если они не указаны, ReactFlow использует getNodeIntersection для определения точки
-        sourceHandle: params.sourceHandle || undefined,
-        targetHandle: params.targetHandle || undefined,
+        sourceHandle: params.sourceHandle || null,
+        targetHandle: params.targetHandle || null,
       }
 
       // Показываем диалог выбора типа связи
@@ -1694,8 +1719,98 @@ function App() {
     [nodes]
   )
 
+  const createConnectionEdge = useCallback(
+    (params: Connection, connectionType: ConnectionType, additionalData?: { objectStorageDirection?: ObjectStorageDirection, relationshipType?: '1:1' | '1:n' | 'n:1' | 'n:m' }) => {
+      const getLabelText = (type: ConnectionType): string => {
+        switch (type) {
+          case 'async':
+            return 'Async'
+          case 'database-connection':
+            return 'DB Connection'
+          case 'cache-connection':
+            return 'Cache'
+          case 'dependency':
+            return 'Зависимость'
+          case 'composition':
+            return 'Композиция'
+          case 'aggregation':
+            return 'Агрегация'
+          case 'method-call':
+            return 'Вызов метода'
+          case 'inheritance':
+            return 'Наследование'
+          default:
+            return type.toUpperCase()
+        }
+      }
+
+      const getColor = (type: ConnectionType): string => {
+        switch (type) {
+          case 'async':
+            return '#ffd43b'
+          case 'database-connection':
+            return '#51cf66'
+          case 'cache-connection':
+            return '#845ef7'
+          case 'database-replication':
+            return '#20c997'
+          case 'dependency':
+            return '#9c88ff'
+          case 'composition':
+            return '#ff6b6b'
+          case 'aggregation':
+            return '#ff8787'
+          case 'method-call':
+            return '#51cf66'
+          case 'inheritance':
+            return '#4dabf7'
+          default:
+            return '#4dabf7'
+        }
+      }
+
+      const newEdge: Edge = {
+        id: `edge-${params.source}-${params.target}-${Date.now()}`,
+        source: params.source!,
+        target: params.target!,
+        sourceHandle: params.sourceHandle || undefined,
+        targetHandle: params.targetHandle || undefined,
+        type: 'animated',
+        animated: connectionType === 'async' || connectionType === 'database-replication',
+        deletable: true,
+        // @ts-ignore
+        deleteOnSourceNodeDelete: true,
+        // @ts-ignore
+        deleteOnTargetNodeDelete: true,
+        style: {
+          stroke: getColor(connectionType),
+          strokeWidth: connectionType === 'inheritance' ? 2 : 3,
+          strokeDasharray:
+            connectionType === 'async' || connectionType === 'database-replication'
+              ? '8,4'
+              : connectionType === 'inheritance'
+                ? '5,5'
+                : undefined,
+        },
+        data: {
+          connectionType,
+          pathType: 'step' as EdgePathType,
+          ...(additionalData?.objectStorageDirection && {
+            objectStorageDirection: additionalData.objectStorageDirection,
+          }),
+          ...(additionalData?.relationshipType && {
+            relationshipType: additionalData.relationshipType,
+          }),
+        },
+      }
+
+      setEdges((eds) => addEdge(newEdge, eds))
+    },
+    [setEdges]
+  )
+
   const handleConnectionTypeSelected = useCallback(
-    (connectionType: ConnectionType) => {
+    (connectionType: ConnectionType, relationshipType?: '1:1' | '1:n' | 'n:1' | 'n:m') => {
       if (!pendingConnection) return
 
       const { source, target, params } = pendingConnection
@@ -1723,10 +1838,10 @@ function App() {
       }
 
       // Создаем связь с выбранным типом
-      createConnectionEdge(params, connectionType)
+      createConnectionEdge(params, connectionType, { relationshipType })
       setPendingConnection(null)
     },
-    [pendingConnection, setEdges]
+    [pendingConnection, setEdges, createConnectionEdge]
   )
 
   const handleObjectStorageDirectionSelected = useCallback(
@@ -1919,96 +2034,6 @@ function App() {
     [pendingConnection, nodes, setEdges]
   )
 
-  const createConnectionEdge = useCallback(
-    (params: Connection, connectionType: ConnectionType, additionalData?: { objectStorageDirection?: ObjectStorageDirection }) => {
-      const getLabelText = (type: ConnectionType): string => {
-        switch (type) {
-          case 'async':
-            return 'Async'
-          case 'database-connection':
-            return 'DB Connection'
-          case 'cache-connection':
-            return 'Cache'
-          case 'dependency':
-            return 'Зависимость'
-          case 'composition':
-            return 'Композиция'
-          case 'aggregation':
-            return 'Агрегация'
-          case 'method-call':
-            return 'Вызов метода'
-          case 'inheritance':
-            return 'Наследование'
-          default:
-            return type.toUpperCase()
-        }
-      }
-
-      const getColor = (type: ConnectionType): string => {
-        switch (type) {
-          case 'async':
-            return '#ffd43b'
-          case 'database-connection':
-            return '#51cf66'
-          case 'cache-connection':
-            return '#845ef7'
-          case 'database-replication':
-            return '#20c997'
-          case 'dependency':
-            return '#9c88ff'
-          case 'composition':
-            return '#ff6b6b'
-          case 'aggregation':
-            return '#ff8787'
-          case 'method-call':
-            return '#51cf66'
-          case 'inheritance':
-            return '#4dabf7'
-          default:
-            return '#4dabf7'
-        }
-      }
-
-      const newEdge: Edge = {
-        id: `edge-${params.source}-${params.target}-${Date.now()}`,
-        source: params.source!,
-        target: params.target!,
-        // Сохраняем Handle ID для привязки к конкретным сторонам компонента
-        // Это позволяет четко привязывать соединения к верхней/нижней стороне
-        // Если Handle не указан, ReactFlow использует getNodeIntersection для определения точки
-        sourceHandle: params.sourceHandle || undefined,
-        targetHandle: params.targetHandle || undefined,
-        type: 'animated',
-        animated: connectionType === 'async' || connectionType === 'database-replication',
-        deletable: true, // Позволяем удалять вручную
-        // Отключаем автоматическое удаление при удалении узлов
-        // @ts-ignore - эти свойства не в типах, но поддерживаются ReactFlow
-        deleteOnSourceNodeDelete: true,
-        deleteOnTargetNodeDelete: true,
-        // Label не устанавливается при создании - будет добавлен только если указано описание данных
-        style: {
-          stroke: getColor(connectionType),
-          strokeWidth: connectionType === 'inheritance' ? 2 : 3,
-          strokeDasharray:
-            connectionType === 'async' || connectionType === 'database-replication'
-              ? '8,4'
-              : connectionType === 'inheritance'
-                ? '5,5'
-                : undefined,
-        },
-        data: {
-          connectionType,
-          pathType: 'step' as EdgePathType, // По умолчанию прямоугольная линия для лучшего отображения направлений
-          ...(additionalData?.objectStorageDirection && {
-            objectStorageDirection: additionalData.objectStorageDirection,
-          }),
-        },
-      }
-
-      setEdges((eds) => addEdge(newEdge, eds))
-    },
-    [setEdges]
-  )
 
   // Обработчик для обновления существующих edges при перетаскивании концов стрелок
   // Это позволяет переносить стрелки на другие компоненты
@@ -2090,6 +2115,24 @@ function App() {
   const updateNodesWithHistory = useCallback((updater: (nds: Node[]) => Node[]) => {
     setNodes((nds) => updater(nds))
   }, [setNodes])
+
+  const handleUpdateVectorDB = useCallback((nodeId: string, config: any) => {
+    updateNodesWithHistory((nds) =>
+      nds.map((node) => {
+        if (node.id === nodeId) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              vectorDatabaseConfig: config,
+            },
+          }
+        }
+        return node
+      })
+    )
+    setVectorDBNode(null)
+  }, [updateNodesWithHistory])
 
   const handleDatabaseConfigUpdate = useCallback(
     (nodeId: string, config: { dbType: DatabaseType; nosqlType?: NoSQLType; vendor?: DatabaseVendor }) => {
@@ -2673,6 +2716,8 @@ function App() {
     // Закрываем все панели
     setDatabaseConfigNode(null)
     setDatabaseSchemaNode(null)
+    setTableEditorNode(null) // Close TableEditor
+    setVectorDBNode(null) // Close VectorDBConfigPanel
     setCacheConfigNode(null)
     setServiceConfigNode(null)
     setFrontendConfigNode(null)
@@ -2746,6 +2791,10 @@ function App() {
         setDatabaseConfigNode(node)
         setDatabaseSchemaNode(null)
       }
+    } else if (nodeData.type === 'table') {
+      setTableEditorNode(node)
+    } else if (nodeData.type === 'vector-database') {
+      setVectorDBNode(node)
     } else if (nodeData.type === 'cache') {
       setCacheConfigNode(node)
     } else if (nodeData.type === 'service') {
@@ -2930,6 +2979,8 @@ function App() {
     setSelectedEdge(null)
     setSelectedNodes([])
     setDatabaseConfigNode(null)
+    setTableEditorNode(null) // Close TableEditor
+    setVectorDBNode(null) // Close VectorDBConfigPanel
     setCacheConfigNode(null)
     setServiceConfigNode(null)
     setFrontendConfigNode(null)
@@ -4299,8 +4350,7 @@ function App() {
           }
 
           // If the node was previously in this container but is NOT anymore
-          // We need to check if we should clear its groupId.
-          // We can check if its current groupId matches this containerId
+          // We need to check if its current groupId matches this containerId
           if ((node.data as ComponentData).groupId === containerId && !validChildNodes.includes(node.id)) {
             return {
               ...node,
@@ -4679,7 +4729,79 @@ function App() {
       />
       <ComponentPalette
         onComponentClick={handleAddComponentClick}
+        onRecommendationClick={() => setShowRecommendationPanel(true)}
       />
+      {showRecommendationPanel && (
+        <RecommendationPanel
+          onClose={() => setShowRecommendationPanel(false)}
+          onAdd={(type, vendor) => {
+            // Logic to add component with specific vendor
+            const reactFlowInstance = reactFlowInstanceRef.current
+            if (!reactFlowInstance) return
+
+            const { x, y, zoom } = reactFlowInstance.getViewport()
+            const centerX = window.innerWidth / 2 - 250
+            const centerY = window.innerHeight / 2
+
+            // Helper to map vendor to node data (simplified)
+            const getDataForVendor = (t: ComponentType, v?: string) => {
+              const base = { label: v ? v.charAt(0).toUpperCase() + v.slice(1) : t }
+              if (!v) return base
+
+              if (t === 'database') {
+                let dbType: DatabaseType = 'sql'
+                let nosqlType: any = undefined
+
+                if (['mongodb', 'dynamodb', 'couchbase', 'elasticsearch'].includes(v)) {
+                  dbType = 'nosql'
+                  nosqlType = 'document'
+                } else if (v === 'cassandra' || v === 'hbase') {
+                  dbType = 'nosql'
+                  nosqlType = 'column'
+                } else if (v === 'redis' || v === 'memcached') {
+                  dbType = 'nosql'
+                  nosqlType = 'key-value'
+                } else if (v === 'neo4j' || v === 'amazon-neptune') {
+                  dbType = 'nosql'
+                  nosqlType = 'graph'
+                } else if (v === 'influxdb' || v === 'timescale') {
+                  dbType = 'nosql'
+                  nosqlType = 'time-series'
+                }
+
+                return { ...base, databaseConfig: { vendor: v, dbType, nosqlType } }
+              }
+              if (t === 'data-warehouse') return { ...base, dataWarehouseConfig: { vendor: v as any } }
+              if (t === 'search-engine') return { ...base, searchEngineConfig: { vendor: v as any } }
+              if (t === 'message-broker') return { ...base, messageBrokerConfig: { vendor: v as any } }
+              if (t === 'queue') return { ...base, queueConfig: { vendor: v as any } }
+              if (t === 'cache') return { ...base, cacheConfig: { vendor: v as any } }
+              if (t === 'etl-service') return { ...base, etlServiceConfig: { vendor: v as any } }
+              if (t === 'stream-processor') return { ...base, streamProcessorConfig: { vendor: v as any } }
+              if (t === 'api-gateway') return { ...base, apiGatewayConfig: { vendor: v as any } }
+              if (t === 'batch-processor') return { ...base, batchProcessorConfig: { vendor: v as any } }
+              return base
+            }
+
+            const newNode: Node = {
+              id: `${type}-${Date.now()}`,
+              type: 'custom',
+              position: { x: centerX - 100 + Math.random() * 50, y: centerY - 100 + Math.random() * 50 },
+              data: {
+                type,
+                ...getDataForVendor(type, vendor)
+              }
+            }
+
+            setNodes((nds) => nds.concat(newNode))
+            historyUpdateTypeRef.current = 'immediate'
+          }}
+          onCompare={(type) => {
+            setComparisonType(type)
+            setShowRecommendationPanel(false)
+          }}
+        />
+      )}
       <FilePanel
         onSave={handleSave}
         onLoad={handleLoad}
@@ -4759,9 +4881,7 @@ function App() {
           deleteKeyCode={activeWorkspace?.isLocked ? null : "Delete"}
           multiSelectionKeyCode={activeWorkspace?.isLocked ? null : "Control"}
           selectionKeyCode={activeWorkspace?.isLocked ? null : "Shift"}
-          edgesConnectable={true} // Разрешаем перетаскивание концов стрелок
-          // Убираем fitView и defaultViewport, чтобы сохранить позицию при обновлении
-          // fitView будет вызываться только при загрузке из файла
+          // edgesConnectable={true} // removed as it might not be supported
           minZoom={0.1}
           maxZoom={2}
           style={{ background: '#1a1a1a' }}
@@ -4932,6 +5052,47 @@ function App() {
             onClose={() => setDatabaseSchemaNode(null)}
           />
         )}
+        {tableEditorNode && (
+          <TableEditor
+            node={tableEditorNode}
+            allTables={nodes.filter(n => (n.data as ComponentData).type === 'table').map(n => ({ id: n.id, name: (n.data as ComponentData).tableConfig?.name || n.data.label }))}
+            onUpdate={(nodeId, tableConfig) => {
+              setNodes((nds) =>
+                nds.map((node) => {
+                  if (node.id === nodeId) {
+                    return {
+                      ...node,
+                      data: {
+                        ...node.data,
+                        label: tableConfig.name,
+                        tableConfig: tableConfig,
+                      },
+                    }
+                  }
+                  return node
+                })
+              )
+              historyUpdateTypeRef.current = 'immediate'
+            }}
+            onClose={() => setTableEditorNode(null)}
+          />
+        )}
+
+        {vectorDBNode && (
+          <VectorDatabaseConfigPanel
+            node={vectorDBNode}
+            onUpdate={handleUpdateVectorDB}
+            onClose={() => setVectorDBNode(null)}
+          />
+        )}
+
+        {showStatistics && (
+          <StatisticsPanel
+            nodes={nodes}
+            edges={edges}
+            onClose={() => setShowStatistics(false)}
+          />
+        )}
         {cacheConfigNode && (
           <CacheConfigPanel
             node={cacheConfigNode}
@@ -5056,12 +5217,6 @@ function App() {
             onClose={() => setEsbConfigNode(null)}
           />
         )}
-        {infoComponentType && (
-          <ComponentInfoPanel
-            componentType={infoComponentType}
-            onClose={() => setInfoComponentType(null)}
-          />
-        )}
         {classConfigNode && (
           <ClassConfigPanel
             node={classConfigNode}
@@ -5151,6 +5306,19 @@ function App() {
             }}
           />
         )}
+        {infoComponentType && (
+          <ComponentInfoPanel
+            componentType={infoComponentType}
+            onClose={() => setInfoComponentType(null)}
+            onCompare={handleComparisonOpen}
+          />
+        )}
+        {comparisonType && (
+          <ComparisonPanel
+            type={comparisonType}
+            onClose={() => setComparisonType(null)}
+          />
+        )}
       </div>
     </div>
   )
@@ -5177,6 +5345,7 @@ function getComponentLabel(type: ComponentType): string {
     'event-bus': 'Шина событий',
     'stream-processor': 'Потоковый обработчик',
     'search-engine': 'Поисковая система',
+    table: 'Таблица БД',
     'analytics-service': 'Сервис аналитики',
     'business-intelligence': 'Business Intelligence',
     'graph-database': 'Графовая БД',
@@ -5228,6 +5397,15 @@ function getComponentLabel(type: ComponentType): string {
     logging: 'Логирование',
     'business-domain': 'Бизнес-домен',
     group: 'Группа',
+    'note': 'Заметка',
+    'system-component': 'Компонент системы',
+    'llm-model': 'LLM Модель',
+    'vector-database': 'Векторная БД',
+    'ml-training': 'Обучение моделей',
+    'ml-inference': 'Инференс',
+    'ai-agent': 'AI Агент',
+    'ml-data-pipeline': 'ML Пайплайн',
+    'gpu-cluster': 'GPU Кластер'
   }
   return labels[type] || type
 }
