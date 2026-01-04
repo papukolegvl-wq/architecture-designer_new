@@ -70,6 +70,7 @@ import { ComponentType, ConnectionType, ComponentData, DatabaseType, NoSQLType, 
 import { saveToFile, loadFromFile, getPersistedHandle } from './utils/fileUtils'
 import { saveToDrawIOFile } from './utils/drawioExport'
 import { HistoryManager } from './utils/historyManager'
+import html2canvas from 'html2canvas'
 
 const edgeTypes = {
   animated: AnimatedEdge,
@@ -3267,7 +3268,6 @@ function App() {
 
     if (nodesToCopy.length === 0) {
       console.log('📋 ❌ Нет выделенных узлов для копирования')
-      alert('Выделите компоненты для копирования:\n1. Обведите курсором (selection box)\n2. Или кликните на компоненты с зажатым Ctrl/Cmd')
       return
     }
 
@@ -3483,6 +3483,132 @@ function App() {
     }, 100)
   }, [copiedNodes, nodes, edges, setNodes, setEdges, setSelectedNodes, reactFlowInstance, setCanUndo, setCanRedo])
 
+  // Экспорт в PNG
+  const handleExportPNG = useCallback(async () => {
+    const selector = '.react-flow__viewport'
+    const element = document.querySelector(selector) as HTMLElement
+    if (!element) return
+
+    try {
+      const canvas = await html2canvas(element, {
+        backgroundColor: null,
+        scale: 2,
+        ignoreElements: (element) => element.classList.contains('react-flow__controls') || element.classList.contains('react-flow__minimap')
+      })
+
+      const link = document.createElement('a')
+      link.download = `architecture-${Date.now()}.png`
+      link.href = canvas.toDataURL('image/png')
+      link.click()
+    } catch (error) {
+      console.error('Error exporting PNG:', error)
+      alert('Ошибка при экспорте в PNG')
+    }
+  }, [])
+
+  // Экспорт в Markdown
+  const handleExportMarkdown = useCallback(() => {
+    let markdown = '# Архитектура Проекта\n\n'
+
+    // Компоненты
+    markdown += '## Компоненты\n\n'
+    const componentsByType: Record<string, string[]> = {}
+    nodes.forEach(node => {
+      const data = node.data as ComponentData
+      const type = data.type || 'unknown'
+      if (!componentsByType[type]) componentsByType[type] = []
+      const label = data.label || node.id
+      componentsByType[type].push(`- **${label}** (${type})`)
+    })
+
+    Object.entries(componentsByType).forEach(([type, items]) => {
+      const typeName = type.charAt(0).toUpperCase() + type.slice(1)
+      markdown += `### ${typeName}\n`
+      markdown += items.join('\n') + '\n\n'
+    })
+
+    // Связи
+    markdown += '## Связи\n\n'
+    edges.forEach(edge => {
+      const sourceNode = nodes.find(n => n.id === edge.source)
+      const targetNode = nodes.find(n => n.id === edge.target)
+      const sourceLabel = (sourceNode?.data as ComponentData)?.label || edge.source
+      const targetLabel = (targetNode?.data as ComponentData)?.label || edge.target
+
+      let relation = '->'
+      if (edge.data?.connectionType === 'bidirectional') relation = '<->'
+
+      markdown += `- ${sourceLabel} ${relation} ${targetLabel}`
+      if (edge.label) markdown += ` : *${edge.label}*`
+      markdown += '\n'
+    })
+
+    // Статистика
+    markdown += '\n## Статистика\n\n'
+    markdown += `- Всего компонентов: ${nodes.length}\n`
+    markdown += `- Всего связей: ${edges.length}\n`
+
+    const blob = new Blob([markdown], { type: 'text/markdown' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.download = `architecture-${Date.now()}.md`
+    link.href = url
+    link.click()
+    URL.revokeObjectURL(url)
+  }, [nodes, edges])
+
+  // Дублирование компонентов
+  const handleDuplicate = useCallback(() => {
+    const selected = nodes.filter(n => n.selected)
+    if (selected.length === 0) return
+
+    const offset = 50
+    const timestamp = Date.now()
+    const idMap = new Map<string, string>()
+
+    const newNodes = selected.map((node, index) => {
+      const newId = `${node.id}-copy-${timestamp}-${index}`
+      idMap.set(node.id, newId)
+
+      // Создаем копию данных, сбрасываем groupId если дублируем только один компонент из группы (опционально)
+      // Здесь мы просто копируем все данные
+
+      return {
+        ...node,
+        id: newId,
+        position: {
+          x: node.position.x + offset,
+          y: node.position.y + offset
+        },
+        selected: true,
+        data: { ...node.data }
+      }
+    })
+
+    // Копируем связи между выделенными узлами
+    const selectedIds = new Set(selected.map(n => n.id))
+    const relevantEdges = edges.filter(e => selectedIds.has(e.source) && selectedIds.has(e.target))
+
+    const newEdges = relevantEdges.map((edge, index) => ({
+      ...edge,
+      id: `${edge.id}-copy-${timestamp}-${index}`,
+      source: idMap.get(edge.source)!,
+      target: idMap.get(edge.target)!,
+      selected: true,
+      data: { ...edge.data }
+    }))
+
+    // Снимаем выделение с текущих и добавляем новые
+    setNodes(nds => nds.map(n => ({ ...n, selected: false })).concat(newNodes))
+    setEdges(eds => eds.map(e => ({ ...e, selected: false })).concat(newEdges))
+
+    // Выделяем новые узлы в ReactFlow
+    setTimeout(() => {
+      setSelectedNodes(newNodes)
+    }, 50)
+
+  }, [nodes, edges, setNodes, setEdges, setSelectedNodes])
+
   // Отслеживание зажатой клавиши Space для панорамирования
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -3543,7 +3669,16 @@ function App() {
           console.log('⌨️ Ctrl+V (KeyV) обработан')
           handlePaste()
         }
-        return false
+      }
+
+      // Ctrl+D или Cmd+D - Дублирование
+      if ((event.ctrlKey || event.metaKey) && event.code === 'KeyD') {
+        if (!isInputFocused) {
+          event.preventDefault()
+          event.stopPropagation()
+          handleDuplicate()
+          return false
+        }
       }
 
       // Delete или Backspace - НЕ удаляем компоненты, если фокус в поле ввода
@@ -3594,7 +3729,7 @@ function App() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown, true)
     }
-  }, [deleteSelected, handleCopy, handlePaste, handleUndo, handleRedo])
+  }, [deleteSelected, handleCopy, handlePaste, handleUndo, handleRedo, handleDuplicate])
 
   // Функция для получения рекомендаций
   // Функция для автоматического построения компонентов из рекомендации (удалена - рекомендации отключены)
@@ -4499,6 +4634,8 @@ function App() {
         onSave={handleSave}
         onLoad={handleLoad}
         onExportDrawIO={() => saveToDrawIOFile(nodes, edges)}
+        onExportPNG={handleExportPNG}
+        onExportMarkdown={handleExportMarkdown}
         onSaveLayout={handleSaveLayout}
 
       />

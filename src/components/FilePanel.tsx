@@ -1,14 +1,17 @@
 import React, { useRef, useState, useEffect } from 'react'
 import { Menu } from 'lucide-react'
+import html2canvas from 'html2canvas'
 
 interface FilePanelProps {
   onSave: () => void | Promise<void>
   onLoad: (file: File) => void
   onExportDrawIO: () => void
+  onExportPNG?: () => void
+  onExportMarkdown?: () => void
   onSaveLayout?: () => void
 }
 
-export default function FilePanel({ onSave, onLoad, onExportDrawIO, onSaveLayout }: FilePanelProps) {
+export default function FilePanel({ onSave, onLoad, onExportDrawIO, onExportPNG, onExportMarkdown, onSaveLayout }: FilePanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -163,6 +166,44 @@ export default function FilePanel({ onSave, onLoad, onExportDrawIO, onSaveLayout
           >
             📊 Экспорт в draw.io
           </button>
+
+          {onExportPNG && (
+            <button
+              onClick={() => {
+                onExportPNG()
+                setIsOpen(false)
+              }}
+              style={menuItemStyle}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#ff6b6b'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent'
+              }}
+              title="Экспорт диаграммы в PNG изображение"
+            >
+              🖼️ Экспорт в PNG
+            </button>
+          )}
+
+          {onExportMarkdown && (
+            <button
+              onClick={() => {
+                onExportMarkdown()
+                setIsOpen(false)
+              }}
+              style={menuItemStyle}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#ffa94d'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent'
+              }}
+              title="Экспорт описания архитектуры в Markdown"
+            >
+              📝 Экспорт в Markdown
+            </button>
+          )}
 
           <button
             onClick={() => {
