@@ -4599,7 +4599,11 @@ function App() {
             }}
           >
             <button
-              onClick={handleToggleLock}
+              onClick={(e) => {
+                e.stopPropagation()
+                e.preventDefault()
+                handleToggleLock()
+              }}
               title={activeWorkspace?.isLocked ? "Разблокировать вкладку" : "Заблокировать вкладку"}
               style={{
                 width: '26px',

@@ -1,4 +1,5 @@
-import React, { useRef } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
+import { Menu } from 'lucide-react'
 
 interface FilePanelProps {
   onSave: () => void | Promise<void>
@@ -9,6 +10,8 @@ interface FilePanelProps {
 
 export default function FilePanel({ onSave, onLoad, onExportDrawIO, onSaveLayout }: FilePanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isOpen, setIsOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -19,37 +22,48 @@ export default function FilePanel({ onSave, onLoad, onExportDrawIO, onSaveLayout
         fileInputRef.current.value = ''
       }
     }
+    setIsOpen(false)
   }
 
   const handleLoadClick = () => {
     fileInputRef.current?.click()
   }
 
+  // Закрываем меню при клике вне его
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isOpen])
+
+  const menuItemStyle = {
+    width: '100%',
+    padding: '12px 16px',
+    backgroundColor: 'transparent',
+    color: 'white',
+    border: 'none',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '500' as const,
+    transition: 'background-color 0.2s',
+    textAlign: 'left' as const,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+  }
+
   return (
-    <div
-      style={{
-        position: 'fixed',
-        bottom: '20px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        backgroundColor: '#2d2d2d',
-        border: '2px solid #555',
-        borderRadius: '12px',
-        padding: '15px 20px',
-        display: 'flex',
-        flexDirection: 'row',
-        gap: '10px',
-        alignItems: 'center',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-        zIndex: 1000,
-        maxWidth: '95vw',
-        overflowX: 'auto',
-        overflowY: 'hidden',
-      }}
-    >
-      <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff', marginRight: '10px', whiteSpace: 'nowrap' }}>
-        Файлы:
-      </h3>
+    <div ref={menuRef} style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 1000 }}>
       <input
         ref={fileInputRef}
         type="file"
@@ -57,128 +71,136 @@ export default function FilePanel({ onSave, onLoad, onExportDrawIO, onSaveLayout
         onChange={handleFileSelect}
         style={{ display: 'none' }}
       />
+
+      {/* Кнопка меню */}
       <button
-        onClick={onSave}
+        onClick={() => setIsOpen(!isOpen)}
         style={{
-          width: '100%',
-          padding: '12px',
-          backgroundColor: '#4dabf7',
+          padding: '10px 16px',
+          backgroundColor: '#2d2d2d',
           color: 'white',
-          border: 'none',
-          borderRadius: '6px',
+          border: '2px solid #555',
+          borderRadius: '8px',
           cursor: 'pointer',
           fontSize: '14px',
-          fontWeight: '500',
-          transition: 'background-color 0.2s',
+          fontWeight: '600',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+          transition: 'all 0.2s',
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = '#339af0'
+          e.currentTarget.style.backgroundColor = '#3d3d3d'
+          e.currentTarget.style.borderColor = '#666'
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = '#4dabf7'
+          e.currentTarget.style.backgroundColor = '#2d2d2d'
+          e.currentTarget.style.borderColor = '#555'
         }}
       >
-        💾 Сохранить
+        <Menu size={18} />
+        Меню
       </button>
-      <button
-        onClick={handleLoadClick}
-        style={{
-          width: '100%',
-          padding: '12px',
-          backgroundColor: '#51cf66',
-          color: 'white',
-          border: 'none',
-          borderRadius: '6px',
-          cursor: 'pointer',
-          fontSize: '14px',
-          fontWeight: '500',
-          transition: 'background-color 0.2s',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = '#40c057'
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = '#51cf66'
-        }}
-      >
-        📂 Загрузить
-      </button>
-      <button
-        onClick={onExportDrawIO}
-        style={{
-          width: '100%',
-          padding: '12px',
-          backgroundColor: '#20c997',
-          color: 'white',
-          border: 'none',
-          borderRadius: '6px',
-          cursor: 'pointer',
-          fontSize: '14px',
-          fontWeight: '500',
-          transition: 'background-color 0.2s',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = '#1aa179'
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = '#20c997'
-        }}
-        title="Экспорт в формат draw.io (можно открыть в app.diagrams.net)"
-      >
-        📊 Экспорт в draw.io
-      </button>
-      <button
-        onClick={() => {
-          const event = new CustomEvent('showAIAssistant')
-          window.dispatchEvent(event)
-        }}
-        style={{
-          width: '100%',
-          padding: '12px',
-          backgroundColor: '#9c88ff',
-          color: 'white',
-          border: 'none',
-          borderRadius: '6px',
-          cursor: 'pointer',
-          fontSize: '14px',
-          fontWeight: '500',
-          transition: 'background-color 0.2s',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = '#8b7ae8'
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = '#9c88ff'
-        }}
-        title="AI Ассистент для помощи в построении архитектуры"
-      >
-        ✨ AI Ассистент
-      </button>
-      {onSaveLayout && (
-        <button
-          onClick={onSaveLayout}
+
+      {/* Выпадающее меню */}
+      {isOpen && (
+        <div
           style={{
-            width: '100%',
-            padding: '12px',
-            backgroundColor: '#845ef7',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: '500',
-            transition: 'background-color 0.2s',
+            position: 'absolute',
+            top: '50px',
+            right: '0',
+            backgroundColor: '#2d2d2d',
+            border: '2px solid #555',
+            borderRadius: '8px',
+            minWidth: '220px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+            overflow: 'hidden',
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#7048e8'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#845ef7'
-          }}
-          title="Сохранить текущее размещение компонентов на рабочем пространстве"
         >
-          📐 Сохранить размещение
-        </button>
+          <button
+            onClick={() => {
+              onSave()
+              setIsOpen(false)
+            }}
+            style={menuItemStyle}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#4dabf7'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent'
+            }}
+          >
+            💾 Сохранить
+          </button>
+
+          <button
+            onClick={handleLoadClick}
+            style={menuItemStyle}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#51cf66'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent'
+            }}
+          >
+            📂 Загрузить
+          </button>
+
+          <button
+            onClick={() => {
+              onExportDrawIO()
+              setIsOpen(false)
+            }}
+            style={menuItemStyle}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#20c997'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent'
+            }}
+            title="Экспорт в формат draw.io (можно открыть в app.diagrams.net)"
+          >
+            📊 Экспорт в draw.io
+          </button>
+
+          <button
+            onClick={() => {
+              const event = new CustomEvent('showAIAssistant')
+              window.dispatchEvent(event)
+              setIsOpen(false)
+            }}
+            style={menuItemStyle}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#9c88ff'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent'
+            }}
+            title="AI Ассистент для помощи в построении архитектуры"
+          >
+            ✨ AI Ассистент
+          </button>
+
+          {onSaveLayout && (
+            <button
+              onClick={() => {
+                onSaveLayout()
+                setIsOpen(false)
+              }}
+              style={menuItemStyle}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#845ef7'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent'
+              }}
+              title="Сохранить текущее размещение компонентов на рабочем пространстве"
+            >
+              📐 Сохранить размещение
+            </button>
+          )}
+        </div>
       )}
     </div>
   )
