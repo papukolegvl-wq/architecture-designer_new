@@ -209,12 +209,12 @@ function BusinessDomainNode({ id, data, selected, onLinkClick, onLinkConfigClick
 
           const isTargetConnected = connectedHandleIds.includes(targetId);
           const isSourceConnected = connectedHandleIds.includes(sourceId);
-          const shouldRender = isHovered || isTargetConnected || isSourceConnected || isConnecting;
+          const shouldRender = isHovered || isTargetConnected || isSourceConnected || isConnecting || isCenter || selected;
 
           const style: React.CSSProperties = {
             [isHorizontal ? 'left' : 'top']: `${p}%`,
             [pos]: '-5px',
-            opacity: shouldRender ? (isHovered || isConnecting ? (isCenter ? 0.8 : 0.3) : (isTargetConnected || isSourceConnected ? 0.6 : 0)) : 0,
+            opacity: shouldRender ? (isHovered || isConnecting || selected ? (isCenter ? 0.8 : 0.3) : (isTargetConnected || isSourceConnected ? 0.6 : 0)) : 0,
             borderRadius: '50%',
             width: isCenter ? '12px' : '10px',
             height: isCenter ? '12px' : '10px',
@@ -223,7 +223,7 @@ function BusinessDomainNode({ id, data, selected, onLinkClick, onLinkConfigClick
             cursor: 'crosshair',
             transform: isHorizontal ? 'translateX(-50%)' : 'translateY(-50%)',
             zIndex: isCenter ? 30 : 25,
-            boxShadow: (isCenter && isHovered) || (isCenter && isConnecting) ? `0 0 8px ${color}` : undefined,
+            boxShadow: isCenter && (isHovered || isConnecting || selected) ? `0 0 8px ${color}` : undefined,
             pointerEvents: shouldRender ? 'all' : 'none',
           };
 

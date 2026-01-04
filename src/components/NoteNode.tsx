@@ -161,7 +161,7 @@ const NoteNode: React.FC<NodeProps & {
 
                     const isTargetConnected = connectedHandleIds.includes(targetId);
                     const isSourceConnected = connectedHandleIds.includes(sourceId);
-                    const shouldRender = isHovered || isTargetConnected || isSourceConnected || isConnecting;
+                    const shouldRender = isHovered || isTargetConnected || isSourceConnected || isConnecting || isCenter || selected;
 
                     if (!shouldRender) return null;
 
@@ -174,7 +174,7 @@ const NoteNode: React.FC<NodeProps & {
                                 style={{
                                     [isHorizontal ? 'left' : 'top']: `${p}%`,
                                     [pos]: '-4px',
-                                    opacity: isHovered || isConnecting ? (isCenter ? 0.8 : 0.4) : 0,
+                                    opacity: isHovered || isConnecting || selected ? (isCenter ? 0.8 : 0.4) : (isTargetConnected || isSourceConnected ? 0.6 : 0),
                                     width: isCenter ? '10px' : '6px',
                                     height: isCenter ? '10px' : '6px',
                                     background: '#ffd666',
@@ -190,7 +190,7 @@ const NoteNode: React.FC<NodeProps & {
                                 style={{
                                     [isHorizontal ? 'left' : 'top']: `${p}%`,
                                     [pos]: '-4px',
-                                    opacity: isHovered || isConnecting ? (isCenter ? 0.8 : 0.4) : 0,
+                                    opacity: isHovered || isConnecting || selected ? (isCenter ? 0.8 : 0.4) : (isTargetConnected || isSourceConnected ? 0.6 : 0),
                                     width: isCenter ? '10px' : '6px',
                                     height: isCenter ? '10px' : '6px',
                                     background: '#ffd666',

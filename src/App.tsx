@@ -64,6 +64,7 @@ import QueueConfigPanel from './components/QueueConfigPanel'
 import ProxyConfigPanel from './components/ProxyConfigPanel'
 import VPNGatewayConfigPanel from './components/VPNGatewayConfigPanel'
 import { Lock, Unlock } from 'lucide-react'
+import ConnectionMarkers from './components/ConnectionMarkers'
 import { AIGeneratedArchitecture } from './utils/geminiService'
 import { ComponentType, ConnectionType, ComponentData, DatabaseType, NoSQLType, ReplicationApproach, ReplicationTool, CacheType, ServiceLanguage, FrontendFramework, DataWarehouseVendor, DatabaseVendor, MessageBrokerVendor, MessageDeliveryType, CDNVendor, LambdaVendor, ObjectStorageVendor, AuthServiceVendor, FirewallVendor, LoadBalancerVendor, ApiGatewayVendor, ESBVendor, DatabaseTable, ObjectStorageDirection, ComponentLink, EdgePathType, BackupServiceVendor, QueueVendor, ProxyVendor, VPNGatewayVendor } from './types'
 import { saveToFile, loadFromFile, getPersistedHandle } from './utils/fileUtils'
@@ -1795,6 +1796,8 @@ function App() {
         data: {
           connectionType,
           pathType: 'step' as EdgePathType,
+          waypoints: [],
+          verticalSegmentX: null,
           ...(additionalData?.objectStorageDirection && {
             objectStorageDirection: additionalData.objectStorageDirection,
           }),
@@ -1901,7 +1904,7 @@ function App() {
       }
 
       const newEdge: Edge = {
-        id: `edge-${params.source}-${params.target}`,
+        id: `edge-${params.source}-${params.target}-${Date.now()}`,
         source: params.source!,
         target: params.target!,
         // Сохраняем Handle ID для привязки к конкретным сторонам компонента
@@ -1986,7 +1989,7 @@ function App() {
       }
 
       const newEdge: Edge = {
-        id: `edge-${params.source}-${params.target}`,
+        id: `edge-${params.source}-${params.target}-${Date.now()}`,
         source: params.source!,
         target: params.target!,
         // Сохраняем Handle ID для привязки к конкретным сторонам компонента
@@ -4515,8 +4518,8 @@ function App() {
       >
         <ReactFlow
           key={activeWorkspaceId}
-          nodes={nodes}
-          edges={edges}
+          nodes={visibleNodes}
+          edges={visibleEdges}
           onNodesChange={handleNodesChange}
           onEdgesChange={handleEdgesChange}
           onConnect={activeWorkspace?.isLocked ? undefined : onConnect}
@@ -4580,6 +4583,7 @@ function App() {
           elevateNodesOnSelect={false} // Отключаем поднятие узлов при выделении для лучшей производительности
           elevateEdgesOnSelect={false} // Отключаем поднятие связей при выделении
         >
+          <ConnectionMarkers />
           <Background
             color="#333"
             gap={20}

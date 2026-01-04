@@ -20,6 +20,19 @@ function AnimatedEdge({
   // Получаем узлы для определения их типов
   const { setEdges, getViewport, screenToFlowPosition } = useReactFlow()
   const zoom = useStore((s) => s.transform[2])
+  const [, setTick] = useState(0)
+
+  // Force update on mount to ensure coordinates are correctly resolved
+  useEffect(() => {
+    const timer = setTimeout(() => setTick(t => t + 1), 50);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Safety check: if coordinates are not valid, render an empty group to keep the component mounted
+  if (isNaN(sourceX) || isNaN(sourceY) || isNaN(targetX) || isNaN(targetY)) {
+    console.log(`[AnimatedEdge ${id}] NaN coordinates:`, { sourceX, sourceY, targetX, targetY });
+    return <g className="react-flow__edge animated-edge-loading" id={id} />;
+  }
 
   // Инициализируем refs ДО их использования
   // Поддержка массива waypoints для множественных точек изгиба
@@ -71,6 +84,8 @@ function AnimatedEdge({
         sourceY,
         targetX,
         targetY,
+        sourcePosition,
+        targetPosition,
         borderRadius: pathType === 'smoothstep' ? 10 : 0, // Без скругления для 'step', со скруглением для 'smoothstep'
       })
     } else {
@@ -82,9 +97,10 @@ function AnimatedEdge({
         targetY,
       })
     }
-  }, [sourceX, sourceY, targetX, targetY, pathType, verticalSegmentX, data?.waypoints])
+  }, [sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, pathType, verticalSegmentX, data?.waypoints])
 
-  const [edgePath, labelX, labelY] = pathResult
+  const [edgePath, labelX, labelY] = pathResult;
+  console.log(`[AnimatedEdge ${id}] pathResult:`, { edgePath, labelX, labelY, pathType });
 
   // Направление потока данных всегда от source к target (как направлена стрелка)
   // Точка должна двигаться от компонента source к компоненту target
@@ -156,6 +172,12 @@ function AnimatedEdge({
     }
   }, [id, data?.verticalSegmentX])
 
+  // Force re-render on mount to ensure path is calculated after handles are positioned
+  const [, forceUpdate] = useState({})
+  React.useLayoutEffect(() => {
+    forceUpdate({})
+  }, [])
+
   // Мемоизируем вычисление цвета на основе типа соединения
   const edgeColor = React.useMemo(() => {
     const connectionType = data?.connectionType
@@ -200,13 +222,13 @@ function AnimatedEdge({
   }, [selected, edgeColor, style, data?.connectionType])
 
   // Определяем тип соединения для отображения стрелок
-  const connectionType = data?.connectionType as string | undefined
+  const connectionType = (data?.connectionType as string) || 'default'
   const isBidirectional = connectionType === 'bidirectional' || connectionType === 'async-bidirectional'
   const isAsyncBidirectional = connectionType === 'async-bidirectional'
 
-  // Убеждаемся, что маркер стрелки всегда применяется
-  const markerEndId = selected ? `arrowhead-selected-${id}` : `arrowhead-${id}`
-  const markerStartId = selected ? `arrowhead-start-selected-${id}` : `arrowhead-start-${id}`
+  // Убеждаемся, что маркер стрелки всегда применяется с использованием глобальных ID
+  const markerEndId = `arrowhead-${connectionType}${selected ? '-selected' : ''}`
+  const markerStartId = `arrowhead-start-${connectionType}${selected ? '-selected' : ''}`
 
   // УБРАНО: Не нужно преобразовывать waypoint координаты через viewport
   // Waypoint координаты уже в системе координат flow и должны загружаться напрямую из edge.data
@@ -775,7 +797,7 @@ function AnimatedEdge({
         return path
       }
 
-      // Если verticalSegmentX НЕ задан, используем стандартный SmoothStepPath для лучшей автоматической маршрутизации
+      // Если verticalSegmentX НЕ задан, используем стандартный SmoothStepPath
       const [stepPath] = getSmoothStepPath({
         sourceX,
         sourceY,
@@ -785,10 +807,10 @@ function AnimatedEdge({
         targetPosition,
         borderRadius: pathType === 'smoothstep' ? 16 : 0,
       });
-      return stepPath;
+      return stepPath || edgePath;
     }
 
-    return edgePath
+    return edgePath || '';
   }, [edgePath, sourceX, sourceY, targetX, targetY, pathType, sourcePosition, targetPosition, verticalSegmentX, data?.sourceAngle, data?.targetAngle, data?.waypoints])
 
   // Вычисляем позицию label с учетом сохраненной позиции или waypoints
@@ -824,66 +846,6 @@ function AnimatedEdge({
   return (
     <>
       <g style={{ cursor: 'default' }}>
-        {/* Определения маркеров для стрелок (указатели направления) - уникальные для каждой стрелки */}
-        <defs>
-          <marker
-            id={`arrowhead-${id}`}
-            markerWidth="15"
-            markerHeight="15"
-            refX="12"
-            refY="7.5"
-            orient="auto"
-            markerUnits="userSpaceOnUse"
-            viewBox="0 0 15 15"
-          >
-            {/* Более крупная и заметная стрелка */}
-            {/* Для асинхронной двухсторонней стрелки цвет всегда жёлтый */}
-            <path d="M0,0 L0,15 L15,7.5 z" fill={isAsyncBidirectional ? '#ffd43b' : edgeColor} stroke={isAsyncBidirectional ? '#ffd43b' : edgeColor} strokeWidth="0.5" />
-          </marker>
-          <marker
-            id={`arrowhead-selected-${id}`}
-            markerWidth="15"
-            markerHeight="15"
-            refX="12"
-            refY="7.5"
-            orient="auto"
-            markerUnits="userSpaceOnUse"
-            viewBox="0 0 15 15"
-          >
-            {/* Более крупная и заметная стрелка для выделенной линии */}
-            {/* Для асинхронной двухсторонней стрелки цвет остаётся жёлтым */}
-            <path d="M0,0 L0,15 L15,7.5 z" fill={isAsyncBidirectional ? '#ffd43b' : '#4dabf7'} stroke={isAsyncBidirectional ? '#ffd43b' : '#4dabf7'} strokeWidth="0.5" />
-          </marker>
-          {/* Маркеры для начала линии (для двухсторонней стрелки) */}
-          <marker
-            id={`arrowhead-start-${id}`}
-            markerWidth="15"
-            markerHeight="15"
-            refX="3"
-            refY="7.5"
-            orient="auto"
-            markerUnits="userSpaceOnUse"
-            viewBox="0 0 15 15"
-          >
-            {/* Стрелка в обратном направлении */}
-            {/* Для асинхронной двухсторонней стрелки цвет всегда жёлтый */}
-            <path d="M15,0 L15,15 L0,7.5 z" fill={isAsyncBidirectional ? '#ffd43b' : edgeColor} stroke={isAsyncBidirectional ? '#ffd43b' : edgeColor} strokeWidth="0.5" />
-          </marker>
-          <marker
-            id={`arrowhead-start-selected-${id}`}
-            markerWidth="15"
-            markerHeight="15"
-            refX="3"
-            refY="7.5"
-            orient="auto"
-            markerUnits="userSpaceOnUse"
-            viewBox="0 0 15 15"
-          >
-            {/* Стрелка в обратном направлении для выделенной линии */}
-            {/* Для асинхронной двухсторонней стрелки цвет остаётся жёлтым */}
-            <path d="M15,0 L15,15 L0,7.5 z" fill={isAsyncBidirectional ? '#ffd43b' : '#4dabf7'} stroke={isAsyncBidirectional ? '#ffd43b' : '#4dabf7'} strokeWidth="0.5" />
-          </marker>
-        </defs>
         <path
           id={id}
           style={{
@@ -1219,4 +1181,5 @@ function AnimatedEdge({
 // Мемоизируем компонент для оптимизации производительности
 // НЕ мемоизируем слишком строго, чтобы анимация работала
 // Export directly without memo to ensure updates are not blocked
-export default memo(AnimatedEdge)
+// Export directly without memo to ensure updates are not blocked on initial render
+export default AnimatedEdge

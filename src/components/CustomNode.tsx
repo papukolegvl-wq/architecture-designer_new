@@ -208,6 +208,19 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
   }, (a, b) => JSON.stringify(a) === JSON.stringify(b));
 
   const isConnecting = useStore((s) => !!s.connectionStartHandle);
+  const [wasConnecting, setWasConnecting] = useState(false);
+
+  // Стабилизируем отображение handle: если мы только что закончили подключение,
+  // придерживаем handle видимыми еще 500мс, чтобы ReactFlow успел отрисовать новую связь
+  useEffect(() => {
+    if (isConnecting) {
+      setWasConnecting(true);
+    } else if (wasConnecting) {
+      const timer = setTimeout(() => setWasConnecting(false), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isConnecting, wasConnecting]);
+
   const isSimple = zoom < 0.4
   const isMedium = zoom < 0.7
 
@@ -831,15 +844,14 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
           const isTargetConnected = connectedHandleIds.includes(targetId);
           const isSourceConnected = connectedHandleIds.includes(sourceId);
 
-          // ОПТИМИЗАЦИЯ: Рендерим handle только если необходимо
-          const shouldRender = isHovered || isConnecting || isCenter || isTargetConnected || isSourceConnected;
-
-          if (!shouldRender) return null;
+          // ОПТИМИЗАЦИЯ: Всегда рендерим handle в DOM, чтобы ReactFlow мог их измерить,
+          // но скрываем визуально и отключаем события, если они не нужны
+          const isVisible = isHovered || isConnecting || wasConnecting || isCenter || isTargetConnected || isSourceConnected || selected;
 
           const style: React.CSSProperties = {
             [isHorizontal ? 'left' : 'top']: `${p}%`,
             [pos]: '-5px',
-            opacity: isHovered || isConnecting ? (isCenter ? 0.8 : 0.4) : (isTargetConnected || isSourceConnected ? 0.6 : 0),
+            opacity: isVisible ? (isCenter ? 0.8 : 0.4) : 0,
             borderRadius: '50%',
             width: isCenter ? '12px' : '8px',
             height: isCenter ? '12px' : '8px',
@@ -848,7 +860,8 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
             cursor: 'crosshair',
             transform: isHorizontal ? 'translateX(-50%)' : 'translateY(-50%)',
             zIndex: isCenter ? 30 : 25,
-            pointerEvents: 'all',
+            pointerEvents: isVisible ? 'all' : 'none',
+            transition: 'opacity 0.2s',
           };
 
           return (
@@ -878,10 +891,8 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
         const isTargetConnected = connectedHandleIds.includes(oldTargetId);
         const isSourceConnected = connectedHandleIds.includes(oldSourceId);
 
-        // Рендерим только если подключено или в режиме поиска связей
-        const shouldRender = isTargetConnected || isSourceConnected || (isHovered && isConnecting);
-
-        if (!shouldRender) return null;
+        // Всегда рендерим для стабильности
+        const isVisible = isTargetConnected || isSourceConnected || (isHovered && isConnecting) || wasConnecting || selected;
 
         const isHorizontal = pos === Position.Top || pos === Position.Bottom;
         const style: React.CSSProperties = {
@@ -892,8 +903,9 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
           cursor: 'crosshair',
           transform: isHorizontal ? 'translateX(-50%)' : 'translateY(-50%)',
           zIndex: 30,
-          opacity: 1,
-          pointerEvents: 'all',
+          opacity: isVisible ? 1 : 0,
+          pointerEvents: isVisible ? 'all' : 'none',
+          transition: 'opacity 0.2s',
         };
 
         return (
