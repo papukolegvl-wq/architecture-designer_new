@@ -1980,6 +1980,10 @@ function App() {
           'dms': 'DMS',
           'goldengate': 'GoldenGate',
           'native-replication': 'Native',
+          'qlik-replicate': 'Qlik Replicate',
+          'striim': 'Striim',
+          'dbvisit': 'Dbvisit',
+          'attunity': 'Attunity',
         }
 
         const approachLabel = approachLabels[approach] || 'Replication'
@@ -3647,10 +3651,14 @@ function App() {
         (activeElement.closest('textarea') !== null)
       )
 
+      // Проверяем, есть ли выделенный текст в документе
+      const selection = window.getSelection()
+      const hasSelection = selection && selection.toString().length > 0
+
       // Ctrl+C или Cmd+C (Mac) - используем event.code для независимости от раскладки
       if ((event.ctrlKey || event.metaKey) && event.code === 'KeyC') {
-        // Разрешаем копирование из полей ввода
-        if (!isInputFocused) {
+        // Разрешаем копирование из полей ввода или если выделен текст
+        if (!isInputFocused && !hasSelection) {
           event.preventDefault()
           event.stopPropagation()
           event.stopImmediatePropagation()

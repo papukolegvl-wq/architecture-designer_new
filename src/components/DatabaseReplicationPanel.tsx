@@ -11,6 +11,10 @@ const getToolDescription = (tool: ReplicationTool): string => {
     'dms': 'AWS Database Migration Service',
     'goldengate': 'Oracle GoldenGate для репликации в реальном времени',
     'native-replication': 'Встроенные механизмы репликации СУБД',
+    'qlik-replicate': 'Платформа для репликации и интеграции данных (Qlik)',
+    'striim': 'Платформа для потоковой интеграции и аналитики данных',
+    'dbvisit': 'Специализированное решение для репликации Oracle/SQL Server',
+    'attunity': 'Решение для высокоскоростной репликации данных',
   }
   return descriptions[tool] || ''
 }
@@ -28,65 +32,68 @@ const replicationApproaches: Array<{
   description: string
   tools: Array<{ value: ReplicationTool; label: string }>
 }> = [
-  {
-    value: 'master-slave',
-    label: 'Master-Slave',
-    description: 'Односторонняя репликация от главной к подчиненной БД',
-    tools: [
-      { value: 'native-replication', label: 'Нативная репликация БД' },
-      { value: 'dms', label: 'AWS DMS' },
-      { value: 'goldengate', label: 'Oracle GoldenGate' },
-    ],
-  },
-  {
-    value: 'master-master',
-    label: 'Master-Master',
-    description: 'Двусторонняя репликация между БД',
-    tools: [
-      { value: 'native-replication', label: 'Нативная репликация БД' },
-      { value: 'goldengate', label: 'Oracle GoldenGate' },
-    ],
-  },
-  {
-    value: 'cdc',
-    label: 'CDC (Change Data Capture)',
-    description: 'Захват изменений данных в реальном времени',
-    tools: [
-      { value: 'debezium', label: 'Debezium' },
-      { value: 'kafka-connect', label: 'Kafka Connect' },
-      { value: 'goldengate', label: 'Oracle GoldenGate' },
-    ],
-  },
-  {
-    value: 'etl',
-    label: 'ETL',
-    description: 'Извлечение, преобразование и загрузка данных',
-    tools: [
-      { value: 'apache-nifi', label: 'Apache NiFi' },
-      { value: 'airbyte', label: 'Airbyte' },
-      { value: 'dms', label: 'AWS DMS' },
-    ],
-  },
-  {
-    value: 'streaming',
-    label: 'Streaming',
-    description: 'Потоковая передача данных',
-    tools: [
-      { value: 'kafka-connect', label: 'Kafka Connect' },
-      { value: 'debezium', label: 'Debezium' },
-    ],
-  },
-  {
-    value: 'snapshot',
-    label: 'Snapshot',
-    description: 'Периодическое создание снимков данных',
-    tools: [
-      { value: 'airbyte', label: 'Airbyte' },
-      { value: 'dms', label: 'AWS DMS' },
-      { value: 'apache-nifi', label: 'Apache NiFi' },
-    ],
-  },
-]
+    {
+      value: 'master-slave',
+      label: 'Master-Slave',
+      description: 'Односторонняя репликация от главной к подчиненной БД',
+      tools: [
+        { value: 'native-replication', label: 'Нативная репликация БД' },
+        { value: 'dms', label: 'AWS DMS' },
+        { value: 'goldengate', label: 'Oracle GoldenGate' },
+      ],
+    },
+    {
+      value: 'master-master',
+      label: 'Master-Master',
+      description: 'Двусторонняя репликация между БД',
+      tools: [
+        { value: 'native-replication', label: 'Нативная репликация БД' },
+        { value: 'goldengate', label: 'Oracle GoldenGate' },
+      ],
+    },
+    {
+      value: 'cdc',
+      label: 'CDC (Change Data Capture)',
+      description: 'Захват изменений данных в реальном времени',
+      tools: [
+        { value: 'debezium', label: 'Debezium' },
+        { value: 'kafka-connect', label: 'Kafka Connect' },
+        { value: 'goldengate', label: 'Oracle GoldenGate' },
+        { value: 'qlik-replicate', label: 'Qlik Replicate' },
+        { value: 'striim', label: 'Striim' },
+        { value: 'attunity', label: 'Attunity' },
+      ],
+    },
+    {
+      value: 'etl',
+      label: 'ETL',
+      description: 'Извлечение, преобразование и загрузка данных',
+      tools: [
+        { value: 'apache-nifi', label: 'Apache NiFi' },
+        { value: 'airbyte', label: 'Airbyte' },
+        { value: 'dms', label: 'AWS DMS' },
+      ],
+    },
+    {
+      value: 'streaming',
+      label: 'Streaming',
+      description: 'Потоковая передача данных',
+      tools: [
+        { value: 'kafka-connect', label: 'Kafka Connect' },
+        { value: 'debezium', label: 'Debezium' },
+      ],
+    },
+    {
+      value: 'snapshot',
+      label: 'Snapshot',
+      description: 'Периодическое создание снимков данных',
+      tools: [
+        { value: 'airbyte', label: 'Airbyte' },
+        { value: 'dms', label: 'AWS DMS' },
+        { value: 'apache-nifi', label: 'Apache NiFi' },
+      ],
+    },
+  ]
 
 export default function DatabaseReplicationPanel({
   sourceNode,
@@ -208,9 +215,9 @@ export default function DatabaseReplicationPanel({
           >
             Инструмент для реализации:
           </label>
-          <div style={{ 
-            padding: '12px', 
-            backgroundColor: '#3d3d3d', 
+          <div style={{
+            padding: '12px',
+            backgroundColor: '#3d3d3d',
             borderRadius: '8px',
             marginBottom: '10px',
             fontSize: '12px',

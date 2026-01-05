@@ -562,36 +562,38 @@ export default function AIAssistantPanel({
 
       if (mode === 'learning' && currentCase) {
         contextPrompt = `
-          Контекст: Пользователь находится в режиме обучения "Архитектурный тренажер".
-          Текущая задача: ${currentCase.title}
-          Описание задачи: ${currentCase.description}
-          Требования: ${(currentCase.businessRequirements || []).join(', ')}
-          Атрибуты качества: ${(currentCase.qualityAttributes || []).join(', ')}
+          Ты — Архитектурный Наставник (Mentor).
+          Контекст: Режим обучения "Архитектурный тренажер".
+          Задача: ${currentCase.title}
+          Описание: ${currentCase.description}
+          ${evaluation ? `Текущая оценка: ${evaluation.score}/100. Итог: ${evaluation.summary}` : 'Решение еще не проверялось.'}
           
-          ТЕКУЩАЯ СХЕМА (в текстовом виде):
+          ТЕКУЩАЯ СХЕМА:
           ${architectureToText(nodes, edges)}
 
-          ${evaluation ? `
-          Оценка текущего решения: ${evaluation.score}/100
-          Верные решения: ${(evaluation.correctDecisions || []).join(', ')}
-          Упущенные требования: ${(evaluation.missedRequirements || []).join(', ')}
-          Рекомендации: ${(evaluation.optimizationSuggestions || []).join(', ')}
-          Путь к 100%: ${(evaluation.roadmapTo100 || []).join(', ')}
-          Общий итог: ${evaluation.summary}
-          ` : 'Пользователь еще не проверил решение, он в процессе проектирования.'}
-
-          ИНСТРУКЦИЯ ДЛЯ ТЕБЯ:
-          1. Отвечай как краткий и практичный архитектурный наставник (Mentor).
-          2. БУДЬ ПРЕДЕЛЬНО КРАТКИМ (2-4 предложения).
-          3. СЕМАНТИЧЕСКИЙ ПОИСК: Тщательно проверь ТЕКУЩУЮ СХЕМУ. Если пользователь добавил сервис (например, "Auth Service"), не предлагай его добавить еще раз, даже если он называется иначе.
-          4. КОНКРЕТНЫЕ СВЯЗИ: Если компоненты на месте, скажи, что и с чем СВЯЗАТЬ. Используй названия (Label) узлов из схемы.
-          5. Если ты ошибся и не заметил компонент, просто извинись и предложи следующий шаг (связь или настройку).
+          ИНСТРУКЦИЯ (СТРОГО):
+          1. ПИШИ СРАЗУ ОТВЕТ. ЗАПРЕЩЕНО повторять вопрос пользователя или писать "Как я понял...".
+          2. Проверь ТЕКУЩУЮ СХЕМУ. Если нужный узел (Auth, Database и т.д.) уже есть, не предлагай его добавить. Предложи СВЯЗАТЬ его.
+          3. Используй конкретные Label из схемы (например: "Соедини ${nodes[0]?.data?.label || 'Сервис'} с ${nodes[1]?.data?.label || 'Базой'}").
+          4. БУДЬ КРАТКИМ (2-4 предложения).
 
           Вопрос пользователя: ${userMessage}
         `.trim()
-      } else if (improvementRecommendations) {
-        // Если есть рекомендации, добавляем их в контекст неявно
-        contextPrompt = `На основе предыдущих рекомендаций: "${improvementRecommendations.substring(0, 1000)}...". Вопрос: ${userMessage}`
+      } else {
+        contextPrompt = `
+          Ты — Архитектурный Эксперт. 
+          
+          ТЕКУЩАЯ СХЕМА:
+          ${architectureToText(nodes, edges)}
+
+          ИНСТРУКЦИЯ:
+          1. ПИШИ СРАЗУ ОТВЕТ. Не повторяй вопрос.
+          2. Если на схеме уже есть упоминаемые компоненты, используй их Label.
+          3. Если нужно добавить компонент, указывай конкретный тип (например: database, cache, message-broker).
+          4. Если нужно соединить, пиши: "Создай связь от [Label A] к [Label B] типа [тип]".
+
+          Вопрос: ${userMessage}
+        `.trim()
       }
 
       const response = await explainArchitectureDecision(contextPrompt, nodes, edges)
@@ -812,7 +814,6 @@ export default function AIAssistantPanel({
     <ErrorBoundary>
       <div
         ref={panelRef}
-        onMouseDown={handleMouseDown}
         style={{
           position: 'fixed',
           top: position.y,
@@ -828,14 +829,24 @@ export default function AIAssistantPanel({
           boxShadow: '0 12px 48px rgba(0,0,0,0.7)',
           display: 'flex',
           flexDirection: 'column',
-          cursor: isDragging ? 'grabbing' : (isMinimized ? 'pointer' : 'default'),
           transition: isDragging ? 'none' : 'width 0.3s, max-width 0.3s, height 0.3s, padding 0.3s',
           overflow: 'hidden',
         }}
       >
         <ErrorBoundary>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMinimized ? 0 : '20px' }}>
-            <h2 style={{ fontSize: isMinimized ? '14px' : '20px', fontWeight: 'bold', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '10px', userSelect: 'none' }}>
+          <div
+            onMouseDown={handleMouseDown}
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: isMinimized ? 0 : '20px',
+              cursor: isDragging ? 'grabbing' : 'grab',
+              padding: '4px 0',
+              userSelect: 'none'
+            }}
+          >
+            <h2 style={{ fontSize: isMinimized ? '14px' : '20px', fontWeight: 'bold', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '10px', pointerEvents: 'none' }}>
               {isMinimized ? 'Ассистент' : 'Ассистент'}
             </h2>
             <div style={{ display: 'flex', gap: '4px' }}>
@@ -1017,6 +1028,8 @@ export default function AIAssistantPanel({
                               maxWidth: '85%',
                               border: msg.role === 'user' ? '1px solid #444' : '1px solid #4dabf730',
                               boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                              userSelect: 'text',
+                              cursor: 'auto',
                             }}
                           >
                             <div style={{ fontSize: '11px', color: msg.role === 'user' ? '#888' : '#4dabf7', marginBottom: '4px', fontWeight: 'bold' }}>
