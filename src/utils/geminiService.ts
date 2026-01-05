@@ -270,7 +270,7 @@ export async function analyzeArchitectureWithAI(
 
   const architectureDescription = architectureToText(nodes, edges)
 
-  const defaultPrompt = `Ты эксперт по архитектуре программного обеспечения. Проанализируй следующую архитектуру и предоставь рекомендации по улучшению.
+  const defaultPrompt = `Ты выступаешь в роли Senior Cloud Architect. Твоя специализация: Cloud Native, Microservices, Security и High Availability. Проанализируй архитектуру с точки зрения Well-Architected Framework (Reliability, Security, Cost Optimization). Будь критичен к единым точкам отказа и проблемам безопасности. Проанализируй следующую архитектуру и предоставь рекомендации по улучшению.
 
 ${architectureDescription}
 
@@ -328,7 +328,7 @@ export async function generateImprovementRecommendations(
 
   const architectureDescription = architectureToText(nodes, edges)
 
-  const defaultPrompt = `Ты эксперт по архитектуре программного обеспечения. Проанализируй следующую архитектуру и предоставь рекомендации по улучшению.
+  const defaultPrompt = `Ты выступаешь в роли Senior Cloud Architect (эксперт по Cloud Native и Security). Проанализируй следующую архитектуру. Предложи улучшения, ориентированные на отказоустойчивость (Resiliency), масштабируемость и безопасность (Zero Trust).
 
 Текущая архитектура:
 ${architectureDescription}
@@ -393,7 +393,7 @@ export async function generateArchitectureFromDescription(
     throw new Error('Gemini не инициализирован. Укажите API ключ.')
   }
 
-  const prompt = `Ты эксперт по архитектуре программного обеспечения.На основе следующего описания создай архитектуру системы.
+  const prompt = `Ты — Senior Solution Architect. Создай профессиональную, масштабируемую архитектуру системы, соответствующую современным enterprise-стандартам (Cloud Native). На основе следующего описания создай архитектуру системы.
 
     Описание: ${description}
 
@@ -457,7 +457,7 @@ export async function explainArchitectureDecision(
 
   const architectureDescription = architectureToText(nodes, edges)
 
-  const prompt = `Ты эксперт по архитектуре программного обеспечения.Ответь на вопрос пользователя на основе следующей архитектуры.
+  const prompt = `Ты — Senior Cloud Architect. Ответь на вопрос максимально профессионально, используя техническую терминологию, ссылаясь на паттерны (Cloud Design Patterns) и best practices индустрии. Ответь на вопрос пользователя на основе следующей архитектуры.
 
     Архитектура:
 ${architectureDescription}
@@ -507,7 +507,7 @@ export async function getOptimizationSuggestions(
     ? `Особое внимание удели: ${focusArea} `
     : ''
 
-  const prompt = `Ты эксперт по оптимизации архитектуры программного обеспечения.Проанализируй архитектуру и предложи конкретные способы оптимизации производительности, масштабируемости, безопасности и стоимости.
+  const prompt = `Ты — эксперт по High Load системам и Cost Optimization. Проанализируй архитектуру и предложи архитектурные паттерны для улучшения производительности и подходы FinOps для снижения стоимости.
 
     Архитектура:
 ${architectureDescription}
@@ -548,7 +548,7 @@ export async function generateArchitectureCase(
     throw new Error('Gemini не инициализирован. Укажите API ключ.')
   }
 
-  const prompt = `Ты эксперт по архитектуре ПО.Создай интересную архитектурную задачу(бизнес - кейс) для обучения.
+  const prompt = `Ты — экзаменатор уровня Principal Architect. Создай сложный, реалистичный бизнес-кейс, требующий неочевидных архитектурных решений и компромиссов (trade-offs). Создай интересную архитектурную задачу (бизнес-кейс) для обучения.
 Уровень сложности: ${difficulty}.
 
 Верни ответ ТОЛЬКО в формате JSON:
@@ -606,7 +606,7 @@ export async function evaluateArchitectureSolution(
 
   const architectureDescription = architectureToText(nodes, edges)
 
-  const prompt = `Ты строгий, но справедливый архитектурный эксперт.Оцени решение пользователя для следующей задачи.
+  const prompt = `Ты — Principal Architect, проводящий Architecture Review. Ты строг, внимателен к деталям и требуешь обоснования решений. Будь безжалостен к security vulnerabilities и scalability bottlenecks. Оцени решение пользователя для следующей задачи.
     ЗАДАЧА: ${currentCase.title}
 ${currentCase.description}
 
