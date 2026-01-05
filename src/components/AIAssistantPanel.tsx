@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { X, Sparkles, Loader2, Send, FileText, HelpCircle, Copy, Minimize2, Maximize2, RefreshCcw, MessageSquare, GraduationCap, CheckCircle2, AlertCircle, Save, FolderOpen, History } from 'lucide-react'
+import { X, Sparkles, Loader2, Send, FileText, HelpCircle, Copy, Minimize2, Maximize2, RefreshCcw, MessageSquare, GraduationCap, CheckCircle2, AlertCircle, Save, FolderOpen, History, TrendingUp } from 'lucide-react'
 import {
   initializeGemini,
   isGeminiInitialized,
@@ -9,6 +9,7 @@ import {
   AIGeneratedArchitecture,
   generateArchitectureCase,
   evaluateArchitectureSolution,
+  architectureToText,
 } from '../utils/geminiService'
 import {
   ArchitectureCase,
@@ -17,7 +18,8 @@ import {
   LearningHistoryItem,
   ComponentData,
   ComponentType,
-  ConnectionType
+  ConnectionType,
+  RoadmapStep as RoadmapStepType
 } from '../types'
 import { Node, Edge } from 'reactflow'
 import {
@@ -566,17 +568,26 @@ export default function AIAssistantPanel({
           Требования: ${(currentCase.businessRequirements || []).join(', ')}
           Атрибуты качества: ${(currentCase.qualityAttributes || []).join(', ')}
           
+          ТЕКУЩАЯ СХЕМА (в текстовом виде):
+          ${architectureToText(nodes, edges)}
+
           ${evaluation ? `
           Оценка текущего решения: ${evaluation.score}/100
           Верные решения: ${(evaluation.correctDecisions || []).join(', ')}
           Упущенные требования: ${(evaluation.missedRequirements || []).join(', ')}
           Рекомендации: ${(evaluation.optimizationSuggestions || []).join(', ')}
+          Путь к 100%: ${(evaluation.roadmapTo100 || []).join(', ')}
           Общий итог: ${evaluation.summary}
           ` : 'Пользователь еще не проверил решение, он в процессе проектирования.'}
 
+          ИНСТРУКЦИЯ ДЛЯ ТЕБЯ:
+          1. Отвечай как краткий и практичный архитектурный наставник (Mentor).
+          2. БУДЬ ПРЕДЕЛЬНО КРАТКИМ (2-4 предложения).
+          3. СЕМАНТИЧЕСКИЙ ПОИСК: Тщательно проверь ТЕКУЩУЮ СХЕМУ. Если пользователь добавил сервис (например, "Auth Service"), не предлагай его добавить еще раз, даже если он называется иначе.
+          4. КОНКРЕТНЫЕ СВЯЗИ: Если компоненты на месте, скажи, что и с чем СВЯЗАТЬ. Используй названия (Label) узлов из схемы.
+          5. Если ты ошибся и не заметил компонент, просто извинись и предложи следующий шаг (связь или настройку).
+
           Вопрос пользователя: ${userMessage}
-          
-          Отвечай как опытный архитектурный наставник. Помогай разобраться, но не давай готовое решение целиком, если задача еще не решена.
         `.trim()
       } else if (improvementRecommendations) {
         // Если есть рекомендации, добавляем их в контекст неявно
@@ -1638,6 +1649,59 @@ export default function AIAssistantPanel({
                                       {(evaluation.optimizationSuggestions || []).map((d, i) => <li key={i}>{d}</li>)}
                                     </ul>
                                   </div>
+
+                                  {evaluation.roadmapTo100 && evaluation.roadmapTo100.length > 0 && (
+                                    <div style={{ backgroundColor: '#1e1e1e', padding: '15px', borderRadius: '10px', border: '1px solid #51cf66', boxShadow: '0 0 10px rgba(81, 207, 102, 0.2)' }}>
+                                      <h4 style={{ color: '#51cf66', fontSize: '14px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
+                                        <TrendingUp size={18} /> Путь к 100% (Roadmap)
+                                      </h4>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                        {evaluation.roadmapTo100.map((step: any, i) => (
+                                          <div key={i} style={{ borderLeft: '2px solid #51cf66', paddingLeft: '15px', paddingBottom: '5px' }}>
+                                            <div style={{ fontWeight: 'bold', color: '#fff', marginBottom: '4px', fontSize: '14px' }}>
+                                              {i + 1}. {step.title}
+                                            </div>
+                                            <div style={{ color: '#ccc', fontSize: '13px', lineHeight: '1.4', marginBottom: '8px' }}>
+                                              {step.description}
+                                            </div>
+
+                                            {((step.componentsToAdd && step.componentsToAdd.length > 0) || (step.connectionsToAdd && step.connectionsToAdd.length > 0)) && (
+                                              <div style={{ backgroundColor: '#252525', padding: '10px', borderRadius: '6px', fontSize: '12px', marginTop: '8px' }}>
+                                                {step.componentsToAdd && step.componentsToAdd.length > 0 && (
+                                                  <div style={{ marginBottom: step.connectionsToAdd && step.connectionsToAdd.length > 0 ? '8px' : '0' }}>
+                                                    <span style={{ color: '#4dabf7', fontWeight: 'bold' }}>Добавить компоненты:</span>
+                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
+                                                      {step.componentsToAdd.map((c: string, j: number) => (
+                                                        <span key={j} style={{ backgroundColor: '#4dabf720', color: '#4dabf7', padding: '2px 6px', borderRadius: '4px', border: '1px solid #4dabf740' }}>
+                                                          {c}
+                                                        </span>
+                                                      ))}
+                                                    </div>
+                                                  </div>
+                                                )}
+                                                {step.connectionsToAdd && step.connectionsToAdd.length > 0 && (
+                                                  <div>
+                                                    <span style={{ color: '#ff922b', fontWeight: 'bold' }}>Связать:</span>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+                                                      {step.connectionsToAdd.map((conn: any, j: number) => (
+                                                        <div key={j} style={{ color: '#eee', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                          <span style={{ color: '#fff' }}>{conn.from}</span>
+                                                          <span style={{ color: '#888' }}>→</span>
+                                                          <span style={{ color: '#fff' }}>{conn.to}</span>
+                                                          <span style={{ color: '#888', fontSize: '11px' }}>({conn.type})</span>
+                                                          {conn.description && <span style={{ color: '#aaa', fontStyle: 'italic', fontSize: '11px' }}>— {conn.description}</span>}
+                                                        </div>
+                                                      ))}
+                                                    </div>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                               {chatMessages.length > 0 && (
@@ -1671,6 +1735,61 @@ export default function AIAssistantPanel({
                                   </div>
                                 </div>
                               )}
+
+                              <div style={{
+                                marginTop: '24px',
+                                padding: '16px',
+                                backgroundColor: '#1a1a1a',
+                                borderRadius: '12px',
+                                border: '1px solid #333'
+                              }}>
+                                <h4 style={{ color: '#fff', marginBottom: '12px', fontSize: '14px' }}>Остались вопросы или я что-то пропустил?</h4>
+                                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
+                                  <textarea
+                                    value={inputValue}
+                                    onChange={(e) => setInputValue(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        handleChat();
+                                      }
+                                    }}
+                                    placeholder="Напишите наставнику..."
+                                    style={{
+                                      flex: 1,
+                                      padding: '12px',
+                                      backgroundColor: '#252525',
+                                      border: '1px solid #444',
+                                      borderRadius: '8px',
+                                      color: '#fff',
+                                      fontSize: '13px',
+                                      resize: 'none',
+                                      minHeight: '40px',
+                                      maxHeight: '100px',
+                                      fontFamily: 'inherit',
+                                      lineHeight: '1.4',
+                                    }}
+                                  />
+                                  <button
+                                    onClick={handleChat}
+                                    disabled={loading || !inputValue.trim()}
+                                    style={{
+                                      width: '40px',
+                                      height: '40px',
+                                      backgroundColor: loading || !inputValue.trim() ? '#333' : '#4dabf7',
+                                      color: 'white',
+                                      border: 'none',
+                                      borderRadius: '8px',
+                                      cursor: loading || !inputValue.trim() ? 'not-allowed' : 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                    }}
+                                  >
+                                    {loading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                                  </button>
+                                </div>
+                              </div>
                             </div>
                           )}
 

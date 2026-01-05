@@ -43,6 +43,13 @@ import {
   Workflow,
   Sparkles,
   Lightbulb,
+  ShieldCheck,
+  Eye,
+  Book,
+  ArrowLeftRight,
+  History,
+  Waves,
+  Repeat,
 } from 'lucide-react'
 
 interface ComponentPaletteProps {
@@ -50,7 +57,7 @@ interface ComponentPaletteProps {
   onRecommendationClick?: () => void
 }
 
-type ComponentCategory = 'all' | 'infrastructure' | 'data' | 'security' | 'development' | 'monitoring' | 'integration' | 'communication' | 'text' | 'ai'
+type ComponentCategory = 'all' | 'infrastructure' | 'data' | 'security' | 'development' | 'monitoring' | 'integration' | 'communication' | 'text' | 'ai' | 'data-engineering'
 
 interface Component {
   type: ComponentType
@@ -104,7 +111,6 @@ const components: Component[] = [
   { type: 'repository', label: 'Репозиторий', icon: <Archive size={24} />, color: '#51cf66', category: 'development' },
   { type: 'class', label: 'Класс', icon: <Code size={24} />, color: '#845ef7', category: 'development' },
   { type: 'batch-processor', label: 'Пакетный обработчик', icon: <Cpu size={24} />, color: '#845ef7', category: 'development' },
-  { type: 'etl-service', label: 'ETL сервис', icon: <Database size={24} />, color: '#20c997', category: 'development' },
   { type: 'blockchain', label: 'Блокчейн', icon: <LinkIcon size={24} />, color: '#333', category: 'development' },
 
   // Мониторинг
@@ -149,6 +155,16 @@ const components: Component[] = [
   { type: 'ml-data-pipeline', label: 'ML Дата-пайплайн', icon: <Workflow size={24} />, color: '#4dabf7', category: 'ai' },
   { type: 'ml-ai-service', label: 'ML/AI сервис', icon: <Sparkles size={24} />, color: '#fab005', category: 'ai' },
   { type: 'gpu-cluster', label: 'GPU кластер', icon: <Server size={24} />, color: '#228be6', category: 'ai' },
+
+  // Data Engineering
+  { type: 'etl-service', label: 'ETL сервис', icon: <Database size={24} />, color: '#20c997', category: 'data-engineering' },
+  { type: 'cdc-service', label: 'CDC сервис', icon: <History size={24} />, color: '#fab005', category: 'data-engineering' },
+  { type: 'data-quality', label: 'Качество данных', icon: <ShieldCheck size={24} />, color: '#40c057', category: 'data-engineering' },
+  { type: 'data-observability', label: 'Observability данных', icon: <Eye size={24} />, color: '#228be6', category: 'data-engineering' },
+  { type: 'metadata-catalog', label: 'Каталог метаданных', icon: <Book size={24} />, color: '#7950f2', category: 'data-engineering' },
+  { type: 'reverse-etl', label: 'Reverse ETL', icon: <Repeat size={24} />, color: '#be4bdb', category: 'data-engineering' },
+  { type: 'feature-store', label: 'Feature Store', icon: <Warehouse size={24} />, color: '#fd7e14', category: 'data-engineering' },
+  { type: 'lakehouse', label: 'Data Lakehouse', icon: <Waves size={24} />, color: '#15aabf', category: 'data-engineering' },
 ]
 
 const categoryLabels: Record<ComponentCategory, string> = {
@@ -162,6 +178,7 @@ const categoryLabels: Record<ComponentCategory, string> = {
   communication: 'Коммуникации',
   text: 'Текст',
   ai: 'AI / ML',
+  'data-engineering': 'Data Engineering',
 }
 
 export default function ComponentPalette({ onComponentClick, onRecommendationClick }: ComponentPaletteProps) {

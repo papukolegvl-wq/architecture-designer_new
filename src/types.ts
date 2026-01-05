@@ -10,11 +10,24 @@ export interface ArchitectureCase {
   expectedComponents?: string[]
 }
 
+export interface RoadmapStep {
+  title: string
+  description: string
+  componentsToAdd?: string[]
+  connectionsToAdd?: {
+    from: string
+    to: string
+    type: string
+    description?: string
+  }[]
+}
+
 export interface ArchitectureEvaluation {
   score: number // 0-100
   correctDecisions: string[]
   missedRequirements: string[]
   optimizationSuggestions: string[]
+  roadmapTo100: RoadmapStep[]
   summary: string
 }
 
@@ -88,6 +101,13 @@ export type ComponentType =
   | 'system-component'
   | 'note'
   | 'table'
+  | 'data-quality'
+  | 'data-observability'
+  | 'metadata-catalog'
+  | 'reverse-etl'
+  | 'feature-store'
+  | 'cdc-service'
+  | 'lakehouse'
 
 export type ConnectionType = 'rest' | 'grpc' | 'async' | 'database-connection' | 'database-replication' | 'cache-connection' | 'dependency' | 'composition' | 'aggregation' | 'method-call' | 'inheritance' | 'bidirectional' | 'async-bidirectional'
 
@@ -107,6 +127,10 @@ export type ReplicationTool =
   | 'dms'
   | 'goldengate'
   | 'native-replication'
+  | 'qlik-replicate'
+  | 'striim'
+  | 'dbvisit'
+  | 'attunity'
 
 export type DatabaseType = 'sql' | 'nosql'
 export type NoSQLType = 'document' | 'column' | 'key-value' | 'graph' | 'time-series'
@@ -234,9 +258,11 @@ export type DataWarehouseVendor =
   | 'redshift'
   | 'bigquery'
   | 'databricks'
-  | 'synapse'
   | 'teradata'
   | 'clickhouse'
+  | 'greenplum'
+  | 'synapse'
+  | 'databricks-sql'
 
 export type ObjectStorageVendor =
   | 's3'
@@ -253,6 +279,13 @@ export type MessageBrokerVendor =
   | 'redis-pubsub'
   | 'amazon-sqs'
   | 'azure-service-bus'
+  | 'google-pub-sub'
+  | 'confluent-cloud'
+  | 'aws-msk'
+  | 'azure-event-hubs'
+  | 'amazon-kinesis'
+  | 'ibm-mq'
+  | 'activemq'
 
 export type MessageDeliveryType =
   | 'push'
@@ -578,6 +611,11 @@ export type IntegrationPlatformVendor =
   | 'tibco'
   | 'workato'
   | 'tray-io'
+  | 'snaplogic'
+  | 'jitterbit'
+  | 'wso2'
+  | 'boomi'
+  | 'mulesoft'
 
 export type BatchProcessorVendor =
   | 'apache-airflow'
@@ -586,6 +624,13 @@ export type BatchProcessorVendor =
   | 'aws-batch'
   | 'azure-batch'
   | 'google-cloud-composer'
+  | 'prefect'
+  | 'dagster'
+  | 'argo-workflows'
+  | 'kubeflow'
+  | 'step-functions'
+  | 'dask'
+  | 'apache-beam'
 
 export type ETLServiceVendor =
   | 'talend'
@@ -594,6 +639,27 @@ export type ETLServiceVendor =
   | 'pentaho'
   | 'matillion'
   | 'fivetran'
+  | 'airbyte'
+  | 'stitch'
+  | 'hevo'
+  | 'rivery'
+  | 'integrate-io'
+  | 'xplenty'
+  | 'estuary'
+  | 'portable'
+  | 'dbt'
+  | 'informatica'
+  | 'talend'
+  | 'ibm-datastage'
+  | 'sap-data-services'
+  | 'pentaho'
+  | 'ab-initio'
+  | 'cloverdx'
+  | 'oracle-odi'
+  | 'aws-glue'
+  | 'azure-data-factory'
+  | 'google-data-fusion'
+  | 'sap-data-intelligence'
 
 export type DataLakeVendor =
   | 'aws-s3-data-lake'
@@ -697,6 +763,56 @@ export type VectorDatabaseVendor =
   | 'elastic-vector'
   | 'pgvector'
 
+export type CDCServiceVendor =
+  | 'debezium'
+  | 'qlik-replicate'
+  | 'oracle-goldengate'
+  | 'aws-dms'
+  | 'striim'
+  | 'fivetran-cdc'
+  | 'airbyte-cdc'
+  | 'dbvisit'
+
+export type LakehouseVendor =
+  | 'databricks'
+  | 'delta-lake'
+  | 'apache-iceberg'
+  | 'apache-hudi'
+
+export type DataQualityVendor =
+  | 'great-expectations'
+  | 'soda'
+  | 'monte-carlo'
+  | 'bigeye'
+  | 'deequ'
+  | 'talend-dq'
+  | 'informatica-dq'
+
+export type DataObservabilityVendor =
+  | 'databand'
+  | 'whylabs'
+  | 'metaplane'
+  | 'anomalo'
+
+export type MetadataCatalogVendor =
+  | 'apache-atlas'
+  | 'datahub'
+  | 'amundsen'
+  | 'collibra'
+  | 'alation'
+  | 'atlan'
+  | 'openmetadata'
+
+export type ReverseETLVendor =
+  | 'hightouch'
+  | 'census'
+  | 'polytomic'
+
+export type FeatureStoreVendor =
+  | 'feast'
+  | 'tecton'
+  | 'hopsworks'
+
 // Конфигурации для новых компонентов
 export interface QueueConfig {
   vendor?: QueueVendor
@@ -782,6 +898,49 @@ export interface ETLServiceConfig {
   vendor?: ETLServiceVendor
   pipelineCount?: number
   dataSourceCount?: number
+}
+
+export interface CDCServiceConfig {
+  vendor?: CDCServiceVendor
+  sourceSystems?: string[]
+  targetSystems?: string[]
+}
+
+export interface LakehouseConfig {
+  vendor?: LakehouseVendor
+  tableFormats?: ('delta' | 'iceberg' | 'hudi')[]
+  storagePlatform?: string
+}
+
+export interface DataQualityConfig {
+  vendor?: DataQualityVendor
+  rulesCount?: number
+  monitoredTables?: string[]
+}
+
+export interface DataObservabilityConfig {
+  vendor?: DataObservabilityVendor
+  monitoredPipelines?: string[]
+  incidentCount?: number
+}
+
+export interface MetadataCatalogConfig {
+  vendor?: MetadataCatalogVendor
+  assetCount?: number
+  lineageEnabled?: boolean
+}
+
+export interface ReverseETLConfig {
+  vendor?: ReverseETLVendor
+  syncCount?: number
+  targetSaaS?: string[]
+}
+
+export interface FeatureStoreConfig {
+  vendor?: FeatureStoreVendor
+  featureCount?: number
+  onlineStorage?: string
+  offlineStorage?: string
 }
 
 export interface OrchestratorConfig {
@@ -922,6 +1081,13 @@ export interface ComponentData {
   businessIntelligenceConfig?: BusinessIntelligenceConfig
   orchestratorConfig?: OrchestratorConfig
   vectorDatabaseConfig?: VectorDatabaseConfig
+  cdcServiceConfig?: CDCServiceConfig
+  lakehouseConfig?: LakehouseConfig
+  dataQualityConfig?: DataQualityConfig
+  dataObservabilityConfig?: DataObservabilityConfig
+  metadataCatalogConfig?: MetadataCatalogConfig
+  reverseEtlConfig?: ReverseETLConfig
+  featureStoreConfig?: FeatureStoreConfig
 }
 
 export interface DatabaseReplicationConfig {

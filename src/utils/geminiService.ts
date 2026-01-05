@@ -173,38 +173,155 @@ async function getAvailableModel(prompt: string) {
   )
 }
 
+// Helper function to extract detailed configuration from component data
+function extractComponentDetails(data: ComponentData): string {
+  let details = ''
+
+  // Хелпер для форматирования строк конфигурации
+  const addConfig = (name: string, config: any) => {
+    if (!config) return
+
+    // Пропускаем пустые объекты
+    if (Object.keys(config).length === 0) return
+
+    details += `    [${name}]:\n`
+    for (const [key, value] of Object.entries(config)) {
+      if (value === undefined || value === null || value === '') continue
+
+      // Форматируем сложные объекты (массивы, вложенные объекты)
+      let displayValue = value
+      if (Array.isArray(value)) {
+        displayValue = value.length > 0
+          ? value.map(v => typeof v === 'object' ? JSON.stringify(v) : v).join(', ')
+          : 'empty'
+      } else if (typeof value === 'object') {
+        displayValue = JSON.stringify(value)
+      }
+
+      details += `      - ${key}: ${displayValue}\n`
+    }
+  }
+
+  // Проверяем все возможные конфигурации
+  addConfig('Database Config', data.databaseConfig)
+  addConfig('Table Structure', data.tableConfig) // Для таблиц
+  addConfig('Service Config', data.serviceConfig)
+  addConfig('Frontend Config', data.frontendConfig)
+  addConfig('Message Broker', data.messageBrokerConfig)
+  addConfig('API Gateway', data.apiGatewayConfig)
+  addConfig('Load Balancer', data.loadBalancerConfig)
+  addConfig('Cache', data.cacheConfig)
+  addConfig('Container', data.containerConfig)
+  addConfig('Auth Service', data.authServiceConfig)
+  addConfig('Firewall', data.firewallConfig)
+  addConfig('CDN', data.cdnConfig)
+  addConfig('Lambda/Function', data.lambdaConfig)
+  addConfig('ESB', data.esbConfig)
+  addConfig('Data Warehouse', data.dataWarehouseConfig)
+  addConfig('Object Storage', data.objectStorageConfig)
+
+  // Новые конфиги
+  addConfig('Queue', data.queueConfig)
+  addConfig('Event Bus', data.eventBusConfig)
+  addConfig('Stream Processor', data.streamProcessorConfig)
+  addConfig('Search Engine', data.searchEngineConfig)
+  addConfig('Graph DB', data.graphDatabaseConfig)
+  addConfig('Time Series DB', data.timeSeriesDatabaseConfig)
+  addConfig('Service Mesh', data.serviceMeshConfig)
+  addConfig('Config Management', data.configurationManagementConfig)
+  addConfig('CI/CD', data.ciCdPipelineConfig)
+  addConfig('Identity Provider', data.identityProviderConfig)
+  addConfig('Secret Management', data.secretManagementConfig)
+  addConfig('Integration Platform', data.integrationPlatformConfig)
+  addConfig('Batch Processor', data.batchProcessorConfig)
+  addConfig('ETL Service', data.etlServiceConfig)
+  addConfig('Data Lake', data.dataLakeConfig)
+  addConfig('ML Service', data.mlServiceConfig)
+  addConfig('Notification Service', data.notificationServiceConfig)
+  addConfig('Email Service', data.emailServiceConfig)
+  addConfig('SMS Gateway', data.smsGatewayConfig)
+  addConfig('Proxy', data.proxyConfig)
+  addConfig('VPN Gateway', data.vpnGatewayConfig)
+  addConfig('DNS Service', data.dnsServiceConfig)
+  addConfig('Backup Service', data.backupServiceConfig)
+  addConfig('Analytics', data.analyticsServiceConfig)
+  addConfig('BI', data.businessIntelligenceConfig)
+  addConfig('Orchestrator', data.orchestratorConfig)
+  addConfig('Vector DB', data.vectorDatabaseConfig)
+
+  // System/Group configs
+  addConfig('System Config', data.systemConfig)
+  addConfig('Group Config', data.groupConfig)
+
+  // Code level configs
+  addConfig('Class Config', data.classConfig)
+  addConfig('Controller Config', data.controllerConfig)
+  addConfig('Repository Config', data.repositoryConfig)
+
+  return details
+}
+
 // Преобразование архитектуры в текстовое описание для AI
-function architectureToText(nodes: Node[], edges: Edge[]): string {
+export function architectureToText(nodes: Node[], edges: Edge[]): string {
   const nodeDataMap = new Map(nodes.map(n => [n.id, n.data as ComponentData]))
 
   let description = 'Архитектура системы:\n\n'
 
   // Описание компонентов
-  description += 'Компоненты:\n'
+  description += 'Компоненты (Nodes):\n'
   nodes.forEach(node => {
     const data = nodeDataMap.get(node.id)
     if (data) {
-      description += `- ${data.label || node.id} (${data.type})\n`
+      const label = data.label || 'Unnamed'
+      if (data.type === 'note') {
+        description += `    Текст заметки: ${label}\n`
+      } else {
+        description += `- Компонент: "${label}" (ID: ${node.id}, Тип: ${data.type})\n`
+      }
+
       if (data.comment) {
-        description += `  Описание: ${data.comment}\n`
+        description += `    Описание (Comment): ${data.comment}\n`
+      }
+
+      // Добавляем детальную конфигурацию (Вендоры, настройки и т.д.)
+      const details = extractComponentDetails(data)
+      if (details) {
+        description += details
       }
     }
   })
 
   // Описание соединений
-  description += '\nСоединения:\n'
+  description += '\nСоединения (Edges):\n'
   edges.forEach(edge => {
     const sourceData = nodeDataMap.get(edge.source)
     const targetData = nodeDataMap.get(edge.target)
     const connectionType = (edge.data as any)?.connectionType || 'unknown'
 
     if (sourceData && targetData) {
-      description += `- ${sourceData.label || edge.source} → ${targetData.label || edge.target} (${connectionType})\n`
-      if ((edge.data as any)?.description) {
-        description += `  Описание: ${(edge.data as any).description}\n`
+      description += `- [${sourceData.label || edge.source}] -> [${targetData.label || edge.target}]\n`
+      description += `    Тип связи: ${connectionType}\n`
+
+      // Подпись на стрелке (label или data.description)
+      const label = edge.label || (edge.data as any)?.label || (edge.data as any)?.description
+      if (label) {
+        description += `    Подпись/Описание связи: ${label}\n`
+      }
+
+      const replication = (edge.data as any)?.replicationConfig
+      if (replication) {
+        description += `    Replication: ${JSON.stringify(replication)}\n`
+      }
+
+      const relType = (edge.data as any)?.relationshipType
+      if (relType) {
+        description += `    Relationship (ERD): ${relType}\n`
       }
     }
   })
+
+  // Log the generated description for debugging purposes
+  console.log('generated Architecture Description for AI:', description);
 
   return description
 }
@@ -254,41 +371,43 @@ export async function analyzeArchitectureWithAI(
 
   const architectureDescription = architectureToText(nodes, edges)
 
-  const defaultPrompt = `Ты выступаешь в роли ведущего эксперта-архитектора мирового уровня (Principal Enterprise Architect & CTO level).
-Твоя специализация охватывает все современные методологии (Cloud Native, Microservices, Modular Monolith, Domain-Driven Design), паттерны (Saga, CQRS, Event Sourcing), инструменты (Kubernetes, Terraform, Service Mesh) и фреймворки.
-Твоя задача: провести глубокий и комплексный архитектурный обзор системы.
+  const defaultPrompt = `Ты выступаешь в роли Архитектурного Коуча (Architecture Coach) и Ведущего Эксперта (Principal Architect).
+Твоя цель — не просто найти ошибки, а стать наставником для пользователя, помогая ему довести проект до 100% совершенства.
 
-Для каждого аспекта ты обязан:
-1. Дать структурированное объяснение: почему это хорошо или плохо.
-2. Привести конкретные практические примеры реализации (включая упоминание конкретных технологий: Kafka, Redis, PostgreSQL, gRPC и т.д.).
-3. Описать альтернативные подходы и объяснить, почему тот или иной вариант лучше в данном контексте (Trade-off analysis).
-4. Если есть проблемы — сформировать четкий пошаговый план улучшения с обоснованием каждого шага.
+ТВОЯ ЗАДАЧА:
+1.  **Глубокий анализ технологий**: Ты ОБЯЗАН распознавать не только типы компонентов (например, "Database"), но и КОНКРЕТНЫЕ технологии/вендоры, если они указаны (например, "MongoDB", "PostgreSQL", "Kafka", "Redis").
+    *   Если указана MongoDB, оценивай решение именно как документную NoSQL базу, а не просто как "хранилище".
+    *   Если указан Redis как кэш, проверяй сценарии использования именно для Redis.
 
-Проанализируй следующую архитектуру с точки зрения этих высоких стандартов:
+2.  **Целостное восприятие**: Анализируй архитектуру как единое целое. Читай описания внутри компонентов (Comment/Description) и пояснения на связях (Edges). Они могут содержать критически важную бизнес-логику.
+
+3.  **Стиль общения — Коучинг**:
+    *   Вместо сухой критики ("Ошибка: не хватает кэша"), используй мотивирующую формулировку: "Чтобы довести производительность до идеала, отличным шагом будет добавление кэширования. Это снизит нагрузку на [Базу Данных]...".
+    *   Объясняй *почему* (Why) и *как* (How).
+
+ПРОАНАЛИЗИРУЙ СЛЕДУЮЩУЮ АРХИТЕКТУРУ:
 
 ${architectureDescription}
 
-Предоставь рекомендации в формате JSON массива, где каждый элемент имеет структуру:
-{
-  "title": "Название рекомендации",
-  "description": "Подробное описание проблемы и решения",
-  "severity": "low" | "medium" | "high",
-  "suggestedComponents": ["тип_компонента1", "тип_компонента2"],
-  "suggestedConnections": [
-    {
-      "from": "тип_компонента",
-      "to": "тип_компонента",
-      "connectionType": "rest" | "async" | "database-connection" | ...,
-      "description": "Описание соединения"
-    }
-  ]
-}
+ТВОЙ ОТВЕТ ДОЛЖЕН БЫТЬ В ФОРМАТЕ JSON (валидный список рекомендаций):
+[
+  {
+    "title": "Заголовок рекомендации",
+    "description": "Текст рекомендации в стиле Коуча. Начни с похвалы или признания того, что уже сделано, затем предложи улучшение. Ссылайся на конкретные технологии из схемы (например: 'Твой выбор MongoDB отличен для гибкой схемы данных, однако для улучшения...').",
+    "severity": "low" | "medium" | "high",
+    "suggestedComponents": ["тип_компонента1", "тип_компонента2"],
+    "suggestedConnections": [
+      {
+        "from": "тип_компонента",
+        "to": "тип_компонента",
+        "connectionType": "rest" | "async" | "database-connection" | ...,
+        "description": "Описание соединения"
+      }
+    ]
+  }
+]
 
-Доступные типы компонентов: service, database, message-broker, api-gateway, cache, load-balancer, frontend, auth-service, cdn, object-storage, data-warehouse, lambda, firewall, esb, monitoring, logging, queue, event-bus, и другие.
-
-Доступные типы соединений: rest, grpc, async, database-connection, cache-connection, database-replication.
-
-Верни только валидный JSON массив без дополнительного текста.`
+Помни: Твоя задача — научить и улучшить. Будь конкретен, называй вещи своими именами (не "база данных", а "твоя PostgreSQL").`
 
   // Используем функцию автоматического выбора модели
   try {
@@ -322,59 +441,40 @@ export async function generateImprovementRecommendations(
 
   const architectureDescription = architectureToText(nodes, edges)
 
-  const defaultPrompt = `Ты выступаешь в роли ведущего эксперта-архитектора мирового уровня (Principal Enterprise Architect).
-Твоя цель: превратить текущее решение в эталонную архитектуру.
-Используй свою глубокую экспертизу в Cloud Native, Security (Zero Trust), High Availability и Scalability.
+  const defaultPrompt = `Ты — Архитектурный Коуч (Architecture Coach). Твоя миссия — помочь пользователю создать архитектуру уровня Enterprise, доведя текущий проект до 100% соответствия требованиям.
 
-Проанализируй архитектуру и предложи улучшения. Твой ответ должен быть максимально подробным и обучающим.
-
-ДЛЯ КАЖДОЙ РЕКОМЕНДАЦИИ:
-1. **Контекст и проблема**: Объясни, почему текущее решение неоптимально.
-2. **Решение (Solution)**: Четко опиши, что нужно сделать. Называй конкретные паттерны (например, "Circuit Breaker", "Outbox Pattern").
-3. **Технологический стек**: Предложи конкретные инструменты (например, "Используй Istio для mTLS", "Замени REST на gRPC для внутренних вызовов").
-4. **Step-by-Step Plan**: Дай пошаговый алгоритм внедрения этого изменения.
-
-Текущая архитектура:
+ПРАВИЛА АНАЛИЗА:
+1.  **Точное распознавание технологий**: Ты должен "видеть" конкретные вендоры.
+    *   Если компонент это "PostgreSQL", то рекомендации должны быть для реляционных БД и специфичны для PostgreSQL (vacuum, WAL, replication slots).
+    *   Если "MongoDB", то говорим о шардинге, реплика сетах и документной модели.
+    *   Если технология не указана, предложи наиболее подходящую для контекста.
+2.  **Целостный контекст**: Учитывай связи между компонентами и комментарии пользователя. Текст внутри узлов и на стрелках — это часть требований.
+3.  **Структурированный "Идеальный мир"**: Четко опиши, как должна выглядеть архитектура в финале.
 
 Текущая архитектура:
 ${architectureDescription}
 
-${improvementPrompt ? `Требования к улучшению: ${improvementPrompt}` : 'Улучши архитектуру, добавив недостающие компоненты, оптимизировав соединения и следуя best practices.'}
+${improvementPrompt ? `Дополнительные требования пользователя: ${improvementPrompt}` : 'Цель: Довести архитектуру до идеала по стандартам High Availability, Security и Scalability.'}
 
-Предоставь рекомендации в понятном и интуитивном формате. Для каждого предложения укажи:
-
-1. **Какие компоненты добавить:**
-   - Название компонента и его тип (например: "API Gateway", "Кэш Redis", "Балансировщик нагрузки")
-   - Зачем он нужен и какую проблему решает
-   - Где его лучше разместить в архитектуре
-
-2. **Что с чем соединить:**
-   - Какие компоненты нужно соединить
-   - Тип соединения (REST API, асинхронное сообщение, подключение к БД и т.д.)
-   - Зачем это соединение нужно и какую пользу оно принесет
-
-3. **Объяснение:**
-   - Почему именно эти изменения улучшат архитектуру
-   - Какие конкретные преимущества это даст (производительность, масштабируемость, надежность и т.д.)
-
-Доступные типы компонентов: service, database, message-broker, api-gateway, cache, load-balancer, frontend, auth-service, cdn, object-storage, data-warehouse, lambda, firewall, esb, monitoring, logging, queue, event-bus, и другие.
-
-Доступные типы соединений: rest, grpc, async, database-connection, cache-connection, database-replication.
-
-Опиши рекомендации простым и понятным языком, как будто объясняешь коллеге.
-
-Структурируй свой ответ, используя следующие теги:
+ФОРМАТ ОТВЕТА (Строго следуй блокам):
 
 <BLOCK:RECOMMENDATIONS>
-Список конкретных рекомендаций по улучшению.
+*   **[Компонент/Область]**:
+    *   **Что сделать**: (Конкретное действие, например "Добавить Redis Cluster перед PostgreSQL")
+    *   **Зачем**: (Объясни пользу: "Снизит Read-нагрузку на 40%")
+    *   **Техническая деталь**: (Если известна технология, дай специфичный совет, например для Redis: "Настрой eviction policy allkeys-lru")
 </BLOCK:RECOMMENDATIONS>
 
 <BLOCK:ISSUES>
-Найденные проблемы, которые исправляют эти рекомендации.
+*   **Проблема**: (Что сейчас не так или отсутствует)
+*   **Риск**: (К чему это приведет: "Потеря данных при сбое", "Высокий латенси")
 </BLOCK:ISSUES>
 
 <BLOCK:ANSWER>
-Общее объяснение и преимущества предлагаемых изменений.
+**Общее видение (The Vision):**
+Здесь опиши, как выглядит эта система в "Идеальном состоянии" (100% готовность). Опиши ключевые потоки данных и взаимодействия.
+Будь вдохновляющим и структурным. Объясни, как предложенные изменения трансформируют текущий проект в это идеальное состояние.
+Используй роль Коуча: "Отличная база! Чтобы сделать из этого мощную Enterprise систему, нам осталось добавить несколько штрихов..."
 </BLOCK:ANSWER>
 
 Не пиши ничего вне этих блоков.`
@@ -472,37 +572,25 @@ export async function explainArchitectureDecision(
 
   const architectureDescription = architectureToText(nodes, edges)
 
-  const prompt = `Ты — ведущий эксперт-архитектор (Principal Architect). Твоя задача — дать исчерпывающий, глубокий профессиональный ответ.
-Не ограничивайся поверхностными суждениями. Копай вглубь. Используй терминологию (CAP-теорема, уровни изоляции транзакций, виды консистентности и т.д.).
+  const prompt = `Ты — Архитектурный Наставник (Architecture Mentor). Твоя задача — дать максимально краткий, конкретный и практичный ответ.
 
-Отвечая на вопрос:
-1. Дай прямой ответ.
-2. Приведи аргументы "За" и "Против" (Pros & Cons).
-3. Приведи пример из реальной практики (Real-world scenario).
-4. Если уместно, предложи альтернативные подходы.
+ПРИНЦИПЫ ОТВЕТА:
+1.  **Конкретные рекомендации по связям**: Если пользователь спрашивает "С чего начать?" или "Что добавить?", сначала проверь, нет ли уже нужных компонентов на схеме. Если они есть, твоим первым советом должно быть: "Соедини [Узел А] и [Узел Б] типом связи [Тип]".
+2.  **Специфика**: Всегда используй названия («label») из схемы пользователя. Ты должен понимать, что "Auth Service" и "Сервис аутентификации" — это один и то же узел.
+3.  **Краткость**: Твой ответ должен быть не более 2-4 предложений. Никакой воды.
+4.  **Признание ошибок**: Если ты что-то пропустил (например, узел уже есть), просто скажи: "Да, я пропустил [X], виноват. Давай тогда свяжем его с [Y]".
 
 Вопрос пользователя на основе следующей архитектуры:
-
-    Архитектура:
 ${architectureDescription}
 
 Вопрос пользователя: ${question}
 
-Дай развернутый ответ.Структурируй его, используя следующие теги(используй только те, которые уместны):
+ФОРМАТ ОТВЕТА (строго):
+- Прямой ответ на вопрос.
+- Конкретное действие ("С чего начать" или "Что изменить").
+- (Опционально) 1 ключевой риск.
 
-  <BLOCK: ANSWER >
-    Твой прямой ответ на вопрос и объяснения.
-</BLOCK:ANSWER>
-
-      < BLOCK: RECOMMENDATIONS >
-        Конкретные рекомендации по улучшению(если есть).
-</BLOCK:RECOMMENDATIONS>
-
-          < BLOCK: ISSUES >
-            Ошибки, риски или проблемы, найденные в архитектуре(если есть).
-</BLOCK:ISSUES>
-
-Не пиши ничего вне этих блоков.`
+Не используй приветствия и вступления.`
 
   // Используем функцию автоматического выбора модели
   try {
@@ -531,23 +619,19 @@ export async function getOptimizationSuggestions(
     ? `Особое внимание удели: ${focusArea} `
     : ''
 
-  const prompt = `Ты — эксперт по High Load системам, Cost Optimization и Performance Engineering.
-Твоя задача: найти "узкие места" и предложить решения для кратного роста производительности или снижения затрат.
+  const prompt = `Ты — Архитектурный Коуч и Эксперт по High Load.Твоя задача — найти пути к идеальной производительности и экономии.
 
-Используй методики FinOps и Performance Tuning.
-Для каждого предложения:
-- Объясни физику процесса (почему здесь тормозит или почему это дорого).
-- Предложи решение (архитектурный паттерн, настройка, смена технологии).
-- Опиши ожидаемый эффект (например, "снижение латентности на 30%", "уменьшение bill на 20%").
+    ИНСТРУКЦИИ:
+  1. ** Специфика **: Твои советы должны быть заточены под выбранные вендоры(PostgreSQL, AWS, и т.д.).
+2. ** Смысл связей **: Учитывай подписи на стрелках.Если через связь идет "тяжелый JSON", посоветуй сжатие или смену формата.
+3. ** Формат **: Четко, по делу, с обоснованием эффекта.
 
 Проанализируй архитектуру:
-
-    Архитектура:
 ${architectureDescription}
 
 ${focusPrompt}
 
-Предоставь структурированный список рекомендаций с приоритетами.`
+Предоставь структурированный список рекомендаций с приоритетами, используя подход Коуча(помогаем достичь 100 % эффективности).`
 
   // Используем функцию автоматического выбора модели
   try {
@@ -582,14 +666,14 @@ export async function generateArchitectureCase(
   }
 
   const prompt = `Ты — строгий экзаменатор уровня Principal Architect в Big Tech компании.
-Твоя задача: создать архитектурный челлендж (Business Case), который проверит глубину знаний кандидата.
+Твоя задача: создать архитектурный челлендж(Business Case), который проверит глубину знаний кандидата.
 
 Кейс должен быть:
-- Реалистичным (ситуация из жизни Enterprise).
-- Сложным (содержать скрытые проблемы, противоречивые требования).
-- Требовать компромиссов (Trade-offs), например, "Скорость vs Надежность".
+  - Реалистичным(ситуация из жизни Enterprise).
+- Сложным(содержать скрытые проблемы, противоречивые требования).
+- Требовать компромиссов(Trade - offs), например, "Скорость vs Надежность".
 
-Создай интересную архитектурную задачу (бизнес-кейс) для обучения.
+Создай интересную архитектурную задачу(бизнес - кейс) для обучения.
 Уровень сложности: ${difficulty}.
 
 Верни ответ ТОЛЬКО в формате JSON:
@@ -641,37 +725,50 @@ export async function evaluateArchitectureSolution(
       correctDecisions: [],
       missedRequirements: [],
       optimizationSuggestions: [],
+      roadmapTo100: [],
       summary: 'API ключ не установлен. Пожалуйста, настройте ключ Gemini API.'
     }
   }
 
   const architectureDescription = architectureToText(nodes, edges)
 
-  const prompt = `Ты — Principal Architect, проводящий Architecture Review Committee.
-Наша цель — не пропустить в продакшн слабое решение.
-Ты должен быть максимально требовательным, но конструктивным.
+  const prompt = `Ты — Архитектурный Коуч, принимающий экзамен(Architecture Review).Твоя задача — оценить решение пользователя по бизнес - кейсу и помочь ему довести его до идеала(100 %).
 
-Твой анализ должен включать:
-1. **Глубокий разбор**: Оцени не только наличие компонентов, но и связи, выбор технологий, паттерны.
-2. **Trade-off Analysis**: Правильно ли выбраны компромиссы?
-3. **Безопасность и Надежность**: Найди уязвимости и единые точки отказа.
-4. **Вердикт**: Четкий и обоснованный.
+ПРАВИЛА ОЦЕНКИ:
+1. **Семантический поиск**: Перед тем как предложить ДОБАВИТЬ («componentsToAdd») новый компонент, ВНИМАТЕЛЬНО проверь список существующих компонентов. Если на холсте уже есть узел с похожим смыслом (например, "Сервис аутентификации", "Auth", "Identity Service" — это одно и то же), НЕ предлагай его добавлять. Признай его наличие в "correctDecisions".
+2. **Приоритет связей**: Если нужные компоненты уже есть, но они не соединены — твоим первым шагом в "roadmapTo100" должно быть установление связей («connectionsToAdd»).
+3. **Конкретика в связях**: В "connectionsToAdd" всегда указывай конкретные названия («label») узлов из решения пользователя. Описывай ЗАЧЕМ нужна эта связь (например, "для проверки токенов" или "для сохранения логов").
+4. **Технологический радар**: Проверь, подходят ли КОНКРЕТНЫЕ выбранные технологии под требования кейса.
 
-Оцени решение пользователя для следующей задачи.
-    ЗАДАЧА: ${currentCase.title}
+ЗАДАЧА: ${currentCase.title}
 ${currentCase.description}
 
 РЕШЕНИЕ ПОЛЬЗОВАТЕЛЯ:
 ${architectureDescription}
 
-Верни ответ ТОЛЬКО в формате JSON:
-  {
-    "score": число от 0 до 100,
-      "correctDecisions": ["что сделано правильно"],
-        "missedRequirements": ["какие требования не выполнены"],
-          "optimizationSuggestions": ["советы по улучшению"],
-            "summary": "Общий вывод эксперта"
-  }
+ВЕРНИ ТОЛЬКО JSON:
+{
+  "score": число 0-100,
+  "correctDecisions": ["что сделано верно, учитывая названия узлов пользователя"],
+  "missedRequirements": ["что упущено из условий"],
+  "roadmapTo100": [
+    {
+      "title": "Заголовок шага",
+      "description": "ПОШАГОВАЯ инструкция: что именно сделать с существующими узлами или что добавить.",
+      "componentsToAdd": ["тип_компонента"],
+      "connectionsToAdd": [
+        {
+          "from": "Label_узла_A",
+          "to": "Label_узла_B",
+          "type": "rest | async | ...",
+          "description": "зачем эта связь"
+        }
+      ]
+    }
+  ],
+  "optimizationSuggestions": ["советы по качеству"],
+  "summary": "Твой вердикт. Будь краток и конструктивен."
+}
 
 Верни только JSON.`
 
@@ -688,6 +785,7 @@ ${architectureDescription}
         correctDecisions: [],
         missedRequirements: ['Ошибка формата ответа AI'],
         optimizationSuggestions: [],
+        roadmapTo100: [],
         summary: 'AI вернул некорректные данные. Попробуйте еще раз.'
       }
     }
@@ -698,6 +796,17 @@ ${architectureDescription}
       correctDecisions: sanitizeStringArray(parsed.correctDecisions),
       missedRequirements: sanitizeStringArray(parsed.missedRequirements),
       optimizationSuggestions: sanitizeStringArray(parsed.optimizationSuggestions),
+      roadmapTo100: Array.isArray(parsed.roadmapTo100) ? parsed.roadmapTo100.map((step: any) => ({
+        title: step.title || 'Шаг',
+        description: step.description || '',
+        componentsToAdd: sanitizeStringArray(step.componentsToAdd),
+        connectionsToAdd: Array.isArray(step.connectionsToAdd) ? step.connectionsToAdd.map((conn: any) => ({
+          from: conn.from || '',
+          to: conn.to || '',
+          type: conn.type || 'default',
+          description: conn.description || ''
+        })) : []
+      })) : [],
       summary: parsed.summary || 'Нет описания'
     } as ArchitectureEvaluation
 
@@ -709,6 +818,7 @@ ${architectureDescription}
       correctDecisions: [],
       missedRequirements: ['Произошла ошибка при обращении к API'],
       optimizationSuggestions: [],
+      roadmapTo100: [],
       summary: `Ошибка: ${error.message || 'Неизвестная ошибка'}. Попробуйте повторить запрос.`
     }
   }

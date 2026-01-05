@@ -43,6 +43,12 @@ import {
   Bot,
   Workflow,
   Table as TableIcon,
+  ShieldCheck,
+  Eye,
+  Book,
+  History,
+  Waves,
+  Repeat,
 } from 'lucide-react'
 
 const componentIcons: Record<string, React.ReactNode> = {
@@ -112,6 +118,13 @@ const componentIcons: Record<string, React.ReactNode> = {
   'dns-service': <Globe size={32} />,
   'system-component': <Box size={32} />,
   table: <TableIcon size={32} />,
+  'cdc-service': <History size={32} />,
+  'data-quality': <ShieldCheck size={32} />,
+  'data-observability': <Eye size={32} />,
+  'metadata-catalog': <Book size={32} />,
+  'reverse-etl': <Repeat size={32} />,
+  'feature-store': <Warehouse size={32} />,
+  lakehouse: <Waves size={32} />,
 }
 
 const componentColors: Record<string, string> = {
@@ -179,6 +192,13 @@ const componentColors: Record<string, string> = {
   'vpn-gateway': '#dc3545',
   'dns-service': '#51cf66',
   table: '#5C7CFA',
+  'cdc-service': '#fab005',
+  'data-quality': '#40c057',
+  'data-observability': '#228be6',
+  'metadata-catalog': '#7950f2',
+  'reverse-etl': '#be4bdb',
+  'feature-store': '#fd7e14',
+  lakehouse: '#15aabf',
 }
 
 interface CustomNodeProps extends NodeProps<ComponentData> {
@@ -659,6 +679,20 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
         return vendorLabels[data.vectorDatabaseConfig.vendor] || 'Vector DB'
       }
       return 'Vector Database'
+    } else if (data.type === 'cdc-service') {
+      return 'CDC'
+    } else if (data.type === 'data-quality') {
+      return 'Data Quality'
+    } else if (data.type === 'data-observability') {
+      return 'Observability'
+    } else if (data.type === 'metadata-catalog') {
+      return 'Metadata'
+    } else if (data.type === 'reverse-etl') {
+      return 'Reverse ETL'
+    } else if (data.type === 'feature-store') {
+      return 'Feature Store'
+    } else if (data.type === 'lakehouse') {
+      return 'Lakehouse'
     }
     return data.connectionType === 'sync' ? 'Sync' : 'Async'
   }

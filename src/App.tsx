@@ -5246,7 +5246,14 @@ function getComponentLabel(type: ComponentType): string {
     'ml-inference': 'Инференс',
     'ai-agent': 'AI Агент',
     'ml-data-pipeline': 'ML Пайплайн',
-    'gpu-cluster': 'GPU Кластер'
+    'gpu-cluster': 'GPU Кластер',
+    'cdc-service': 'CDC сервис',
+    'data-quality': 'Качество данных',
+    'data-observability': 'Observability данных',
+    'metadata-catalog': 'Каталог метаданных',
+    'reverse-etl': 'Reverse ETL',
+    'feature-store': 'Feature Store',
+    'lakehouse': 'Data Lakehouse'
   }
   return labels[type] || type
 }
