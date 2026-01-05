@@ -1,3 +1,23 @@
+import { Node, Edge } from 'reactflow'
+
+export interface ArchitectureCase {
+  id: string
+  title: string
+  difficulty: 'beginner' | 'intermediate' | 'advanced' | 'god'
+  description: string
+  businessRequirements: string[]
+  qualityAttributes: string[]
+  expectedComponents?: string[]
+}
+
+export interface ArchitectureEvaluation {
+  score: number // 0-100
+  correctDecisions: string[]
+  missedRequirements: string[]
+  optimizationSuggestions: string[]
+  summary: string
+}
+
 export type ComponentType =
   | 'service'
   | 'database'
@@ -934,3 +954,23 @@ export interface ConnectionData {
   verticalSegmentX?: number
 }
 
+export interface LearningHistoryItem {
+  timestamp: number
+  score: number
+  summary: string
+  correctDecisions: string[]
+  missedRequirements: string[]
+  optimizationSuggestions: string[]
+}
+
+export interface LearningProject {
+  id: string
+  version: string
+  lastModified: number
+  case: ArchitectureCase
+  nodes: Node[]
+  edges: Edge[]
+  chatMessages: { role: 'user' | 'assistant'; content: string }[]
+  history: LearningHistoryItem[]
+  currentEvaluation: ArchitectureEvaluation | null
+}

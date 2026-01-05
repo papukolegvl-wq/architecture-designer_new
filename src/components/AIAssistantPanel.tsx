@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { X, Sparkles, Loader2, Send, FileText, HelpCircle, Copy, Minimize2, Maximize2, RefreshCcw, MessageSquare, GraduationCap, CheckCircle2, AlertCircle } from 'lucide-react'
+import { X, Sparkles, Loader2, Send, FileText, HelpCircle, Copy, Minimize2, Maximize2, RefreshCcw, MessageSquare, GraduationCap, CheckCircle2, AlertCircle, Save, FolderOpen, History } from 'lucide-react'
 import {
   initializeGemini,
   isGeminiInitialized,
@@ -9,11 +9,21 @@ import {
   AIGeneratedArchitecture,
   generateArchitectureCase,
   evaluateArchitectureSolution,
-  ArchitectureCase,
-  ArchitectureEvaluation
 } from '../utils/geminiService'
+import {
+  ArchitectureCase,
+  ArchitectureEvaluation,
+  LearningProject,
+  LearningHistoryItem,
+  ComponentData,
+  ComponentType,
+  ConnectionType
+} from '../types'
 import { Node, Edge } from 'reactflow'
-import { ComponentData, ComponentType, ConnectionType } from '../types'
+import {
+  saveLearningProject,
+  loadLearningProject
+} from '../utils/fileUtils'
 
 // ErrorBoundary Component
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: Error | null }> {
@@ -58,6 +68,7 @@ interface AIAssistantPanelProps {
   edges: Edge[]
   onClose: () => void
   onGenerateArchitecture?: () => void
+  onLoadProject?: (nodes: Node[], edges: Edge[]) => void
 }
 
 type AssistantMode = 'chat' | 'generate' | 'learning'
@@ -66,6 +77,7 @@ export default function AIAssistantPanel({
   nodes,
   edges,
   onClose,
+  onLoadProject
 }: AIAssistantPanelProps) {
   const [apiKey, setApiKey] = useState<string>(() => {
     // Загружаем API ключ из localStorage
@@ -87,7 +99,9 @@ export default function AIAssistantPanel({
   // Состояние для обучения (learning)
   const [currentCase, setCurrentCase] = useState<ArchitectureCase | null>(null)
   const [evaluation, setEvaluation] = useState<ArchitectureEvaluation | null>(null)
+  const [learningHistory, setLearningHistory] = useState<LearningHistoryItem[]>([])
   const [difficulty, setDifficulty] = useState<'beginner' | 'intermediate' | 'advanced' | 'god'>('beginner')
+
 
   // Состояние для перемещения и сворачивания
   const [position, setPosition] = useState({ x: 50, y: 50 }) // в процентах или пикселях
@@ -611,10 +625,78 @@ export default function AIAssistantPanel({
     try {
       const result = await evaluateArchitectureSolution(nodes, edges, currentCase)
       setEvaluation(result)
+
+      // Add to history
+      const historyItem: LearningHistoryItem = {
+        timestamp: Date.now(),
+        score: result.score,
+        summary: result.summary,
+        correctDecisions: result.correctDecisions,
+        missedRequirements: result.missedRequirements,
+        optimizationSuggestions: result.optimizationSuggestions
+      }
+      setLearningHistory(prev => [...prev, historyItem])
+
     } catch (err: any) {
       setError(err.message || 'Ошибка при оценке решения')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleSaveProject = async () => {
+    if (!currentCase) return
+
+    // Create current history item if we have an evaluation but haven't saved it to history yet
+    // Actually handleCheckSolution already saves to history.
+    // So we just take current state.
+
+    const project: LearningProject = {
+      id: crypto.randomUUID(),
+      version: '1.0',
+      lastModified: Date.now(),
+      case: currentCase,
+      nodes,
+      edges,
+      chatMessages,
+      history: learningHistory,
+      currentEvaluation: evaluation
+    }
+
+    await saveLearningProject(project)
+  }
+
+  const handleLoadProject = async () => {
+    try {
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = '.json'
+      input.onchange = async (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0]
+        if (!file) return
+
+        try {
+          const project = await loadLearningProject(file)
+
+          // Restore state
+          setCurrentCase(project.case)
+          setChatMessages(project.chatMessages || [])
+          setLearningHistory(project.history || [])
+          setEvaluation(project.currentEvaluation)
+
+          // Restore diagram
+          if (onLoadProject) {
+            onLoadProject(project.nodes, project.edges)
+          }
+
+          setMode('learning')
+        } catch (err: any) {
+          setError('Ошибка при загрузке проекта: ' + err.message)
+        }
+      }
+      input.click()
+    } catch (err) {
+      console.error(err)
     }
   }
 
@@ -1347,6 +1429,27 @@ export default function AIAssistantPanel({
                                 </button>
                               ))}
                             </div>
+
+                            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
+                              <button
+                                onClick={handleLoadProject}
+                                style={{
+                                  padding: '8px 16px',
+                                  backgroundColor: 'transparent',
+                                  color: '#aaa',
+                                  border: '1px solid #444',
+                                  borderRadius: '8px',
+                                  cursor: 'pointer',
+                                  fontSize: '13px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px'
+                                }}
+                              >
+                                <FolderOpen size={16} />
+                                Загрузить сохраненный проект
+                              </button>
+                            </div>
                           </>
                         )}
                       </div>
@@ -1384,9 +1487,10 @@ export default function AIAssistantPanel({
                                   alignItems: 'center',
                                   gap: '4px'
                                 }}
+                                title="Сбросить и выбрать новый кейс"
                               >
                                 <RefreshCcw size={12} />
-                                Сменить кейс
+                                Новый
                               </button>
                             </div>
                           </div>
@@ -1569,6 +1673,43 @@ export default function AIAssistantPanel({
                               )}
                             </div>
                           )}
+
+                          <div style={{ marginTop: '20px', borderTop: '1px solid #333', paddingTop: '20px' }}>
+                            <button
+                              onClick={handleSaveProject}
+                              style={{
+                                width: '100%',
+                                padding: '12px',
+                                backgroundColor: 'transparent',
+                                color: '#aaa',
+                                border: '1px solid #444',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '8px',
+                                transition: 'all 0.2s'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#2d2d2d'
+                                e.currentTarget.style.borderColor = '#666'
+                                e.currentTarget.style.color = '#fff'
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'transparent'
+                                e.currentTarget.style.borderColor = '#444'
+                                e.currentTarget.style.color = '#aaa'
+                              }}
+                            >
+                              <Save size={16} />
+                              Сохранить проект
+                            </button>
+                            <p style={{ textAlign: 'center', fontSize: '11px', color: '#666', marginTop: '8px' }}>
+                              Сохранится всё: задание, схема, чат и оценки. Можно продолжить позже.
+                            </p>
+                          </div>
                         </div>
                       </div>
                     )}

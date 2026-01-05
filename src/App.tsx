@@ -5139,6 +5139,12 @@ function App() {
             onGenerateArchitecture={() => {
               // Улучшения не применяются автоматически, только выгружаются как JSON
             }}
+            onLoadProject={(newNodes, newEdges) => {
+              historyUpdateTypeRef.current = 'reset'
+              setNodes(newNodes)
+              setEdges(newEdges)
+              isFileLoadRef.current = true
+            }}
           />
         )}
         {infoComponentType && (

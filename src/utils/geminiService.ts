@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { Node, Edge } from 'reactflow'
-import { ComponentData, ComponentType, ConnectionType } from '../types'
+import { ComponentData, ComponentType, ConnectionType, ArchitectureCase, ArchitectureEvaluation } from '../types'
 
 // Инициализация Gemini AI
 // ВАЖНО: API ключ должен храниться в переменных окружения или настройках приложения
@@ -240,23 +240,7 @@ export interface AIGeneratedArchitecture {
   }>
 }
 
-export interface ArchitectureCase {
-  id: string
-  title: string
-  difficulty: 'beginner' | 'intermediate' | 'advanced' | 'god'
-  description: string
-  businessRequirements: string[]
-  qualityAttributes: string[]
-  expectedComponents?: string[]
-}
-
-export interface ArchitectureEvaluation {
-  score: number // 0-100
-  correctDecisions: string[]
-  missedRequirements: string[]
-  optimizationSuggestions: string[]
-  summary: string
-}
+// Interfaces moved to types.ts
 
 // Анализ архитектуры с помощью AI
 export async function analyzeArchitectureWithAI(
@@ -270,7 +254,17 @@ export async function analyzeArchitectureWithAI(
 
   const architectureDescription = architectureToText(nodes, edges)
 
-  const defaultPrompt = `Ты выступаешь в роли Senior Cloud Architect. Твоя специализация: Cloud Native, Microservices, Security и High Availability. Проанализируй архитектуру с точки зрения Well-Architected Framework (Reliability, Security, Cost Optimization). Будь критичен к единым точкам отказа и проблемам безопасности. Проанализируй следующую архитектуру и предоставь рекомендации по улучшению.
+  const defaultPrompt = `Ты выступаешь в роли ведущего эксперта-архитектора мирового уровня (Principal Enterprise Architect & CTO level).
+Твоя специализация охватывает все современные методологии (Cloud Native, Microservices, Modular Monolith, Domain-Driven Design), паттерны (Saga, CQRS, Event Sourcing), инструменты (Kubernetes, Terraform, Service Mesh) и фреймворки.
+Твоя задача: провести глубокий и комплексный архитектурный обзор системы.
+
+Для каждого аспекта ты обязан:
+1. Дать структурированное объяснение: почему это хорошо или плохо.
+2. Привести конкретные практические примеры реализации (включая упоминание конкретных технологий: Kafka, Redis, PostgreSQL, gRPC и т.д.).
+3. Описать альтернативные подходы и объяснить, почему тот или иной вариант лучше в данном контексте (Trade-off analysis).
+4. Если есть проблемы — сформировать четкий пошаговый план улучшения с обоснованием каждого шага.
+
+Проанализируй следующую архитектуру с точки зрения этих высоких стандартов:
 
 ${architectureDescription}
 
@@ -328,7 +322,19 @@ export async function generateImprovementRecommendations(
 
   const architectureDescription = architectureToText(nodes, edges)
 
-  const defaultPrompt = `Ты выступаешь в роли Senior Cloud Architect (эксперт по Cloud Native и Security). Проанализируй следующую архитектуру. Предложи улучшения, ориентированные на отказоустойчивость (Resiliency), масштабируемость и безопасность (Zero Trust).
+  const defaultPrompt = `Ты выступаешь в роли ведущего эксперта-архитектора мирового уровня (Principal Enterprise Architect).
+Твоя цель: превратить текущее решение в эталонную архитектуру.
+Используй свою глубокую экспертизу в Cloud Native, Security (Zero Trust), High Availability и Scalability.
+
+Проанализируй архитектуру и предложи улучшения. Твой ответ должен быть максимально подробным и обучающим.
+
+ДЛЯ КАЖДОЙ РЕКОМЕНДАЦИИ:
+1. **Контекст и проблема**: Объясни, почему текущее решение неоптимально.
+2. **Решение (Solution)**: Четко опиши, что нужно сделать. Называй конкретные паттерны (например, "Circuit Breaker", "Outbox Pattern").
+3. **Технологический стек**: Предложи конкретные инструменты (например, "Используй Istio для mTLS", "Замени REST на gRPC для внутренних вызовов").
+4. **Step-by-Step Plan**: Дай пошаговый алгоритм внедрения этого изменения.
+
+Текущая архитектура:
 
 Текущая архитектура:
 ${architectureDescription}
@@ -393,7 +399,16 @@ export async function generateArchitectureFromDescription(
     throw new Error('Gemini не инициализирован. Укажите API ключ.')
   }
 
-  const prompt = `Ты — Senior Solution Architect. Создай профессиональную, масштабируемую архитектуру системы, соответствующую современным enterprise-стандартам (Cloud Native). На основе следующего описания создай архитектуру системы.
+  const prompt = `Ты — ведущий архитектурный эксперт (Principal Architect). Твоя задача — спроектировать идеальную систему с нуля, используя лучшие мировые практики.
+Ты должен мыслить как CTO технологического гиганта (Google, Uber, Netflix).
+
+На основе следующего описания создай архитектуру, которая будет:
+- Масштабируемой (Scalable)
+- Отказоустойчивой (Resilient)
+- Безопасной (Secure by Design)
+- Экономически эффективной (Cost Efficient)
+
+Описание задачи: ${description}
 
     Описание: ${description}
 
@@ -457,7 +472,16 @@ export async function explainArchitectureDecision(
 
   const architectureDescription = architectureToText(nodes, edges)
 
-  const prompt = `Ты — Senior Cloud Architect. Ответь на вопрос максимально профессионально, используя техническую терминологию, ссылаясь на паттерны (Cloud Design Patterns) и best practices индустрии. Ответь на вопрос пользователя на основе следующей архитектуры.
+  const prompt = `Ты — ведущий эксперт-архитектор (Principal Architect). Твоя задача — дать исчерпывающий, глубокий профессиональный ответ.
+Не ограничивайся поверхностными суждениями. Копай вглубь. Используй терминологию (CAP-теорема, уровни изоляции транзакций, виды консистентности и т.д.).
+
+Отвечая на вопрос:
+1. Дай прямой ответ.
+2. Приведи аргументы "За" и "Против" (Pros & Cons).
+3. Приведи пример из реальной практики (Real-world scenario).
+4. Если уместно, предложи альтернативные подходы.
+
+Вопрос пользователя на основе следующей архитектуры:
 
     Архитектура:
 ${architectureDescription}
@@ -507,7 +531,16 @@ export async function getOptimizationSuggestions(
     ? `Особое внимание удели: ${focusArea} `
     : ''
 
-  const prompt = `Ты — эксперт по High Load системам и Cost Optimization. Проанализируй архитектуру и предложи архитектурные паттерны для улучшения производительности и подходы FinOps для снижения стоимости.
+  const prompt = `Ты — эксперт по High Load системам, Cost Optimization и Performance Engineering.
+Твоя задача: найти "узкие места" и предложить решения для кратного роста производительности или снижения затрат.
+
+Используй методики FinOps и Performance Tuning.
+Для каждого предложения:
+- Объясни физику процесса (почему здесь тормозит или почему это дорого).
+- Предложи решение (архитектурный паттерн, настройка, смена технологии).
+- Опиши ожидаемый эффект (например, "снижение латентности на 30%", "уменьшение bill на 20%").
+
+Проанализируй архитектуру:
 
     Архитектура:
 ${architectureDescription}
@@ -548,7 +581,15 @@ export async function generateArchitectureCase(
     throw new Error('Gemini не инициализирован. Укажите API ключ.')
   }
 
-  const prompt = `Ты — экзаменатор уровня Principal Architect. Создай сложный, реалистичный бизнес-кейс, требующий неочевидных архитектурных решений и компромиссов (trade-offs). Создай интересную архитектурную задачу (бизнес-кейс) для обучения.
+  const prompt = `Ты — строгий экзаменатор уровня Principal Architect в Big Tech компании.
+Твоя задача: создать архитектурный челлендж (Business Case), который проверит глубину знаний кандидата.
+
+Кейс должен быть:
+- Реалистичным (ситуация из жизни Enterprise).
+- Сложным (содержать скрытые проблемы, противоречивые требования).
+- Требовать компромиссов (Trade-offs), например, "Скорость vs Надежность".
+
+Создай интересную архитектурную задачу (бизнес-кейс) для обучения.
 Уровень сложности: ${difficulty}.
 
 Верни ответ ТОЛЬКО в формате JSON:
@@ -606,7 +647,17 @@ export async function evaluateArchitectureSolution(
 
   const architectureDescription = architectureToText(nodes, edges)
 
-  const prompt = `Ты — Principal Architect, проводящий Architecture Review. Ты строг, внимателен к деталям и требуешь обоснования решений. Будь безжалостен к security vulnerabilities и scalability bottlenecks. Оцени решение пользователя для следующей задачи.
+  const prompt = `Ты — Principal Architect, проводящий Architecture Review Committee.
+Наша цель — не пропустить в продакшн слабое решение.
+Ты должен быть максимально требовательным, но конструктивным.
+
+Твой анализ должен включать:
+1. **Глубокий разбор**: Оцени не только наличие компонентов, но и связи, выбор технологий, паттерны.
+2. **Trade-off Analysis**: Правильно ли выбраны компромиссы?
+3. **Безопасность и Надежность**: Найди уязвимости и единые точки отказа.
+4. **Вердикт**: Четкий и обоснованный.
+
+Оцени решение пользователя для следующей задачи.
     ЗАДАЧА: ${currentCase.title}
 ${currentCase.description}
 

@@ -183,6 +183,7 @@ export async function saveToFile(nodes: Node[], edges: Edge[], cachedHandle?: an
   return undefined
 }
 
+
 export function loadFromFile(file: File): Promise<ArchitectureData> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -202,3 +203,72 @@ export function loadFromFile(file: File): Promise<ArchitectureData> {
     reader.readAsText(file)
   })
 }
+
+import { LearningProject } from '../types'
+
+export async function saveLearningProject(project: LearningProject, cachedHandle?: any): Promise<any> {
+  const json = JSON.stringify(project, null, 2)
+  const filename = `learning-project-${new Date().toISOString().split('T')[0]}.json`
+
+  try {
+    if ('showSaveFilePicker' in window) {
+      let fileHandle = cachedHandle
+
+      if (!fileHandle) {
+        // @ts-ignore
+        fileHandle = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [{
+            description: 'Learning Project JSON',
+            accept: { 'application/json': ['.json'] },
+          }],
+        })
+      }
+
+      // @ts-ignore
+      const writable = await fileHandle.createWritable()
+      await writable.write(json)
+      await writable.close()
+
+      return fileHandle
+    }
+  } catch (error) {
+    console.error('File System Access API error in saveLearningProject:', error)
+    if ((error as Error).name === 'AbortError') return undefined
+  }
+
+  // Fallback
+  const blob = new Blob([json], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+
+  return undefined
+}
+
+export function loadLearningProject(file: File): Promise<LearningProject> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string
+        const data = JSON.parse(text) as LearningProject
+        // Basic validation
+        if (!data.case || !data.nodes || !data.history) {
+          throw new Error('Неверный формат файла обучающего проекта')
+        }
+        resolve(data)
+      } catch (error) {
+        reject(new Error('Ошибка при чтении файла проекта: ' + (error as Error).message))
+      }
+    }
+    reader.onerror = () => reject(new Error('Ошибка при чтении файла'))
+    reader.readAsText(file)
+  })
+}
+
