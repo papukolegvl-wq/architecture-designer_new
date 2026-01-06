@@ -42,7 +42,13 @@ const AVAILABLE_COMPONENTS: ComponentType[] = [
   'ai-agent', 'ml-data-pipeline', 'gpu-cluster', 'notification-service', 'email-service',
   'sms-gateway', 'proxy', 'vpn-gateway', 'dns-service', 'table', 'data-quality',
   'data-observability', 'metadata-catalog', 'reverse-etl', 'feature-store',
-  'cdc-service', 'lakehouse', 'business-process', 'dashboard'
+  'cdc-service', 'lakehouse', 'business-process', 'dashboard',
+  'vpc', 'subnet', 'routing-table', 'internet-gateway', 'nat-gateway', 'transit-gateway',
+  'direct-connect', 'container-registry', 'waf', 'shield', 'hsm', 'kms', 'iam-policy',
+  'security-group', 'soc-siem', 'block-storage', 'file-storage', 'archive-storage',
+  'payment-gateway', 'workflow-engine', 'scheduler', 'state-machine', 'crm', 'erp',
+  'billing-system', 'data-mesh-node', 'data-governance', 'schema-registry',
+  'master-data-management', 'media-transcoder', 'media-streaming'
 ]
 
 // Функция для получения списка доступных моделей
