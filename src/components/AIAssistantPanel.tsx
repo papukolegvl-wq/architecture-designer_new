@@ -762,8 +762,17 @@ export default function AIAssistantPanel({
 ОПИСАНИЕ:
 ${currentCase.description}
 
+БИЗНЕС-ЦЕЛИ:
+${(currentCase.businessGoals || []).map(goal => `- ${goal}`).join('\n')}
+
 БИЗНЕС-ТРЕБОВАНИЯ:
 ${(currentCase.businessRequirements || []).map(req => `- ${req}`).join('\n')}
+
+ФУНКЦИОНАЛЬНЫЕ ТРЕБОВАНИЯ:
+${(currentCase.functionalRequirements || []).map(req => `- ${req}`).join('\n')}
+
+НЕФУНКЦИОНАЛЬНЫЕ ТРЕБОВАНИЯ:
+${(currentCase.nonFunctionalRequirements || []).map(req => `- ${req}`).join('\n')}
 
 АТРИБУТЫ КАЧЕСТВА:
 ${(currentCase.qualityAttributes || []).map(attr => `- ${attr}`).join('\n')}
@@ -1659,34 +1668,63 @@ ${currentCase.expectedComponents.join(', ')}` : ''}
                             </div>
                             <p style={{ color: '#ccc', fontSize: '14px', lineHeight: '1.5', marginBottom: '16px' }}>{currentCase.description}</p>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
-                              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '20px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                              {/* Первый ряд: Цели и Бизнес-требования */}
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                                 <div>
-                                  <h4 style={{ color: '#4dabf7', fontSize: '13px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Требования:</h4>
+                                  <h4 style={{ color: '#ff922b', fontSize: '13px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Бизнес-цели:</h4>
+                                  <ul style={{ paddingLeft: '18px', color: '#aaa', fontSize: '12px', margin: 0 }}>
+                                    {(currentCase.businessGoals || []).map((goal, i) => <li key={i}>{typeof goal === 'string' ? goal : JSON.stringify(goal)}</li>)}
+                                    {(!currentCase.businessGoals || currentCase.businessGoals.length === 0) && <li style={{ listStyle: 'none', marginLeft: '-18px', fontStyle: 'italic' }}>Не указаны</li>}
+                                  </ul>
+                                </div>
+                                <div>
+                                  <h4 style={{ color: '#4dabf7', fontSize: '13px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Бизнес-требования:</h4>
                                   <ul style={{ paddingLeft: '18px', color: '#aaa', fontSize: '12px', margin: 0 }}>
                                     {(currentCase.businessRequirements || []).map((req, i) => <li key={i}>{typeof req === 'string' ? req : JSON.stringify(req)}</li>)}
                                   </ul>
                                 </div>
+                              </div>
+
+                              {/* Второй ряд: Функциональные и Нефункциональные требования */}
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                                 <div>
-                                  <h4 style={{ color: '#51cf66', fontSize: '13px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Качества:</h4>
+                                  <h4 style={{ color: '#845ef7', fontSize: '13px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Функциональные требования:</h4>
                                   <ul style={{ paddingLeft: '18px', color: '#aaa', fontSize: '12px', margin: 0 }}>
-                                    {(currentCase.qualityAttributes || []).map((attr, i) => <li key={i}>{typeof attr === 'string' ? attr : JSON.stringify(attr)}</li>)}
+                                    {(currentCase.functionalRequirements || []).map((req, i) => <li key={i}>{typeof req === 'string' ? req : JSON.stringify(req)}</li>)}
+                                    {(!currentCase.functionalRequirements || currentCase.functionalRequirements.length === 0) && <li style={{ listStyle: 'none', marginLeft: '-18px', fontStyle: 'italic' }}>Не указаны</li>}
+                                  </ul>
+                                </div>
+                                <div>
+                                  <h4 style={{ color: '#22b8cf', fontSize: '13px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Нефункциональные требования:</h4>
+                                  <ul style={{ paddingLeft: '18px', color: '#aaa', fontSize: '12px', margin: 0 }}>
+                                    {(currentCase.nonFunctionalRequirements || []).map((req, i) => <li key={i}>{typeof req === 'string' ? req : JSON.stringify(req)}</li>)}
+                                    {(!currentCase.nonFunctionalRequirements || currentCase.nonFunctionalRequirements.length === 0) && <li style={{ listStyle: 'none', marginLeft: '-18px', fontStyle: 'italic' }}>Не указаны</li>}
                                   </ul>
                                 </div>
                               </div>
 
-                              {currentCase.expectedComponents && currentCase.expectedComponents.length > 0 && (
-                                <div style={{ borderTop: '1px solid #333', paddingTop: '15px' }}>
-                                  <h4 style={{ color: '#fcc419', fontSize: '13px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Рекомендуемые компоненты:</h4>
-                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                                    {currentCase.expectedComponents.map((comp, i) => (
-                                      <span key={i} style={{ padding: '4px 8px', backgroundColor: '#fcc41915', color: '#fcc419', borderRadius: '4px', fontSize: '11px', border: '1px solid #fcc41930' }}>
-                                        {comp}
-                                      </span>
-                                    ))}
-                                  </div>
+                              {/* Третий ряд: Качества и Компоненты */}
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', borderTop: '1px solid #333', paddingTop: '15px' }}>
+                                <div>
+                                  <h4 style={{ color: '#51cf66', fontSize: '13px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Атрибуты качества:</h4>
+                                  <ul style={{ paddingLeft: '18px', color: '#aaa', fontSize: '12px', margin: 0 }}>
+                                    {(currentCase.qualityAttributes || []).map((attr, i) => <li key={i}>{typeof attr === 'string' ? attr : JSON.stringify(attr)}</li>)}
+                                  </ul>
                                 </div>
-                              )}
+                                {currentCase.expectedComponents && currentCase.expectedComponents.length > 0 && (
+                                  <div>
+                                    <h4 style={{ color: '#fcc419', fontSize: '13px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Рекомендуемые типы:</h4>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                      {currentCase.expectedComponents.map((comp, i) => (
+                                        <span key={i} style={{ padding: '4px 8px', backgroundColor: '#fcc41915', color: '#fcc419', borderRadius: '4px', fontSize: '11px', border: '1px solid #fcc41930' }}>
+                                          {comp}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                             </div>
 
 

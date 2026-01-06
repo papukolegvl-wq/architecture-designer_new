@@ -713,23 +713,32 @@ export async function generateArchitectureCase(
   const prompt = `Ты — строгий экзаменатор уровня Principal Architect в Big Tech компании.
 Твоя задача: создать архитектурный челлендж(Business Case), который проверит глубину знаний кандидата.
 
-Кейс должен быть:
-  - Реалистичным(ситуация из жизни Enterprise).
-- Сложным(содержать скрытые проблемы, противоречивые требования).
-- Требовать компромиссов(Trade - offs), например, "Скорость vs Надежность".
+Кейс должен быть структурированным и содержать:
+1. **Бизнес-цели (Business Goals)**: Чего компания хочет достичь глобально? (Например: Выход на рынок Европы, Снижение затрат на 30%).
+2. **Бизнес-требования (Business Requirements)**: Что именно должна делать система для бизнеса?
+3. **Функциональные требования (Functional Requirements)**: Конкретные функции системы.
+4. **Нефункциональные требования (Non-Functional Requirements)**: Требования к надежности, масштабируемости, безопасности (в дополнение к Quality Attributes).
 
-Создай интересную архитектурную задачу(бизнес - кейс) для обучения.
+Кейс должен быть:
+- Реалистичным(ситуация из жизни Enterprise).
+- Сложным(содержать скрытые проблемы, противоречивые требования).
+- Требовать компромиссов(Trade-offs), например, "Скорость vs Надежность".
+
+Создай интересную архитектурную задачу(бизнес-кейс) для обучения.
 Уровень сложности: ${difficulty}.
 
 Верни ответ ТОЛЬКО в формате JSON:
   {
     "id": "уникальный_id",
-      "title": "Название задачи",
-        "difficulty": "${difficulty}",
-          "description": "Общее описание бизнес-проблемы",
-            "businessRequirements": ["требование 1", "требование 2"],
-              "qualityAttributes": ["атрибут 1", "атрибут 2"],
-                "expectedComponents": ["тип_компонента1", "тип_компонента2"]
+    "title": "Название задачи",
+    "difficulty": "${difficulty}",
+    "description": "Общее описание бизнес-проблемы",
+    "businessGoals": ["цель 1", "цель 2"],
+    "businessRequirements": ["требование 1", "требование 2"],
+    "functionalRequirements": ["функционал 1", "функционал 2"],
+    "nonFunctionalRequirements": ["требование к качеству 1", "требование к качеству 2"],
+    "qualityAttributes": ["атрибут 1", "атрибут 2"],
+    "expectedComponents": ["тип_компонента1", "тип_компонента2"]
   }
 
 Будь креативным.
@@ -747,7 +756,10 @@ export async function generateArchitectureCase(
       title: parsed.title || 'Архитектурная задача',
       difficulty: parsed.difficulty || difficulty,
       description: parsed.description || 'Нет описания',
+      businessGoals: sanitizeStringArray(parsed.businessGoals),
       businessRequirements: sanitizeStringArray(parsed.businessRequirements),
+      functionalRequirements: sanitizeStringArray(parsed.functionalRequirements),
+      nonFunctionalRequirements: sanitizeStringArray(parsed.nonFunctionalRequirements),
       qualityAttributes: sanitizeStringArray(parsed.qualityAttributes),
       expectedComponents: sanitizeStringArray(parsed.expectedComponents)
     } as ArchitectureCase
@@ -792,7 +804,13 @@ export async function evaluateArchitectureSolution(
 - **Tight Coupling**: Цепочка из >3 синхронных вызовов (A -> B -> C -> D). Используй асинхронные очереди или 'get-information'/'send-information' там, где детали протокола пока не важны.
 
 КЕЙС: ${currentCase.title}
-ТРЕБОВАНИЯ: ${currentCase.description}
+ОПИСАНИЕ: ${currentCase.description}
+
+БИЗНЕС-ЦЕЛИ: ${(currentCase.businessGoals || []).join(', ')}
+БИЗНЕС-ТРЕБОВАНИЯ: ${(currentCase.businessRequirements || []).join(', ')}
+ФУНКЦИОНАЛЬНЫЕ ТРЕБОВАНИЯ: ${(currentCase.functionalRequirements || []).join(', ')}
+НЕФУНКЦИОНАЛЬНЫЕ ТРЕБОВАНИЯ: ${(currentCase.nonFunctionalRequirements || []).join(', ')}
+АТРИБУТЫ КАЧЕСТВА: ${(currentCase.qualityAttributes || []).join(', ')}
 
 ТЕКУЩАЯ СХЕМА (ТЕХНИЧЕСКИЙ СРЕЗ):
 ${architectureDescription}

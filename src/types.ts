@@ -5,7 +5,10 @@ export interface ArchitectureCase {
   title: string
   difficulty: 'beginner' | 'intermediate' | 'advanced' | 'god'
   description: string
+  businessGoals?: string[]
   businessRequirements: string[]
+  functionalRequirements?: string[]
+  nonFunctionalRequirements?: string[]
   qualityAttributes: string[]
   expectedComponents?: string[]
 }
