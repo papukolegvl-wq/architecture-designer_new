@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { ComponentType } from '../types'
+import { getComponentDefinition } from '../utils/componentDefinitions'
 import {
   Server,
   Database,
@@ -240,6 +241,7 @@ export default function ComponentPalette({ onComponentClick, onRecommendationCli
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<ComponentCategory>('all')
+  const [hoveredComponent, setHoveredComponent] = useState<Component | null>(null)
   const paletteRef = useRef<HTMLDivElement>(null)
 
   // Фильтрация компонентов
@@ -574,12 +576,14 @@ export default function ComponentPalette({ onComponentClick, onRecommendationCli
                     textAlign: 'center',
                   }}
                   onMouseEnter={(e) => {
+                    setHoveredComponent(component)
                     e.currentTarget.style.borderColor = component.color
                     e.currentTarget.style.backgroundColor = '#333'
                     e.currentTarget.style.transform = 'translateY(-2px)'
                     e.currentTarget.style.boxShadow = `0 4px 12px ${component.color}30`
                   }}
                   onMouseLeave={(e) => {
+                    setHoveredComponent(null)
                     e.currentTarget.style.borderColor = `${component.color}40`
                     e.currentTarget.style.backgroundColor = '#2d2d2d'
                     e.currentTarget.style.transform = 'translateY(0)'
@@ -622,6 +626,52 @@ export default function ComponentPalette({ onComponentClick, onRecommendationCli
               ))}
             </div>
           )}
+
+          {/* Информационная панель при наведении */}
+          <div style={{
+            marginTop: '12px',
+            padding: '12px',
+            backgroundColor: '#252525',
+            borderRadius: '6px',
+            border: '1px solid #333',
+            minHeight: '80px',
+            transition: 'opacity 0.2s',
+            opacity: hoveredComponent ? 1 : 0.6
+          }}>
+            {hoveredComponent ? (
+              <>
+                <div style={{
+                  color: hoveredComponent.color,
+                  fontWeight: '600',
+                  fontSize: '12px',
+                  marginBottom: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  {React.cloneElement(hoveredComponent.icon as React.ReactElement, { size: 14 })}
+                  {hoveredComponent.label}
+                </div>
+                <div style={{
+                  color: '#aaa',
+                  fontSize: '11px',
+                  lineHeight: '1.4'
+                }}>
+                  {getComponentDefinition(hoveredComponent.type).description}
+                </div>
+              </>
+            ) : (
+              <div style={{
+                color: '#666',
+                fontSize: '11px',
+                fontStyle: 'italic',
+                textAlign: 'center',
+                paddingTop: '20px'
+              }}>
+                Наведите на компонент для описания
+              </div>
+            )}
+          </div>
         </>
       )}
     </div>
