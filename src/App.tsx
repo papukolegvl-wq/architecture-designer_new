@@ -1423,6 +1423,10 @@ function App() {
             return 'Вызов метода'
           case 'inheritance':
             return 'Наследование'
+          case 'get-information':
+            return 'GET'
+          case 'send-information':
+            return 'SEND'
           default:
             return type.toUpperCase()
         }
@@ -1448,6 +1452,10 @@ function App() {
             return '#51cf66'
           case 'inheritance':
             return '#4dabf7'
+          case 'get-information':
+            return '#22b8cf'
+          case 'send-information':
+            return '#f76707'
           default:
             return '#4dabf7'
         }
@@ -1556,6 +1564,10 @@ function App() {
             return 'Вызов метода'
           case 'inheritance':
             return 'Наследование'
+          case 'get-information':
+            return 'GET'
+          case 'send-information':
+            return 'SEND'
           default:
             return type.toUpperCase()
         }
@@ -1581,6 +1593,10 @@ function App() {
             return '#51cf66'
           case 'inheritance':
             return '#4dabf7'
+          case 'get-information':
+            return '#22b8cf'
+          case 'send-information':
+            return '#f76707'
           default:
             return '#4dabf7'
         }

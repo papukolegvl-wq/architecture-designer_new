@@ -715,26 +715,11 @@ export default function AIAssistantPanel({
 
   const handleStartLearning = async (diff?: 'beginner' | 'intermediate' | 'advanced' | 'god') => {
     const targetDiff = diff || 'beginner'
-    setLoadingCase(true)
-    setError(null)
-    setEvaluation(null)
     try {
       const newCase = await generateArchitectureCase(targetDiff)
       setCurrentCase(newCase)
-
-      // Добавляем приветственное сообщение от наставника
-      const welcomeMessage = `Я подготовил для вас кейс: "${newCase.title}". 
-      
-Ознакомьтесь с описанием требований и атрибутов качества выше. Я готов ответить на любые ваши уточняющие вопросы по заданию или помочь с выбором архитектурных решений. 
-
-Когда будете готовы, вы сможете запросить оценку вашей работы нажав кнопку "Проверить решение". Удачи!`
-
-      setChatMessages([{ role: 'assistant', content: welcomeMessage }])
       setMode('learning')
-
-      // Очищаем предыдущий ввод
       setInputValue('')
-
     } catch (err: any) {
       setError(err.message || 'Ошибка при генерации кейса')
     } finally {
@@ -767,6 +752,39 @@ export default function AIAssistantPanel({
       setLoading(false)
     }
   }
+
+  const handleDownloadCase = () => {
+    if (!currentCase) return;
+
+    const content = `ЗАДАНИЕ: ${currentCase.title}
+УРОВЕНЬ: ${currentCase.difficulty.toUpperCase()}
+
+ОПИСАНИЕ:
+${currentCase.description}
+
+БИЗНЕС-ТРЕБОВАНИЯ:
+${(currentCase.businessRequirements || []).map(req => `- ${req}`).join('\n')}
+
+АТРИБУТЫ КАЧЕСТВА:
+${(currentCase.qualityAttributes || []).map(attr => `- ${attr}`).join('\n')}
+
+${currentCase.expectedComponents && currentCase.expectedComponents.length > 0 ? `РЕКОМЕНДУЕМЫЕ КОМПОНЕНТЫ:
+${currentCase.expectedComponents.join(', ')}` : ''}
+
+--------------------------------------------------
+Сгенерировано в Architecture Designer AI Assistant
+`.trim();
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `case-${currentCase.title.replace(/\s+/g, '-').toLowerCase()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const handleSaveProject = async () => {
     if (!currentCase) return
@@ -1589,6 +1607,25 @@ export default function AIAssistantPanel({
                                   {currentCase.difficulty === 'god' ? 'БОГ АРХИТЕКТУРЫ' : currentCase.difficulty.toUpperCase()}
                                 </span>
                                 <button
+                                  onClick={handleDownloadCase}
+                                  style={{
+                                    background: '#51cf6620',
+                                    border: '1px solid #51cf66',
+                                    color: '#51cf66',
+                                    padding: '4px 12px',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    fontSize: '11px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    fontWeight: '600'
+                                  }}
+                                >
+                                  <Save size={12} />
+                                  Скачать задание
+                                </button>
+                                <button
                                   onClick={() => {
                                     setCurrentCase(null)
                                     setEvaluation(null)
@@ -1597,7 +1634,7 @@ export default function AIAssistantPanel({
                                     background: 'transparent',
                                     border: '1px solid #666',
                                     color: '#888',
-                                    padding: '4px 8px',
+                                    padding: '4px 12px',
                                     borderRadius: '4px',
                                     cursor: 'pointer',
                                     fontSize: '11px',
@@ -1605,10 +1642,10 @@ export default function AIAssistantPanel({
                                     alignItems: 'center',
                                     gap: '4px'
                                   }}
-                                  title="Сбросить и выбрать новый кейс"
+                                  title="Выбрать новый кейс"
                                 >
                                   <RefreshCcw size={12} />
-                                  Новый
+                                  Новое задание
                                 </button>
                               </div>
                             </div>
@@ -1645,301 +1682,6 @@ export default function AIAssistantPanel({
                             </div>
 
 
-                            {!evaluation ? (
-                              <button
-                                onClick={handleCheckSolution}
-                                disabled={loading || (nodes.length === 0)}
-                                style={{
-                                  width: '100%',
-                                  padding: '16px',
-                                  backgroundColor: nodes.length === 0 ? '#444' : (currentCase.difficulty === 'god' ? '#ae3ec9' : '#51cf66'),
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '12px',
-                                  cursor: (loading || nodes.length === 0) ? 'not-allowed' : 'pointer',
-                                  fontSize: '16px',
-                                  fontWeight: 'bold',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  gap: '10px',
-                                  transition: 'all 0.3s',
-                                  boxShadow: currentCase.difficulty === 'god' && nodes.length > 0 ? '0 4px 15px rgba(174, 62, 201, 0.3)' : 'none'
-                                }}
-                              >
-                                {loading ? <Loader2 className="animate-spin" /> : (currentCase.difficulty === 'god' ? <Sparkles size={20} /> : <GraduationCap size={20} />)}
-                                {currentCase.difficulty === 'god' ? 'Получить божественную оценку' : 'Проверить решение'}
-                              </button>
-                            ) : (
-                              <div style={{ padding: '20px', backgroundColor: '#2d2d2d', borderRadius: '12px', border: `2px solid ${currentCase.difficulty === 'god' ? '#ae3ec9' : '#51cf66'}` }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                                    <div style={{
-                                      width: '60px',
-                                      height: '60px',
-                                      borderRadius: '30px',
-                                      border: `4px solid ${currentCase.difficulty === 'god' ? '#ae3ec9' : '#51cf66'}`,
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      fontSize: '20px',
-                                      fontWeight: 'bold',
-                                      color: currentCase.difficulty === 'god' ? '#ae3ec9' : '#51cf66'
-                                    }}>
-                                      {evaluation.score}
-                                    </div>
-                                    <h3 style={{ color: '#fff', margin: 0 }}>Оценка эксперта</h3>
-                                  </div>
-                                  <button
-                                    onClick={() => {
-                                      setEvaluation(null)
-                                      setCurrentCase(null)
-                                    }}
-                                    style={{ background: 'transparent', border: '1px solid #666', color: '#888', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}
-                                  >
-                                    Новая задача
-                                  </button>
-                                </div>
-
-                                <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
-                                  <button
-                                    onClick={() => setEvaluation(null)}
-                                    style={{
-                                      flex: 1,
-                                      padding: '10px',
-                                      backgroundColor: '#4dabf7',
-                                      color: 'white',
-                                      border: 'none',
-                                      borderRadius: '8px',
-                                      cursor: 'pointer',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      gap: '8px',
-                                      fontWeight: '600'
-                                    }}
-                                  >
-                                    <RefreshCcw size={16} />
-                                    Исправить и проверить снова
-                                  </button>
-                                </div>
-
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                  <div style={{ backgroundColor: '#1e1e1e', padding: '16px', borderRadius: '12px', borderLeft: `4px solid ${currentCase.difficulty === 'god' ? '#ae3ec9' : '#51cf66'}`, boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
-                                    <p style={{ color: '#eee', fontSize: '15px', margin: 0, fontStyle: 'italic', lineHeight: '1.6' }}>{currentCase.difficulty === 'god' ? '🌟 ' : ''}"{evaluation.summary}"</p>
-                                  </div>
-
-                                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '15px' }}>
-                                    <div style={{ backgroundColor: '#1e1e1e', padding: '15px', borderRadius: '10px', border: `1px solid ${currentCase.difficulty === 'god' ? '#ae3ec940' : '#51cf6620'}` }}>
-                                      <h4 style={{ color: currentCase.difficulty === 'god' ? '#ae3ec9' : '#51cf66', fontSize: '14px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
-                                        <CheckCircle2 size={18} /> {currentCase.difficulty === 'god' ? 'Божественные решения' : 'Плюсы'}
-                                      </h4>
-                                      <ul style={{ paddingLeft: '20px', color: '#ccc', fontSize: '13px', margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                        {(evaluation.correctDecisions || []).map((d, i) => <li key={i}>{d}</li>)}
-                                      </ul>
-                                    </div>
-
-                                    <div style={{ backgroundColor: '#1e1e1e', padding: '15px', borderRadius: '10px', border: '1px solid #ff922b20' }}>
-                                      <h4 style={{ color: '#ff922b', fontSize: '14px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
-                                        <AlertCircle size={18} /> Ошибки и пропуски
-                                      </h4>
-                                      <ul style={{ paddingLeft: '20px', color: '#ccc', fontSize: '13px', margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                        {(evaluation.missedRequirements || []).map((d, i) => <li key={i}>{d}</li>)}
-                                      </ul>
-                                    </div>
-
-                                    <div style={{ backgroundColor: '#1e1e1e', padding: '15px', borderRadius: '10px', border: '1px solid #4dabf720' }}>
-                                      <h4 style={{ color: '#4dabf7', fontSize: '14px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
-                                        <RefreshCcw size={16} /> Рекомендации эксперта
-                                      </h4>
-                                      <ul style={{ paddingLeft: '20px', color: '#ccc', fontSize: '13px', margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                        {(evaluation.optimizationSuggestions || []).map((d, i) => <li key={i}>{d}</li>)}
-                                      </ul>
-                                    </div>
-
-                                    {evaluation.roadmapTo100 && evaluation.roadmapTo100.length > 0 && (
-                                      <div style={{ backgroundColor: '#1e1e1e', padding: '15px', borderRadius: '10px', border: '1px solid #51cf66', boxShadow: '0 0 10px rgba(81, 207, 102, 0.2)' }}>
-                                        <h4 style={{ color: '#51cf66', fontSize: '14px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
-                                          <TrendingUp size={18} /> Путь к 100% (Roadmap)
-                                        </h4>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                          {evaluation.roadmapTo100.map((step: any, i) => (
-                                            <div key={i} style={{ borderLeft: '2px solid #51cf66', paddingLeft: '15px', paddingBottom: '5px' }}>
-                                              <div style={{ fontWeight: 'bold', color: '#fff', marginBottom: '4px', fontSize: '14px' }}>
-                                                {i + 1}. {step.title}
-                                              </div>
-                                              <div style={{ color: '#ccc', fontSize: '13px', lineHeight: '1.4', marginBottom: '8px' }}>
-                                                {step.description}
-                                              </div>
-
-                                              {((step.componentsToAdd && step.componentsToAdd.length > 0) || (step.connectionsToAdd && step.connectionsToAdd.length > 0)) && (
-                                                <div style={{ backgroundColor: '#252525', padding: '10px', borderRadius: '6px', fontSize: '12px', marginTop: '8px' }}>
-                                                  {step.componentsToAdd && step.componentsToAdd.length > 0 && (
-                                                    <div style={{ marginBottom: step.connectionsToAdd && step.connectionsToAdd.length > 0 ? '8px' : '0' }}>
-                                                      <span style={{ color: '#4dabf7', fontWeight: 'bold' }}>Добавить компоненты:</span>
-                                                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
-                                                        {step.componentsToAdd.map((c: string, j: number) => (
-                                                          <span key={j} style={{ backgroundColor: '#4dabf720', color: '#4dabf7', padding: '2px 6px', borderRadius: '4px', border: '1px solid #4dabf740' }}>
-                                                            {c}
-                                                          </span>
-                                                        ))}
-                                                      </div>
-                                                    </div>
-                                                  )}
-                                                  {step.connectionsToAdd && step.connectionsToAdd.length > 0 && (
-                                                    <div>
-                                                      <span style={{ color: '#ff922b', fontWeight: 'bold' }}>Связать:</span>
-                                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
-                                                        {step.connectionsToAdd.map((conn: any, j: number) => (
-                                                          <div key={j} style={{ color: '#eee', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                            <span style={{ color: '#fff' }}>{conn.from}</span>
-                                                            <span style={{ color: '#888' }}>→</span>
-                                                            <span style={{ color: '#fff' }}>{conn.to}</span>
-                                                            <span style={{ color: '#888', fontSize: '11px' }}>({conn.type})</span>
-                                                            {conn.description && <span style={{ color: '#aaa', fontStyle: 'italic', fontSize: '11px' }}>— {conn.description}</span>}
-                                                          </div>
-                                                        ))}
-                                                      </div>
-                                                    </div>
-                                                  )}
-                                                </div>
-                                              )}
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Обсуждение с наставником (всегда доступно) */}
-                            <div style={{ marginTop: evaluation ? '20px' : '0', borderTop: evaluation ? '1px solid #444' : 'none', paddingTop: evaluation ? '20px' : '0' }}>
-                              {chatMessages.length > 0 && (
-                                <div style={{ marginBottom: '20px' }}>
-                                  <h4 style={{ color: '#fff', marginBottom: '16px', fontSize: '15px' }}>Обсуждение с наставником:</h4>
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                    {chatMessages.map((msg, idx) => (
-                                      <div
-                                        key={idx}
-                                        style={{
-                                          padding: '12px',
-                                          backgroundColor: msg.role === 'user' ? '#1e1e1e' : '#2d2d2d',
-                                          borderRadius: '8px',
-                                          alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                                          maxWidth: '80%',
-                                          border: msg.role === 'user' ? '1px solid #444' : `1px solid ${currentCase?.difficulty === 'god' ? '#ae3ec940' : '#4dabf740'}`
-                                        }}
-                                      >
-                                        <div style={{ fontSize: '11px', color: '#888', marginBottom: '4px' }}>
-                                          {msg.role === 'user' ? 'Вы' : 'AI Наставник'}
-                                        </div>
-                                        {renderStructuredContent(msg.content)}
-                                      </div>
-                                    ))}
-                                    {loading && (
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#4dabf7' }}>
-                                        <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                                        <span>Наставник печатает...</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-
-                              <div style={{
-                                marginTop: '24px',
-                                padding: '16px',
-                                backgroundColor: '#1a1a1a',
-                                borderRadius: '12px',
-                                border: '1px solid #333'
-                              }}>
-                                <h4 style={{ color: '#fff', marginBottom: '12px', fontSize: '14px' }}>Остались вопросы или я что-то пропустил?</h4>
-                                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
-                                  <textarea
-                                    value={inputValue}
-                                    onChange={(e) => setInputValue(e.target.value)}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter' && !e.shiftKey) {
-                                        e.preventDefault();
-                                        handleChat();
-                                      }
-                                    }}
-                                    placeholder="Напишите наставнику..."
-                                    style={{
-                                      flex: 1,
-                                      padding: '12px',
-                                      backgroundColor: '#252525',
-                                      border: '1px solid #444',
-                                      borderRadius: '8px',
-                                      color: '#fff',
-                                      fontSize: '13px',
-                                      resize: 'none',
-                                      minHeight: '40px',
-                                      maxHeight: '100px',
-                                      fontFamily: 'inherit',
-                                      lineHeight: '1.4',
-                                    }}
-                                  />
-                                  <button
-                                    onClick={handleChat}
-                                    disabled={loading || !inputValue.trim()}
-                                    style={{
-                                      width: '40px',
-                                      height: '40px',
-                                      backgroundColor: loading || !inputValue.trim() ? '#333' : '#4dabf7',
-                                      color: 'white',
-                                      border: 'none',
-                                      borderRadius: '8px',
-                                      cursor: loading || !inputValue.trim() ? 'not-allowed' : 'pointer',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                    }}
-                                  >
-                                    {loading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div style={{ marginTop: '20px', borderTop: '1px solid #333', paddingTop: '20px' }}>
-                              <button
-                                onClick={handleSaveProject}
-                                style={{
-                                  width: '100%',
-                                  padding: '12px',
-                                  backgroundColor: 'transparent',
-                                  color: '#aaa',
-                                  border: '1px solid #444',
-                                  borderRadius: '8px',
-                                  cursor: 'pointer',
-                                  fontSize: '14px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  gap: '8px',
-                                  transition: 'all 0.2s'
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.backgroundColor = '#2d2d2d'
-                                  e.currentTarget.style.borderColor = '#666'
-                                  e.currentTarget.style.color = '#fff'
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor = 'transparent'
-                                  e.currentTarget.style.borderColor = '#444'
-                                  e.currentTarget.style.color = '#aaa'
-                                }}
-                              >
-                                <Save size={16} />
-                                Сохранить проект
-                              </button>
-                              <p style={{ textAlign: 'center', fontSize: '11px', color: '#666', marginTop: '8px' }}>
-                                Сохранится всё: задание, схема, чат и оценки. Можно продолжить позже.
-                              </p>
-                            </div>
                           </div>
                         </div>
                       )}

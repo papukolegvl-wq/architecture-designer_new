@@ -425,7 +425,7 @@ ${architectureDescription}
       {
         "from": "Label_СУЩЕСТВУЮЩЕГО_узла_A",
         "to": "Label_СУЩЕСТВУЮЩЕГО_узла_B",
-        "connectionType": "rest" | "async" | "database-connection" | ...,
+        "connectionType": "rest" | "grpc" | "async" | "get-information" | "send-information" | "database-connection" | ...,
         "description": "Техническая цель этой связи"
       }
     ]
@@ -789,7 +789,7 @@ export async function evaluateArchitectureSolution(
 ЗАПРЕТЫ (TABOO - СРАЗУ -40 БАЛЛОВ ЗА КАЖДЫЙ):
 - **Direct DB Access**: Любая связь Gateway/Frontend -> Database. Только через Service.
 - **Security Breach**: Доступ к User DB без Auth Service.
-- **Tight Coupling**: Цепочка из >3 синхронных вызовов (A -> B -> C -> D).
+- **Tight Coupling**: Цепочка из >3 синхронных вызовов (A -> B -> C -> D). Используй асинхронные очереди или 'get-information'/'send-information' там, где детали протокола пока не важны.
 
 КЕЙС: ${currentCase.title}
 ТРЕБОВАНИЯ: ${currentCase.description}

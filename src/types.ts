@@ -111,7 +111,7 @@ export type ComponentType =
   | 'business-process'
   | 'dashboard'
 
-export type ConnectionType = 'rest' | 'grpc' | 'async' | 'database-connection' | 'database-replication' | 'cache-connection' | 'dependency' | 'composition' | 'aggregation' | 'method-call' | 'inheritance' | 'bidirectional' | 'async-bidirectional'
+export type ConnectionType = 'rest' | 'grpc' | 'async' | 'get-information' | 'send-information' | 'database-connection' | 'database-replication' | 'cache-connection' | 'dependency' | 'composition' | 'aggregation' | 'method-call' | 'inheritance' | 'bidirectional' | 'async-bidirectional'
 
 export type ReplicationApproach =
   | 'master-slave'

@@ -14,6 +14,8 @@ const connectionColors: Record<ConnectionType | 'default', string> = {
     inheritance: '#4dabf7',
     rest: '#4dabf7',
     grpc: '#4dabf7',
+    'get-information': '#22b8cf',
+    'send-information': '#f76707',
     bidirectional: '#4dabf7',
     default: '#4dabf7',
 };

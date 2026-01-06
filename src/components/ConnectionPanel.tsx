@@ -13,6 +13,8 @@ const connectionTypes: Array<{ value: ConnectionType; label: string }> = [
   { value: 'rest', label: 'REST' },
   { value: 'grpc', label: 'gRPC' },
   { value: 'async', label: 'Асинхронный' },
+  { value: 'get-information', label: 'Получение информации' },
+  { value: 'send-information', label: 'Отправка информации' },
   { value: 'database-connection', label: 'Database Connection' },
   { value: 'database-replication', label: 'Database Replication' },
   { value: 'cache-connection', label: 'Cache Connection' },

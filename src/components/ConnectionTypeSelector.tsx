@@ -13,6 +13,8 @@ const connectionTypes: Array<{ value: ConnectionType; label: string; description
   { value: 'rest', label: 'REST', description: 'HTTP REST API' },
   { value: 'grpc', label: 'gRPC', description: 'gRPC протокол' },
   { value: 'async', label: 'Асинхронный', description: 'Через брокер сообщений' },
+  { value: 'get-information', label: 'Получение информации', description: 'Запрос данных без указания протокола' },
+  { value: 'send-information', label: 'Отправка информации', description: 'Передача данных без указания протокола' },
   { value: 'bidirectional', label: 'Двухсторонняя стрелка', description: 'Двухстороннее соединение' },
   { value: 'async-bidirectional', label: 'Асинхронная двухсторонняя стрелка', description: 'Асинхронное двухстороннее соединение' },
   { value: 'database-connection', label: 'Database Connection', description: 'Прямое подключение к БД' },
