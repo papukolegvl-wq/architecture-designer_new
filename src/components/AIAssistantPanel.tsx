@@ -779,7 +779,10 @@ ${currentCase.expectedComponents.join(', ')}` : ''}
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `case-${currentCase.title.replace(/\s+/g, '-').toLowerCase()}.txt`;
+    const now = new Date();
+    const datePart = now.toISOString().split('T')[0];
+    const timePart = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+    a.download = `case-${currentCase.title.replace(/\s+/g, '-').toLowerCase()}-${datePart}_${timePart}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

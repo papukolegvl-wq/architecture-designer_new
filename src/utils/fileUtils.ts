@@ -104,7 +104,10 @@ export async function saveToFile(nodes: Node[], edges: Edge[], cachedHandle?: an
   }
 
   const json = JSON.stringify(data, null, 2)
-  const filename = `architecture-${new Date().toISOString().split('T')[0]}.json`
+  const now = new Date()
+  const datePart = now.toISOString().split('T')[0]
+  const timePart = now.toTimeString().split(' ')[0].replace(/:/g, '-')
+  const filename = `architecture-${datePart}_${timePart}.json`
 
   try {
     if ('showSaveFilePicker' in window) {
@@ -208,7 +211,10 @@ import { LearningProject } from '../types'
 
 export async function saveLearningProject(project: LearningProject, cachedHandle?: any): Promise<any> {
   const json = JSON.stringify(project, null, 2)
-  const filename = `learning-project-${new Date().toISOString().split('T')[0]}.json`
+  const now = new Date()
+  const datePart = now.toISOString().split('T')[0]
+  const timePart = now.toTimeString().split(' ')[0].replace(/:/g, '-')
+  const filename = `learning-project-${datePart}_${timePart}.json`
 
   try {
     if ('showSaveFilePicker' in window) {

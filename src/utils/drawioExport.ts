@@ -4,108 +4,108 @@ import { ComponentData } from '../types'
 // C4 Model стили для draw.io
 // C4 использует специфические формы и цвета для разных типов компонентов
 const c4Shapes: Record<string, { shape: string; color: string; description?: string }> = {
-  'frontend': { 
-    shape: 'rounded=1;whiteSpace=wrap;html=1;fillColor=#438DD5;strokeColor=#ffffff;strokeWidth=2;arcSize=4;', 
+  'frontend': {
+    shape: 'rounded=1;whiteSpace=wrap;html=1;fillColor=#438DD5;strokeColor=#ffffff;strokeWidth=2;arcSize=4;',
     color: '#438DD5',
     description: 'Web Application'
   },
-  'service': { 
-    shape: 'mxgraph.c4.container;lazy=0;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#ffffff;strokeWidth=2;', 
+  'service': {
+    shape: 'mxgraph.c4.container;lazy=0;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#ffffff;strokeWidth=2;',
     color: '#85BBF0',
     description: 'Application Service'
   },
-  'auth-service': { 
-    shape: 'mxgraph.c4.container;lazy=0;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#ffffff;strokeWidth=2;', 
+  'auth-service': {
+    shape: 'mxgraph.c4.container;lazy=0;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#ffffff;strokeWidth=2;',
     color: '#85BBF0',
     description: 'Authentication Service'
   },
-  'database': { 
-    shape: 'mxgraph.flowchart.database_2;whiteSpace=wrap;html=1;fillColor=#438DD5;strokeColor=#2E5C8A;strokeWidth=2;', 
+  'database': {
+    shape: 'mxgraph.flowchart.database_2;whiteSpace=wrap;html=1;fillColor=#438DD5;strokeColor=#2E5C8A;strokeWidth=2;',
     color: '#438DD5',
     description: 'Database'
   },
-  'data-warehouse': { 
-    shape: 'mxgraph.c4.database;lazy=0;whiteSpace=wrap;html=1;fillColor=#438DD5;strokeColor=#ffffff;strokeWidth=2;', 
+  'data-warehouse': {
+    shape: 'mxgraph.c4.database;lazy=0;whiteSpace=wrap;html=1;fillColor=#438DD5;strokeColor=#ffffff;strokeWidth=2;',
     color: '#438DD5',
     description: 'Data Warehouse'
   },
-  'message-broker': { 
-    shape: 'mxgraph.c4.queue;lazy=0;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#ffffff;strokeWidth=2;', 
+  'message-broker': {
+    shape: 'mxgraph.c4.queue;lazy=0;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#ffffff;strokeWidth=2;',
     color: '#85BBF0',
     description: 'Message Broker'
   },
-  'api-gateway': { 
-    shape: 'mxgraph.c4.container;lazy=0;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#ffffff;strokeWidth=2;', 
+  'api-gateway': {
+    shape: 'mxgraph.c4.container;lazy=0;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#ffffff;strokeWidth=2;',
     color: '#85BBF0',
     description: 'API Gateway'
   },
-  'esb': { 
-    shape: 'mxgraph.c4.container;lazy=0;whiteSpace=wrap;html=1;fillColor=#9c88ff;strokeColor=#ffffff;strokeWidth=2;', 
+  'esb': {
+    shape: 'mxgraph.c4.container;lazy=0;whiteSpace=wrap;html=1;fillColor=#9c88ff;strokeColor=#ffffff;strokeWidth=2;',
     color: '#9c88ff',
     description: 'ESB'
   },
-  'cache': { 
-    shape: 'mxgraph.c4.database;lazy=0;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#ffffff;strokeWidth=2;', 
+  'cache': {
+    shape: 'mxgraph.c4.database;lazy=0;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#ffffff;strokeWidth=2;',
     color: '#85BBF0',
     description: 'Cache'
   },
-  'load-balancer': { 
-    shape: 'mxgraph.c4.container;lazy=0;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#ffffff;strokeWidth=2;', 
+  'load-balancer': {
+    shape: 'mxgraph.c4.container;lazy=0;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#ffffff;strokeWidth=2;',
     color: '#85BBF0',
     description: 'Load Balancer'
   },
-  'cdn': { 
-    shape: 'mxgraph.c4.container_boundary;lazy=0;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#ffffff;strokeWidth=2;', 
+  'cdn': {
+    shape: 'mxgraph.c4.container_boundary;lazy=0;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#ffffff;strokeWidth=2;',
     color: '#85BBF0',
     description: 'CDN'
   },
-  'lambda': { 
-    shape: 'mxgraph.c4.container;lazy=0;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#ffffff;strokeWidth=2;', 
+  'lambda': {
+    shape: 'mxgraph.c4.container;lazy=0;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#ffffff;strokeWidth=2;',
     color: '#85BBF0',
     description: 'Serverless Function'
   },
-  'object-storage': { 
-    shape: 'mxgraph.c4.database;lazy=0;whiteSpace=wrap;html=1;fillColor=#438DD5;strokeColor=#ffffff;strokeWidth=2;', 
+  'object-storage': {
+    shape: 'mxgraph.c4.database;lazy=0;whiteSpace=wrap;html=1;fillColor=#438DD5;strokeColor=#ffffff;strokeWidth=2;',
     color: '#438DD5',
     description: 'Object Storage'
   },
-  'firewall': { 
-    shape: 'mxgraph.c4.container;lazy=0;whiteSpace=wrap;html=1;fillColor=#FF6B6B;strokeColor=#ffffff;strokeWidth=2;', 
+  'firewall': {
+    shape: 'mxgraph.c4.container;lazy=0;whiteSpace=wrap;html=1;fillColor=#FF6B6B;strokeColor=#ffffff;strokeWidth=2;',
     color: '#FF6B6B',
     description: 'Firewall'
   },
-  'system': { 
-    shape: 'swimlane;html=1;startSize=30;fillColor=#E1F5FE;strokeColor=#4DABF7;strokeWidth=2;dashed=1;dashPattern=8 8;', 
+  'system': {
+    shape: 'swimlane;html=1;startSize=30;fillColor=#E1F5FE;strokeColor=#4DABF7;strokeWidth=2;dashed=1;dashPattern=8 8;',
     color: '#4DABF7',
     description: 'System'
   },
-  'client': { 
-    shape: 'mxgraph.c4.container;lazy=0;whiteSpace=wrap;html=1;fillColor=#4dabf7;strokeColor=#2E5C8A;strokeWidth=2;', 
+  'client': {
+    shape: 'mxgraph.c4.container;lazy=0;whiteSpace=wrap;html=1;fillColor=#4dabf7;strokeColor=#2E5C8A;strokeWidth=2;',
     color: '#4dabf7',
     description: 'Client'
   },
-  'external-system': { 
-    shape: 'swimlane;html=1;startSize=30;fillColor=#FFF4E6;strokeColor=#ffa94d;strokeWidth=2;dashed=1;dashPattern=8 8;', 
+  'external-system': {
+    shape: 'swimlane;html=1;startSize=30;fillColor=#FFF4E6;strokeColor=#ffa94d;strokeWidth=2;dashed=1;dashPattern=8 8;',
     color: '#ffa94d',
     description: 'External System'
   },
-  'business-domain': { 
-    shape: 'swimlane;html=1;startSize=30;fillColor=#FFF4E6;strokeColor=#ffa94d;strokeWidth=2;dashed=1;dashPattern=8 8;', 
+  'business-domain': {
+    shape: 'swimlane;html=1;startSize=30;fillColor=#FFF4E6;strokeColor=#ffa94d;strokeWidth=2;dashed=1;dashPattern=8 8;',
     color: '#ffa94d',
     description: 'Business Domain'
   },
-  'controller': { 
-    shape: 'mxgraph.c4.container;lazy=0;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#ffffff;strokeWidth=2;', 
+  'controller': {
+    shape: 'mxgraph.c4.container;lazy=0;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#ffffff;strokeWidth=2;',
     color: '#85BBF0',
     description: 'Controller'
   },
-  'repository': { 
-    shape: 'mxgraph.c4.database;lazy=0;whiteSpace=wrap;html=1;fillColor=#438DD5;strokeColor=#ffffff;strokeWidth=2;', 
+  'repository': {
+    shape: 'mxgraph.c4.database;lazy=0;whiteSpace=wrap;html=1;fillColor=#438DD5;strokeColor=#ffffff;strokeWidth=2;',
     color: '#438DD5',
     description: 'Repository'
   },
-  'class': { 
-    shape: 'mxgraph.c4.container;lazy=0;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#ffffff;strokeWidth=2;', 
+  'class': {
+    shape: 'mxgraph.c4.container;lazy=0;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#ffffff;strokeWidth=2;',
     color: '#85BBF0',
     description: 'Class'
   },
@@ -121,27 +121,27 @@ export function exportToDrawIO(nodes: Node[], edges: Edge[]): string {
     const type = (node.data as ComponentData).type
     return type !== 'system' && type !== 'external-system' && type !== 'business-domain'
   })
-  
+
   // Создаем карту дочерних узлов для каждой системы
   const systemChildrenMap = new Map<string, Node[]>()
-  
+
   systemNodes.forEach(systemNode => {
     // Находим узлы, которые находятся внутри системы
     const systemX = systemNode.position.x
     const systemY = systemNode.position.y
     const systemWidth = systemNode.width || 400
     const systemHeight = systemNode.height || 300
-    
+
     const children = regularNodes.filter(node => {
       const nodeX = node.position.x
       const nodeY = node.position.y
       const nodeWidth = node.width || 200
       const nodeHeight = node.height || 120
-      
+
       // Проверяем, находится ли узел внутри системы
       const nodeCenterX = nodeX + nodeWidth / 2
       const nodeCenterY = nodeY + nodeHeight / 2
-      
+
       return (
         nodeCenterX >= systemX &&
         nodeCenterY >= systemY &&
@@ -149,20 +149,20 @@ export function exportToDrawIO(nodes: Node[], edges: Edge[]): string {
         nodeCenterY <= systemY + systemHeight
       )
     })
-    
+
     systemChildrenMap.set(systemNode.id, children)
   })
-  
+
   // Создаем XML для систем (контейнеры)
   const systemCells = systemNodes.map((node) => {
     const data = node.data as ComponentData
     const nodeLabel = typeof node.data.label === 'string' ? node.data.label : data.type
     // Не добавляем текстовый префикс статуса - только цветовое обозначение
     const escapedLabel = escapeXml(String(nodeLabel))
-    
+
     const width = node.width || 400
     const height = node.height || 300
-    
+
     // Добавляем черный цвет текста для систем
     // Добавляем визуальное обозначение статуса в стиле системы
     let systemStyle = c4Shapes['system'].shape + 'fontColor=#000000;'
@@ -177,11 +177,11 @@ export function exportToDrawIO(nodes: Node[], edges: Edge[]): string {
       <mxGeometry x="${node.position.x}" y="${node.position.y}" width="${width}" height="${height}" as="geometry" />
     </mxCell>`
   }).join('\n')
-  
+
   // Создаем XML для обычных компонентов
   const regularCells = regularNodes.map((node) => {
     const data = node.data as ComponentData
-    
+
     // Определяем, в какой системе находится этот узел
     let parentId = '1' // По умолчанию корневой элемент
     for (const [systemId, children] of systemChildrenMap.entries()) {
@@ -190,25 +190,25 @@ export function exportToDrawIO(nodes: Node[], edges: Edge[]): string {
         break
       }
     }
-    
-    const c4Config = c4Shapes[data.type] || { 
-      shape: 'mxgraph.c4.container;lazy=0;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#ffffff;strokeWidth=2;', 
+
+    const c4Config = c4Shapes[data.type] || {
+      shape: 'mxgraph.c4.container;lazy=0;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#ffffff;strokeWidth=2;',
       color: '#85BBF0',
       description: 'Component'
     }
-    
+
     // Проверяем статус компонента
     const isNew = data.status === 'new'
     const backgroundColor = isNew ? '#FF9999' : (c4Config.color || '#85BBF0')
     const textColor = isNew ? '#000000' : '#000000'
-    
+
     // Специальный формат для frontend - окно приложения с title bar
     let label = ''
     if (data.type === 'frontend') {
       const nodeLabel = typeof node.data.label === 'string' ? node.data.label : 'Клиентское приложение'
       // Не добавляем текстовый префикс статуса - только цветовое обозначение
       const escapedLabel = escapeXml(String(nodeLabel))
-      
+
       // Создаем HTML для окна приложения с title bar как в браузере
       // Title bar прижат к самому верху - оборачиваем в div с border-radius
       const frontendBgColor = isNew ? '#FF9999' : '#438DD5'
@@ -233,10 +233,10 @@ export function exportToDrawIO(nodes: Node[], edges: Edge[]): string {
       const nodeLabel = typeof node.data.label === 'string' ? node.data.label : 'Сервис'
       // Не добавляем текстовый префикс статуса - только цветовое обозначение
       const escapedLabel = escapeXml(String(nodeLabel))
-      
+
       const serviceBgColor = isNew ? '#FF9999' : '#85BBF0'
       const serviceRectColor = isNew ? '#FF9999' : '#438DD5'
-      
+
       // Создаем HTML для сервера: основной квадрат с двумя горизонтальными прямоугольниками слева
       // Прямоугольники с черной границей, выступают слева в самый край, в два раза больше, расположены параллельно друг другу
       // Сдвинуты максимально влево, чтобы не перекрывать текст по центру
@@ -256,9 +256,9 @@ export function exportToDrawIO(nodes: Node[], edges: Edge[]): string {
       const nodeLabel = typeof node.data.label === 'string' ? node.data.label : 'Клиент'
       // Не добавляем текстовый префикс статуса - только цветовое обозначение
       const escapedLabel = escapeXml(String(nodeLabel))
-      
+
       const clientBgColor = isNew ? '#FF9999' : '#4dabf7'
-      
+
       // Создаем HTML для фигуры человека: круг сверху (голова) и округлый прямоугольник снизу (тело)
       // Голова поднята выше, тело с сильно закругленными углами
       label = `<div style="width:100%;height:100%;position:relative;margin:0;padding:0;overflow:visible;">
@@ -280,7 +280,7 @@ export function exportToDrawIO(nodes: Node[], edges: Edge[]): string {
       const nodeLabel = typeof node.data.label === 'string' ? node.data.label : data.type
       // Не добавляем текстовый префикс статуса - только цветовое обозначение
       label = `<div style="color:${textColor};"><b>${escapeXml(String(nodeLabel))}</b>`
-      
+
       // Добавляем описание/технологию
       let technology = ''
       if (data.databaseConfig?.vendor) {
@@ -300,11 +300,11 @@ export function exportToDrawIO(nodes: Node[], edges: Edge[]): string {
       } else if (data.esbConfig?.vendor) {
         technology = String(data.esbConfig.vendor)
       }
-      
+
       if (technology) {
         label += `<br/><i style="color:${textColor};">${escapeXml(technology)}</i>`
       }
-      
+
       // Добавляем описание типа компонента
       if (c4Config.description) {
         label += `<br/><font size="1" color="${textColor}">${escapeXml(c4Config.description)}</font>`
@@ -318,7 +318,7 @@ export function exportToDrawIO(nodes: Node[], edges: Edge[]): string {
     // Если узел находится в системе, позиционируем относительно системы
     let x = node.position.x
     let y = node.position.y
-    
+
     if (parentId !== '1') {
       const systemNode = systemNodes.find(n => n.id === parentId)
       if (systemNode) {
@@ -346,7 +346,7 @@ export function exportToDrawIO(nodes: Node[], edges: Edge[]): string {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
     }
-    
+
     // Добавляем цвет текста и фона в зависимости от статуса
     let componentStyle = c4Config.shape
     if (isNew) {
@@ -357,24 +357,24 @@ export function exportToDrawIO(nodes: Node[], edges: Edge[]): string {
       // Для остальных: черный текст
       componentStyle += `fontColor=${textColor};`
     }
-    
+
     return `    <mxCell id="${node.id}" value="${escapedLabel}" style="${componentStyle}" vertex="1" parent="${parentId}">
       <mxGeometry x="${x}" y="${y}" width="${width}" height="${height}" as="geometry" />
     </mxCell>`
   }).join('\n')
-  
+
   const mxGraphModel = systemCells + '\n' + regularCells
 
   const mxEdges = edges.map((edge, index) => {
     const sourceNode = nodes.find(n => n.id === edge.source)
     const targetNode = nodes.find(n => n.id === edge.target)
-    
+
     if (!sourceNode || !targetNode) return ''
-    
+
     // C4 стили для связей
     let edgeColor = '#333333'
     let edgeStyle = 'endArrow=block;html=1;rounded=0;strokeWidth=2;fontSize=12;fontColor=#000000;'
-    
+
     // Определяем тип связи и стиль в формате C4
     let label = ''
     if (edge.data?.connectionType === 'rest') {
@@ -443,12 +443,15 @@ export function saveToDrawIOFile(nodes: Node[], edges: Edge[]): void {
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
-  link.download = `c4-architecture-diagram-${new Date().toISOString().split('T')[0]}.drawio`
+  const now = new Date()
+  const datePart = now.toISOString().split('T')[0]
+  const timePart = now.toTimeString().split(' ')[0].replace(/:/g, '-')
+  link.download = `c4-architecture-diagram-${datePart}_${timePart}.drawio`
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
   URL.revokeObjectURL(url)
-  
+
   // Показываем подсказку о C4 формате
   setTimeout(() => {
     alert('Диаграмма экспортирована в формате C4 Model!\n\nПри открытии в draw.io:\n1. Выберите "More Shapes" → "C4 Model"\n2. Или используйте встроенные стили C4\n\nКомпоненты будут отображаться в стиле C4 с правильными формами и цветами.')
