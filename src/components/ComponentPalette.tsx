@@ -50,6 +50,7 @@ import {
   History,
   Waves,
   Repeat,
+  LayoutDashboard,
 } from 'lucide-react'
 
 interface ComponentPaletteProps {
@@ -118,6 +119,7 @@ const components: Component[] = [
   { type: 'logging', label: 'Логирование', icon: <FileText size={24} />, color: '#ffa94d', category: 'monitoring' },
   { type: 'analytics-service', label: 'Аналитика', icon: <BarChart3 size={24} />, color: '#339af0', category: 'monitoring' },
   { type: 'business-intelligence', label: 'Business Intelligence', icon: <BarChart3 size={24} />, color: '#4dabf7', category: 'monitoring' },
+  { type: 'dashboard', label: 'Дашборд', icon: <LayoutDashboard size={24} />, color: '#339af0', category: 'monitoring' },
 
   // Интеграция
   { type: 'api-gateway', label: 'API Gateway', icon: <Network size={24} />, color: '#ff6b6b', category: 'integration' },
@@ -165,6 +167,7 @@ const components: Component[] = [
   { type: 'reverse-etl', label: 'Reverse ETL', icon: <Repeat size={24} />, color: '#be4bdb', category: 'data-engineering' },
   { type: 'feature-store', label: 'Feature Store', icon: <Warehouse size={24} />, color: '#fd7e14', category: 'data-engineering' },
   { type: 'lakehouse', label: 'Data Lakehouse', icon: <Waves size={24} />, color: '#15aabf', category: 'data-engineering' },
+  { type: 'business-process', label: 'Бизнес процесс', icon: <Workflow size={24} />, color: '#ae3ec9', category: 'infrastructure' },
 ]
 
 const categoryLabels: Record<ComponentCategory, string> = {

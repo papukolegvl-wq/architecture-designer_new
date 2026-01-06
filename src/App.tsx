@@ -20,6 +20,7 @@ import ComponentPalette from './components/ComponentPalette'
 import CustomNode from './components/CustomNode'
 import SystemNode from './components/SystemNode'
 import BusinessDomainNode from './components/BusinessDomainNode'
+import BusinessProcessNode from './components/BusinessProcessNode'
 import ContainerNode from './components/ContainerNode'
 import GroupNode from './components/GroupNode'
 import NoteNode from './components/NoteNode'
@@ -66,264 +67,42 @@ import VPNGatewayConfigPanel from './components/VPNGatewayConfigPanel'
 import { Lock, Unlock } from 'lucide-react'
 import ConnectionMarkers from './components/ConnectionMarkers'
 import { AIGeneratedArchitecture } from './utils/geminiService'
-import { ComponentType, ConnectionType, ComponentData, DatabaseType, NoSQLType, ReplicationApproach, ReplicationTool, CacheType, ServiceLanguage, FrontendFramework, DataWarehouseVendor, DatabaseVendor, MessageBrokerVendor, MessageDeliveryType, CDNVendor, LambdaVendor, ObjectStorageVendor, AuthServiceVendor, FirewallVendor, LoadBalancerVendor, ApiGatewayVendor, ESBVendor, DatabaseTable, ObjectStorageDirection, ComponentLink, EdgePathType, BackupServiceVendor, QueueVendor, ProxyVendor, VPNGatewayVendor } from './types'
+import { ComponentType, ConnectionType, ComponentData, DatabaseType, NoSQLType, ReplicationApproach, ReplicationTool, CacheType, ServiceLanguage, FrontendFramework, DataWarehouseVendor, DatabaseVendor, MessageBrokerVendor, MessageDeliveryType, CDNVendor, LambdaVendor, ObjectStorageVendor, AuthServiceVendor, FirewallVendor, LoadBalancerVendor, ApiGatewayVendor, ESBVendor, DatabaseTable, ObjectStorageDirection, ComponentLink, EdgePathType, BackupServiceVendor, QueueVendor, ProxyVendor, VPNGatewayVendor, Workspace } from './types'
+import { usePersistence } from './hooks/usePersistence'
+import { useHistory } from './hooks/useHistory'
+import { ensureEdgesNotAutoDeleted, saveWorkspacesToLocalStorage } from './utils/persistenceUtils'
 import { saveToFile, loadFromFile, getPersistedHandle } from './utils/fileUtils'
 import { saveToDrawIOFile } from './utils/drawioExport'
-import { HistoryManager } from './utils/historyManager'
 import html2canvas from 'html2canvas'
 
 const edgeTypes = {
   animated: AnimatedEdge,
 }
 
-// Загружаем из localStorage при инициализации
-const loadFromLocalStorage = (): { nodes: Node[]; edges: Edge[] } => {
-  try {
-    const saved = localStorage.getItem('architecture-designer-state')
-    if (saved) {
-      const parsed = JSON.parse(saved)
-      const nodes = (parsed.nodes || []).map((node: Node) => {
-        // Восстанавливаем все свойства узла полностью (JSON.parse уже восстановил все свойства)
-        const restoredNode: Node = {
-          ...node,
-          // data уже содержит все конфигурации из JSON, сохраняем как есть
-          data: node.data ? { ...node.data } : node.data
-        }
-
-        // Восстанавливаем свойства для компонентов типа "system", "external-system" и "business-domain"
-        const data = node.data as ComponentData
-        if (data && (data.type === 'system' || data.type === 'external-system' || data.type === 'business-domain')) {
-          // Убеждаемся, что тип узла установлен правильно
-          restoredNode.type = data.type === 'business-domain' ? 'business-domain' : 'system'
-
-          // Восстанавливаем размеры
-          if (!restoredNode.width) {
-            restoredNode.width = 600
-          }
-          if (!restoredNode.height) {
-            restoredNode.height = 400
-          }
-
-          // Восстанавливаем стиль
-          if (!restoredNode.style) {
-            restoredNode.style = { zIndex: -1 }
-          } else if (!restoredNode.style.zIndex) {
-            restoredNode.style = { ...restoredNode.style, zIndex: -1 }
-          }
-
-          // Восстанавливаем systemConfig (сохраняем существующие childNodes если они есть)
-          // Все остальные свойства data уже сохранены через spread выше
-          if (!data.systemConfig) {
-            restoredNode.data = {
-              ...restoredNode.data,
-              systemConfig: { childNodes: [] },
-            }
-          } else {
-            // Сохраняем существующие childNodes, все остальные свойства data уже сохранены
-            restoredNode.data = {
-              ...restoredNode.data,
-              systemConfig: {
-                childNodes: data.systemConfig.childNodes || [],
-              },
-            }
-          }
-        }
-        // Для всех остальных компонентов все конфигурации уже сохранены через spread выше
-        // Важно: groupId сохраняется автоматически, так как он входит в data и восстанавливается через spread
-
-        return restoredNode
-      })
-
-      const systemNodesCount = nodes.filter((n: Node) => {
-        const data = n.data as ComponentData
-        return data?.type === 'system' || data?.type === 'external-system' || data?.type === 'business-domain'
-      }).length
-
-      console.log('Загружено узлов:', nodes.length, 'Узлы типа system:', systemNodesCount)
-
-      // Логируем узлы с конфигурациями
-      const nodesWithConfigs = nodes.filter((n: Node) => {
-        const data = n.data as ComponentData
-        return data && (
-          data.databaseConfig ||
-          data.cacheConfig ||
-          data.serviceConfig ||
-          data.frontendConfig ||
-          data.dataWarehouseConfig ||
-          data.objectStorageConfig ||
-          data.messageBrokerConfig ||
-          data.cdnConfig ||
-          data.lambdaConfig ||
-          data.authServiceConfig ||
-          data.firewallConfig ||
-          data.loadBalancerConfig ||
-          data.apiGatewayConfig ||
-          data.esbConfig ||
-          data.systemConfig
-        )
-      })
-
-      if (nodesWithConfigs.length > 0) {
-        console.log('Загружено узлов с конфигурациями:', nodesWithConfigs.length, nodesWithConfigs.map((n: Node) => {
-          const data = n.data as ComponentData
-          const configs = []
-          if (data.databaseConfig) configs.push('databaseConfig')
-          if (data.cacheConfig) configs.push('cacheConfig')
-          if (data.serviceConfig) configs.push('serviceConfig')
-          if (data.frontendConfig) configs.push('frontendConfig')
-          if (data.dataWarehouseConfig) configs.push('dataWarehouseConfig')
-          if (data.objectStorageConfig) configs.push('objectStorageConfig')
-          if (data.messageBrokerConfig) configs.push('messageBrokerConfig')
-          if (data.cdnConfig) configs.push('cdnConfig')
-          if (data.lambdaConfig) configs.push('lambdaConfig')
-          if (data.authServiceConfig) configs.push('authServiceConfig')
-          if (data.firewallConfig) configs.push('firewallConfig')
-          if (data.loadBalancerConfig) configs.push('loadBalancerConfig')
-          if (data.apiGatewayConfig) configs.push('apiGatewayConfig')
-          if (data.esbConfig) configs.push('esbConfig')
-          if (data.systemConfig) configs.push('systemConfig')
-          return {
-            id: n.id,
-            type: data?.type,
-            configs: configs
-          }
-        }))
-      }
-
-      console.log('Узлы типа system:', nodes.filter((n: Node) => {
-        const data = n.data as ComponentData
-        return data?.type === 'system' || data?.type === 'external-system' || data?.type === 'business-domain'
-      }).map((n: Node) => {
-        const nodeData = n.data as ComponentData
-        return {
-          id: n.id,
-          type: n.type,
-          width: n.width,
-          height: n.height,
-          hasStyle: !!n.style,
-          childNodes: nodeData?.systemConfig?.childNodes || [],
-          childNodesCount: (nodeData?.systemConfig?.childNodes || []).length
-        }
-      }))
-
-      const restoredEdges = ensureEdgesNotAutoDeleted(parsed.edges || [])
-
-      // Проверяем, что waypoint координаты загружены
-      const edgesWithWaypoints = restoredEdges.filter(e => e.data?.waypointX !== undefined && e.data?.waypointY !== undefined)
-      if (edgesWithWaypoints.length > 0) {
-        console.log('📂 Загружено edges с waypoint:', edgesWithWaypoints.length, edgesWithWaypoints.map(e => ({
-          id: e.id,
-          waypointX: e.data?.waypointX,
-          waypointY: e.data?.waypointY
-        })))
-      }
-
-      return {
-        nodes,
-        edges: restoredEdges,
-      }
-    }
-  } catch (error) {
-    console.error('Ошибка при загрузке из localStorage:', error)
-  }
-  return { nodes: [], edges: [] }
-}
-
-// Функция для добавления свойств отключения автоматического удаления к edges
-const ensureEdgesNotAutoDeleted = (edgesArray: Edge[]): Edge[] => {
-  return edgesArray.map(edge => {
-    const edgeData = edge.data ? { ...edge.data } : {}
-    // Устанавливаем pathType: 'step' для всех edges, если он не указан
-    if (!edgeData.pathType) {
-      edgeData.pathType = 'step'
-    }
-    // Сохраняем waypoint координаты, если они есть
-    // waypointX и waypointY уже должны быть в edge.data, но убеждаемся что они сохраняются
-
-    const updatedEdge = {
-      ...edge,
-      data: edgeData, // Сохраняем все данные edge, включая waypointX и waypointY
-    }
-
-    return {
-      ...updatedEdge,
-      deletable: true,
-      // @ts-ignore - эти свойства не в типах, но поддерживаются ReactFlow
-      deleteOnSourceNodeDelete: true,
-      deleteOnTargetNodeDelete: true,
-    }
-  })
-}
-
-interface Workspace {
-  id: string
-  name: string
-  nodes: Node[]
-  edges: Edge[]
-  viewport?: { x: number; y: number; zoom: number } // Сохраняем viewport для каждого workspace
-  isLocked?: boolean
-}
-
-const loadWorkspacesFromLocalStorage = (): Workspace[] => {
-  try {
-    const saved = localStorage.getItem('architecture-designer-workspaces')
-    if (saved) {
-      const workspaces = JSON.parse(saved) as Workspace[]
-      if (workspaces && Array.isArray(workspaces) && workspaces.length > 0) {
-        // Убеждаемся, что все загруженные edges имеют необходимые свойства для корректной отрисовки и удаления
-        return workspaces.map(w => ({
-          ...w,
-          nodes: w.nodes || [],
-          edges: ensureEdgesNotAutoDeleted(w.edges || [])
-        }))
-      }
-      return [{ id: '1', name: 'Рабочее пространство 1', nodes: [], edges: [] }]
-    }
-  } catch (error) {
-    console.error('Ошибка при загрузке вкладок:', error)
-  }
-  // Если нет сохраненных вкладок, создаем первую из старого формата или пустую
-  const savedState = loadFromLocalStorage()
-  return [{ id: '1', name: 'Рабочее пространство 1', nodes: savedState.nodes, edges: ensureEdgesNotAutoDeleted(savedState.edges || []) }]
-}
-
-const saveWorkspacesToLocalStorage = (workspaces: Workspace[]) => {
-  try {
-    const serialized = JSON.stringify(workspaces)
-    localStorage.setItem('architecture-designer-workspaces', serialized)
-  } catch (error) {
-    console.error('Ошибка при сохранении вкладок:', error)
-  }
-}
 
 function App() {
-  const [workspaces, setWorkspaces] = useState<Workspace[]>(loadWorkspacesFromLocalStorage())
-  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>(() => {
-    const savedActiveId = localStorage.getItem('architecture-designer-active-tab')
-    if (savedActiveId && workspaces.some(w => w.id === savedActiveId)) {
-      return savedActiveId
-    }
-    return workspaces[0]?.id || '1'
-  })
-
+  const { workspaces, setWorkspaces, activeWorkspaceId, setActiveWorkspaceId, saveWorkspaceState } = usePersistence()
   const activeWorkspace = workspaces.find(w => w.id === activeWorkspaceId)
 
   const [nodes, setNodes, onNodesChange] = useNodesState(activeWorkspace?.nodes || [])
   const [edges, setEdges, onEdgesChange] = useEdgesState(activeWorkspace?.edges || [])
 
-  // Сохраняем активную вкладку в localStorage
-  useEffect(() => {
-    localStorage.setItem('architecture-designer-active-tab', activeWorkspaceId)
-  }, [activeWorkspaceId])
-  // Тип обновления истории
-  type HistoryUpdateType = 'standard' | 'immediate' | 'skip' | 'reset'
-  const historyUpdateTypeRef = useRef<HistoryUpdateType>('standard')
+  const { undo, redo, canUndo, canRedo, historyUpdateTypeRef, isHistoryActionRef } = useHistory(nodes, edges, (nodes, edges) => {
+    setNodes(nodes)
+    setEdges(edges)
+  })
 
-  const historyManagerRef = useRef(new HistoryManager())
-  const isHistoryActionRef = useRef(false)
-  const edgesToPreserveRef = useRef<Edge[]>([]) // Ref для хранения edges, которые нужно сохранить при удалении узлов
-  const [canUndo, setCanUndo] = useState(false)
-  const [canRedo, setCanRedo] = useState(false)
+  // Ref для хранения edges, которые нужно сохранить при удалении узлов
+  const edgesToPreserveRef = useRef<Edge[]>([])
+
+  useEffect(() => {
+    if (activeWorkspace) {
+      setNodes(activeWorkspace.nodes)
+      setEdges(activeWorkspace.edges)
+      historyUpdateTypeRef.current = 'reset'
+    }
+  }, [activeWorkspaceId])
+
   const [showRecommendationPanel, setShowRecommendationPanel] = useState(false)
 
   // Отключаем автоматическое удаление edges при удалении узлов для всех существующих edges
@@ -387,40 +166,14 @@ function App() {
   // Флаг для отслеживания загрузки архитектуры из файла
   const isFileLoadRef = useRef(false)
 
-  // Сохраняем состояние текущей вкладки при изменении nodes или edges
-  // Используем debounce для оптимизации - сохраняем не чаще чем раз в секунду
   useEffect(() => {
     if (activeWorkspaceId) {
       const timeoutId = setTimeout(() => {
-        // Используем reactFlowInstanceRef для безопасного доступа
-        const instance = reactFlowInstanceRef.current || reactFlowInstance
-        const viewport = instance ? instance.getViewport() : { x: 0, y: 0, zoom: 1 }
-
-        setWorkspaces(prev => {
-          const updated = prev.map(w =>
-            w.id === activeWorkspaceId
-              ? { ...w, nodes, edges, viewport } // Сохраняем viewport вместе с nodes и edges
-              : w
-          )
-
-          // Проверяем, что waypoint координаты сохраняются
-          const edgesWithWaypoints = edges.filter(e => e.data?.waypointX !== undefined && e.data?.waypointY !== undefined)
-          if (edgesWithWaypoints.length > 0) {
-            console.log('💾 Сохранение edges с waypoint в localStorage:', edgesWithWaypoints.length, edgesWithWaypoints.map(e => ({
-              id: e.id,
-              waypointX: e.data?.waypointX,
-              waypointY: e.data?.waypointY
-            })))
-          }
-
-          saveWorkspacesToLocalStorage(updated)
-          return updated
-        })
-      }, 1000) // Сохраняем через 1 секунду после последнего изменения
-
+        saveWorkspaceState(nodes, edges, reactFlowInstanceRef.current)
+      }, 1000)
       return () => clearTimeout(timeoutId)
     }
-  }, [nodes, edges, activeWorkspaceId]) // Убрали reactFlowInstance из зависимостей
+  }, [nodes, edges, activeWorkspaceId, saveWorkspaceState])
 
   // Автоматически применяем fitView после загрузки файла
   useEffect(() => {
@@ -901,60 +654,24 @@ function App() {
         }
       }, 50)
     },
-    [onNodesChange, nodes, edges, setCanUndo, setCanRedo, setNodes]
+    [onNodesChange, nodes, edges, setNodes]
   )
 
   // Обертка для onEdgesChange с сохранением истории
   const onEdgesChangeWithHistory = useCallback(
     (changes: any) => {
-      // Применяем изменения
       onEdgesChange(changes)
-
-      // Проверяем, есть ли критические изменения для сохранения истории
       const hasMeaningfulChanges = changes.some((c: any) =>
         c.type !== 'select' && c.type !== 'dimensions' && c.type !== 'position'
       )
-
-      // Для позиционирования сохраняем только при завершении перетаскивания (это сложно отловить тут, 
-      // поэтому полагаемся на обработчик onNodeDragStop для истории перемещений)
-
       if (hasMeaningfulChanges) {
-        // История теперь сохраняется централизованно через useEffect([nodes, edges])
+        historyUpdateTypeRef.current = 'immediate'
       }
     },
-    [onEdgesChange, nodes, edges, setCanUndo, setCanRedo]
+    [onEdgesChange, historyUpdateTypeRef]
   )
 
-  // Обработчики Undo/Redo
-  const handleUndo = useCallback(() => {
-    const state = historyManagerRef.current.undo()
-    if (state) {
-      isHistoryActionRef.current = true
-      historyUpdateTypeRef.current = 'skip'
-      setNodes(state.nodes)
-      setEdges(state.edges)
-      setCanUndo(historyManagerRef.current.canUndo())
-      setCanRedo(historyManagerRef.current.canRedo())
-      setTimeout(() => {
-        isHistoryActionRef.current = false
-      }, 200)
-    }
-  }, [setNodes, setEdges, setCanUndo, setCanRedo])
-
-  const handleRedo = useCallback(() => {
-    const state = historyManagerRef.current.redo()
-    if (state) {
-      isHistoryActionRef.current = true
-      historyUpdateTypeRef.current = 'skip'
-      setNodes(state.nodes)
-      setEdges(state.edges)
-      setCanUndo(historyManagerRef.current.canUndo())
-      setCanRedo(historyManagerRef.current.canRedo())
-      setTimeout(() => {
-        isHistoryActionRef.current = false
-      }, 200)
-    }
-  }, [setNodes, setEdges, setCanUndo, setCanRedo])
+  // Обработчики Undo/Redo теперь в useHistory hook
 
   const [selectedEdge, setSelectedEdge] = useState<Edge | null>(null)
   const [selectedNodes, setSelectedNodes] = useState<Node[]>([])
@@ -1041,15 +758,6 @@ function App() {
 
 
 
-  // Инициализируем историю при первой загрузке
-  useEffect(() => {
-    if (historyManagerRef.current.getCurrentState() === null && nodesRef.current.length > 0) {
-      // Если узлы уже есть при загрузке (например из LS), инициализируем ими
-      historyManagerRef.current.initialize(nodesRef.current, edgesRef.current)
-      setCanUndo(historyManagerRef.current.canUndo())
-      setCanRedo(historyManagerRef.current.canRedo())
-    }
-  }, [])
 
   // Загружаем сохраненный дескриптор файла при старте
   useEffect(() => {
@@ -1068,42 +776,6 @@ function App() {
     setInfoComponentType(null)
   }, [])
 
-  // Универсальное сохранение истории при любых изменениях nodes/edges
-  useEffect(() => {
-    const updateType = historyUpdateTypeRef.current
-
-    // Если это undo/redo или загрузка файла (которая сама обрабатывает историю/сброс), пропускаем
-    if (updateType === 'skip' || isFileLoadRef.current) {
-      // После пропуска возвращаем в стандартный режим
-      historyUpdateTypeRef.current = 'standard'
-      return
-    }
-
-    if (updateType === 'reset') {
-      console.log('Resetting history for new context')
-      historyManagerRef.current.initialize(nodes, edges)
-      setCanUndo(historyManagerRef.current.canUndo())
-      setCanRedo(historyManagerRef.current.canRedo())
-      historyUpdateTypeRef.current = 'standard'
-      return
-    }
-
-    const saveState = () => {
-      historyManagerRef.current.pushState(nodes, edges)
-      setCanUndo(historyManagerRef.current.canUndo())
-      setCanRedo(historyManagerRef.current.canRedo())
-      // Возвращаем в стандартный режим после сохранения
-      historyUpdateTypeRef.current = 'standard'
-    }
-
-    if (updateType === 'immediate') {
-      saveState()
-    } else {
-      // 'standard' - debounce
-      const timeoutId = setTimeout(saveState, 500)
-      return () => clearTimeout(timeoutId)
-    }
-  }, [nodes, edges])
   const [pendingConnection, setPendingConnection] = useState<{
     source: Node
     target: Node
@@ -1195,14 +867,14 @@ function App() {
       // Ctrl + Z = Undo (поддержка разных раскладок через code и русский 'я')
       if (isCtrl && !isShift && (key === 'z' || key === 'я' || code === 'KeyZ')) {
         event.preventDefault()
-        handleUndo()
+        undo()
       }
 
       // Ctrl + Y или Ctrl + Shift + Z = Redo
       if ((isCtrl && !isShift && (key === 'y' || key === 'н' || code === 'KeyY')) ||
         (isCtrl && isShift && (key === 'z' || key === 'я' || code === 'KeyZ'))) {
         event.preventDefault()
-        handleRedo()
+        redo()
       }
 
       // Пробел для панорамирования
@@ -1224,7 +896,7 @@ function App() {
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
     }
-  }, [handleUndo, handleRedo, isSpacePressed])
+  }, [undo, redo, isSpacePressed])
 
   const addComponent = useCallback(
     (type: ComponentType, position?: { x: number; y: number }) => {
@@ -1274,7 +946,7 @@ function App() {
 
       const newNode: Node = {
         id: `${type}-${Date.now()}`,
-        type: isSystemType ? (type === 'business-domain' ? 'business-domain' : 'system') : isContainerType ? 'container' : isGroupType ? 'group' : 'custom',
+        type: isSystemType ? (type === 'business-domain' ? 'business-domain' : 'system') : isContainerType ? 'container' : type === 'business-process' ? 'business-process' : isGroupType ? 'group' : 'custom',
         position: finalPosition,
         data: {
           type,
@@ -1305,6 +977,11 @@ function App() {
               ]
             }
           }),
+          ...(type === 'business-process' && {
+            businessProcessConfig: {
+              childNodes: []
+            }
+          }),
         },
         ...(isSystemType && {
           width: 600,
@@ -1317,6 +994,11 @@ function App() {
           style: { zIndex: 0 },
         }),
         ...(isGroupType && {
+          width: 400,
+          height: 300,
+          style: { zIndex: 0 },
+        }),
+        ...(type === 'business-process' && {
           width: 400,
           height: 300,
           style: { zIndex: 0 },
@@ -1940,13 +1622,7 @@ function App() {
         const updated = addEdge(newEdge, eds)
 
         // Сохраняем в историю после создания связи
-        setTimeout(() => {
-          if (!isHistoryActionRef.current) {
-            historyManagerRef.current.pushState(nodesRef.current, edgesRef.current)
-            setCanUndo(historyManagerRef.current.canUndo())
-            setCanRedo(historyManagerRef.current.canRedo())
-          }
-        }, 150)
+        historyUpdateTypeRef.current = 'immediate'
 
         return updated
       })
@@ -2024,19 +1700,9 @@ function App() {
       }
 
       setEdges((eds) => {
-        const updated = addEdge(newEdge, eds)
-
-        // Сохраняем в историю после создания связи
-        setTimeout(() => {
-          if (!isHistoryActionRef.current) {
-            historyManagerRef.current.pushState(nodesRef.current, edgesRef.current)
-            setCanUndo(historyManagerRef.current.canUndo())
-            setCanRedo(historyManagerRef.current.canRedo())
-          }
-        }, 150)
-
-        return updated
+        return addEdge(newEdge, eds)
       })
+      historyUpdateTypeRef.current = 'immediate'
       setPendingConnection(null)
     },
     [pendingConnection, nodes, setEdges]
@@ -2869,13 +2535,7 @@ function App() {
         const updated = eds.filter((e) => !idsToDelete.includes(e.id))
 
         // Сохраняем в историю после удаления связи
-        setTimeout(() => {
-          if (!isHistoryActionRef.current) {
-            historyManagerRef.current.pushState(nodesRef.current, edgesRef.current)
-            setCanUndo(historyManagerRef.current.canUndo())
-            setCanRedo(historyManagerRef.current.canRedo())
-          }
-        }, 150)
+        historyUpdateTypeRef.current = 'immediate'
 
         return updated
       })
@@ -2899,15 +2559,7 @@ function App() {
         setEdges((eds) => eds.filter(e => !nodeIds.includes(e.source) && !nodeIds.includes(e.target)))
 
         // Сохраняем в историю
-        setTimeout(() => {
-          if (!isHistoryActionRef.current) {
-            // Берем актуальные edges после обновления
-            const currentEdges = edges.filter(e => !nodeIds.includes(e.source) && !nodeIds.includes(e.target));
-            historyManagerRef.current.pushState(updatedNodes, currentEdges)
-            setCanUndo(historyManagerRef.current.canUndo())
-            setCanRedo(historyManagerRef.current.canRedo())
-          }
-        }, 100)
+        historyUpdateTypeRef.current = 'immediate'
 
         return updatedNodes
       })
@@ -3145,39 +2797,7 @@ function App() {
     }
 
     // Сохраняем в историю после группировки
-    setTimeout(() => {
-      if (!isHistoryActionRef.current) {
-        const updatedNodes = nodes.map((node) => {
-          if (allNodeIdsToGroup.includes(node.id)) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                groupId: groupId,
-              },
-            }
-          }
-          return node
-        })
-
-        const updatedEdges = edges.map((edge) => {
-          if (edgesInGroup.some(e => e.id === edge.id)) {
-            return {
-              ...edge,
-              data: {
-                ...edge.data,
-                groupId: groupId,
-              },
-            }
-          }
-          return edge
-        })
-
-        historyManagerRef.current.pushState(updatedNodes, updatedEdges)
-        setCanUndo(historyManagerRef.current.canUndo())
-        setCanRedo(historyManagerRef.current.canRedo())
-      }
-    }, 100)
+    historyUpdateTypeRef.current = 'immediate'
 
     // Снимаем выделение
     setSelectedNodeIds([])
@@ -3223,13 +2843,7 @@ function App() {
     })
 
     // Сохраняем в историю после разгруппировки
-    setTimeout(() => {
-      if (!isHistoryActionRef.current) {
-        historyManagerRef.current.pushState(nodesRef.current, edgesRef.current)
-        setCanUndo(historyManagerRef.current.canUndo())
-        setCanRedo(historyManagerRef.current.canRedo())
-      }
-    }, 150)
+    historyUpdateTypeRef.current = 'immediate'
 
 
     // Снимаем выделение
@@ -3470,22 +3084,8 @@ function App() {
     }, 50)
 
     // Сохраняем в историю после вставки
-    setTimeout(() => {
-      if (!isHistoryActionRef.current) {
-        setNodes((nds) => {
-          const updatedNodes = nds
-          setEdges((eds) => {
-            const updatedEdges = eds
-            historyManagerRef.current.pushState(updatedNodes, updatedEdges)
-            setCanUndo(historyManagerRef.current.canUndo())
-            setCanRedo(historyManagerRef.current.canRedo())
-            return updatedEdges
-          })
-          return updatedNodes
-        })
-      }
-    }, 100)
-  }, [copiedNodes, nodes, edges, setNodes, setEdges, setSelectedNodes, reactFlowInstance, setCanUndo, setCanRedo])
+    historyUpdateTypeRef.current = 'immediate'
+  }, [copiedNodes, nodes, edges, setNodes, setEdges, setSelectedNodes, reactFlowInstance])
 
   // Экспорт в PNG
   const handleExportPNG = useCallback(async () => {
@@ -3703,7 +3303,7 @@ function App() {
           event.preventDefault()
           event.stopPropagation()
           event.stopImmediatePropagation()
-          handleUndo()
+          undo()
           return false
         }
       }
@@ -3714,7 +3314,7 @@ function App() {
           event.preventDefault()
           event.stopPropagation()
           event.stopImmediatePropagation()
-          handleRedo()
+          redo()
           return false
         }
       }
@@ -3725,7 +3325,7 @@ function App() {
           event.preventDefault()
           event.stopPropagation()
           event.stopImmediatePropagation()
-          handleRedo()
+          redo()
           return false
         }
       }
@@ -3737,7 +3337,7 @@ function App() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown, true)
     }
-  }, [deleteSelected, handleCopy, handlePaste, handleUndo, handleRedo, handleDuplicate])
+  }, [deleteSelected, handleCopy, handlePaste, undo, redo, handleDuplicate])
 
   // Функция для получения рекомендаций
   // Функция для автоматического построения компонентов из рекомендации (удалена - рекомендации отключены)
@@ -4150,12 +3750,9 @@ function App() {
       const { containerId, childNodes, width, height } = event.detail
 
       setNodes((nds) => {
-        // 1. Identify valid child nodes in the current list
-        // Filter out the container itself to avoid recursion
         const validChildNodes = childNodes.filter(id => id !== containerId);
 
         return nds.map((node) => {
-          // If it's the container, update its config
           if (node.id === containerId) {
             return {
               ...node,
@@ -4171,9 +3768,7 @@ function App() {
             }
           }
 
-          // If it's a child node inside the container, assign groupId
           if (validChildNodes.includes(node.id)) {
-            // Only update if it doesn't already have this groupId to avoid unnecessary renders
             if ((node.data as ComponentData).groupId !== containerId) {
               return {
                 ...node,
@@ -4185,14 +3780,12 @@ function App() {
             }
           }
 
-          // If the node was previously in this container but is NOT anymore
-          // We need to check if its current groupId matches this containerId
           if ((node.data as ComponentData).groupId === containerId && !validChildNodes.includes(node.id)) {
             return {
               ...node,
               data: {
                 ...node.data,
-                groupId: undefined // Remove from group
+                groupId: undefined
               }
             }
           }
@@ -4216,6 +3809,85 @@ function App() {
                 ...node.data,
                 containerConfig: {
                   ...(node.data as ComponentData).containerConfig,
+                  isManuallyResized
+                }
+              }
+            }
+          }
+          return node
+        })
+      )
+    }
+
+    const handleBusinessProcessSizeUpdate = (event: CustomEvent<{
+      processId: string
+      childNodes: string[]
+      width: number
+      height: number
+      position: { x: number; y: number }
+    }>) => {
+      const { processId, childNodes, width, height } = event.detail
+
+      setNodes((nds) => {
+        const validChildNodes = childNodes.filter(id => id !== processId);
+
+        return nds.map((node) => {
+          if (node.id === processId) {
+            return {
+              ...node,
+              width,
+              height,
+              data: {
+                ...node.data,
+                businessProcessConfig: {
+                  ...(node.data as ComponentData).businessProcessConfig,
+                  childNodes: validChildNodes,
+                },
+              },
+            }
+          }
+
+          if (validChildNodes.includes(node.id)) {
+            if ((node.data as ComponentData).groupId !== processId) {
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  groupId: processId
+                }
+              }
+            }
+          }
+
+          if ((node.data as ComponentData).groupId === processId && !validChildNodes.includes(node.id)) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                groupId: undefined
+              }
+            }
+          }
+
+          return node
+        })
+      })
+    }
+
+    const handleBusinessProcessManualResize = (event: CustomEvent<{
+      processId: string
+      isManuallyResized: boolean
+    }>) => {
+      const { processId, isManuallyResized } = event.detail
+      setNodes((nds) =>
+        nds.map(node => {
+          if (node.id === processId) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                businessProcessConfig: {
+                  ...(node.data as ComponentData).businessProcessConfig,
                   isManuallyResized
                 }
               }
@@ -4261,6 +3933,8 @@ function App() {
     window.addEventListener('systemNodesUpdate', handleSystemNodesUpdate as EventListener)
     window.addEventListener('containerSizeUpdate', handleContainerSizeUpdate as EventListener)
     window.addEventListener('containerManualResize', handleContainerManualResize as EventListener)
+    window.addEventListener('businessProcessSizeUpdate', handleBusinessProcessSizeUpdate as EventListener)
+    window.addEventListener('businessProcessManualResize', handleBusinessProcessManualResize as EventListener)
     window.addEventListener('groupSizeUpdate', handleGroupSizeUpdate as EventListener)
 
     const handleComponentInfoClick = (event: Event) => {
@@ -4381,6 +4055,8 @@ function App() {
       window.removeEventListener('systemNodesUpdate', handleSystemNodesUpdate as EventListener)
       window.removeEventListener('containerSizeUpdate', handleContainerSizeUpdate as EventListener)
       window.removeEventListener('containerManualResize', handleContainerManualResize as EventListener)
+      window.removeEventListener('businessProcessSizeUpdate', handleBusinessProcessSizeUpdate as EventListener)
+      window.removeEventListener('businessProcessManualResize', handleBusinessProcessManualResize as EventListener)
       window.removeEventListener('componentInfoClick', handleComponentInfoClick as EventListener)
       window.removeEventListener('componentLinkClick', handleComponentLinkClick as EventListener)
       window.removeEventListener('componentLinkConfigClick', handleComponentLinkConfigClick as EventListener)
@@ -4477,6 +4153,19 @@ function App() {
           const event = new CustomEvent('componentInfoClick', { detail: { componentType: type } })
           window.dispatchEvent(event)
         }}
+        onLinkClick={(link) => {
+          const event = new CustomEvent('componentLinkClick', { detail: { link } })
+          window.dispatchEvent(event)
+        }}
+        onLinkConfigClick={(nodeId) => {
+          const event = new CustomEvent('componentLinkConfigClick', { detail: { nodeId } })
+          window.dispatchEvent(event)
+        }}
+      />
+    ),
+    'business-process': (props: NodeProps) => (
+      <BusinessProcessNode
+        {...props}
         onLinkClick={(link) => {
           const event = new CustomEvent('componentLinkClick', { detail: { link } })
           window.dispatchEvent(event)
@@ -5197,6 +4886,7 @@ function getComponentLabel(type: ComponentType): string {
     table: 'Таблица БД',
     'analytics-service': 'Сервис аналитики',
     'business-intelligence': 'Business Intelligence',
+    'business-process': 'Бизнес-процесс',
     'graph-database': 'Графовая БД',
     'time-series-database': 'Временные ряды',
     'service-mesh': 'Сервисная сеть',
@@ -5261,7 +4951,8 @@ function getComponentLabel(type: ComponentType): string {
     'metadata-catalog': 'Каталог метаданных',
     'reverse-etl': 'Reverse ETL',
     'feature-store': 'Feature Store',
-    'lakehouse': 'Data Lakehouse'
+    'lakehouse': 'Data Lakehouse',
+    'dashboard': 'Панель управления (Dashboard)'
   }
   return labels[type] || type
 }

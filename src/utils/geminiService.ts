@@ -27,6 +27,24 @@ export function isGeminiInitialized(): boolean {
   return genAI !== null
 }
 
+const AVAILABLE_COMPONENTS: ComponentType[] = [
+  'service', 'database', 'message-broker', 'api-gateway', 'cache', 'load-balancer',
+  'frontend', 'auth-service', 'cdn', 'object-storage', 'data-warehouse', 'lambda',
+  'firewall', 'system', 'esb', 'client', 'external-system', 'business-domain',
+  'controller', 'repository', 'class', 'server', 'container', 'orchestrator',
+  'service-discovery', 'web-server', 'monitoring', 'logging', 'queue', 'event-bus',
+  'stream-processor', 'search-engine', 'analytics-service', 'business-intelligence',
+  'graph-database', 'time-series-database', 'service-mesh', 'configuration-management',
+  'ci-cd-pipeline', 'backup-service', 'identity-provider', 'secret-management',
+  'api-client', 'api-documentation', 'integration-platform', 'batch-processor',
+  'etl-service', 'data-lake', 'edge-computing', 'iot-gateway', 'blockchain',
+  'ml-ai-service', 'llm-model', 'vector-database', 'ml-training', 'ml-inference',
+  'ai-agent', 'ml-data-pipeline', 'gpu-cluster', 'notification-service', 'email-service',
+  'sms-gateway', 'proxy', 'vpn-gateway', 'dns-service', 'table', 'data-quality',
+  'data-observability', 'metadata-catalog', 'reverse-etl', 'feature-store',
+  'cdc-service', 'lakehouse', 'business-process', 'dashboard'
+]
+
 // Функция для получения списка доступных моделей
 async function getAvailableModelsList(): Promise<string[]> {
   if (!storedApiKey) {
@@ -265,22 +283,25 @@ function extractComponentDetails(data: ComponentData): string {
 export function architectureToText(nodes: Node[], edges: Edge[]): string {
   const nodeDataMap = new Map(nodes.map(n => [n.id, n.data as ComponentData]))
 
-  let description = 'Архитектура системы:\n\n'
+  let description = 'ТЕКУЩАЯ АРХИТЕКТУРА НА ХОЛСТЕ:\n\n'
 
   // Описание компонентов
-  description += 'Компоненты (Nodes):\n'
+  description += 'КОМПОНЕНТЫ (Nodes):\n'
+  if (nodes.length === 0) {
+    description += '    (На холсте пока нет компонентов)\n'
+  }
   nodes.forEach(node => {
     const data = nodeDataMap.get(node.id)
     if (data) {
       const label = data.label || 'Unnamed'
       if (data.type === 'note') {
-        description += `    Текст заметки: ${label}\n`
+        description += `  - ЗАМЕТКА [ID: ${node.id}]: "${label}"\n`
       } else {
-        description += `- Компонент: "${label}" (ID: ${node.id}, Тип: ${data.type})\n`
+        description += `  - УЗЕЛ [ID: ${node.id}]: Label="${label}", Type="${data.type}"\n`
       }
 
       if (data.comment) {
-        description += `    Описание (Comment): ${data.comment}\n`
+        description += `    ОПИСАНИЕ/КОММЕНТАРИЙ: ${data.comment}\n`
       }
 
       // Добавляем детальную конфигурацию (Вендоры, настройки и т.д.)
@@ -292,36 +313,35 @@ export function architectureToText(nodes: Node[], edges: Edge[]): string {
   })
 
   // Описание соединений
-  description += '\nСоединения (Edges):\n'
+  description += '\nСВЯЗИ МЕЖДУ КОМПОНЕНТАМИ (Edges):\n'
+  if (edges.length === 0) {
+    description += '    (На холсте пока нет связей)\n'
+  }
   edges.forEach(edge => {
     const sourceData = nodeDataMap.get(edge.source)
     const targetData = nodeDataMap.get(edge.target)
     const connectionType = (edge.data as any)?.connectionType || 'unknown'
 
     if (sourceData && targetData) {
-      description += `- [${sourceData.label || edge.source}] -> [${targetData.label || edge.target}]\n`
-      description += `    Тип связи: ${connectionType}\n`
+      description += `  - [${sourceData.label || sourceData.type}] --(${connectionType})--> [${targetData.label || targetData.type}]\n`
 
       // Подпись на стрелке (label или data.description)
       const label = edge.label || (edge.data as any)?.label || (edge.data as any)?.description
       if (label) {
-        description += `    Подпись/Описание связи: ${label}\n`
+        description += `    ТЕКСТ НА СВЯЗИ: "${label}"\n`
       }
 
       const replication = (edge.data as any)?.replicationConfig
       if (replication) {
-        description += `    Replication: ${JSON.stringify(replication)}\n`
+        description += `    REPLICATION: ${JSON.stringify(replication)}\n`
       }
 
       const relType = (edge.data as any)?.relationshipType
       if (relType) {
-        description += `    Relationship (ERD): ${relType}\n`
+        description += `    RELATIONSHIP (ERD): ${relType}\n`
       }
     }
   })
-
-  // Log the generated description for debugging purposes
-  console.log('generated Architecture Description for AI:', description);
 
   return description
 }
@@ -371,23 +391,8 @@ export async function analyzeArchitectureWithAI(
 
   const architectureDescription = architectureToText(nodes, edges)
 
-  const availableComponents: ComponentType[] = [
-    'service', 'database', 'message-broker', 'api-gateway', 'cache', 'load-balancer',
-    'frontend', 'auth-service', 'cdn', 'object-storage', 'data-warehouse', 'lambda',
-    'firewall', 'system', 'esb', 'client', 'external-system', 'business-domain',
-    'controller', 'repository', 'class', 'server', 'container', 'orchestrator',
-    'service-discovery', 'web-server', 'monitoring', 'logging', 'queue', 'event-bus',
-    'stream-processor', 'search-engine', 'analytics-service', 'business-intelligence',
-    'graph-database', 'time-series-database', 'service-mesh', 'configuration-management',
-    'ci-cd-pipeline', 'backup-service', 'identity-provider', 'secret-management',
-    'api-client', 'api-documentation', 'integration-platform', 'batch-processor',
-    'etl-service', 'data-lake', 'edge-computing', 'iot-gateway', 'blockchain',
-    'ml-ai-service', 'llm-model', 'vector-database', 'ml-training', 'ml-inference',
-    'ai-agent', 'ml-data-pipeline', 'gpu-cluster', 'notification-service', 'email-service',
-    'sms-gateway', 'proxy', 'vpn-gateway', 'dns-service', 'table', 'data-quality',
-    'data-observability', 'metadata-catalog', 'reverse-etl', 'feature-store',
-    'cdc-service', 'lakehouse'
-  ]
+  // Добавление списка доступных компонентов в промпт
+  const availableComponentsStr = AVAILABLE_COMPONENTS.join(', ')
 
   const defaultPrompt = `Ты выступаешь в роли Архитектурного Коуча (Architecture Coach) и Ведущего Эксперта (Principal Architect).
 Твоя цель — не просто найти ошибки, а стать наставником для пользователя, помогая ему довести проект до 100% совершенства.
@@ -403,7 +408,7 @@ export async function analyzeArchitectureWithAI(
     - КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО повторять или перефразировать вопрос пользователя.
     - ЗАПРЕЩЕНО писать "Как я понял...", "Ваш запрос касается...". Начинай ответ прямо с первой рекомендации.
 
-ДОСТУПНЫЕ ТИПЫ КОМПОНЕНТОВ (для "suggestedComponents"): ${availableComponents.join(', ')}
+ДОСТУПНЫЕ ТИПЫ КОМПОНЕНТОВ (для "suggestedComponents"): ${availableComponentsStr}
 
 ПРОАНАЛИЗИРУЙ СЛЕДУЮЩУЮ АРХИТЕКТУРУ:
 
@@ -460,36 +465,37 @@ export async function generateImprovementRecommendations(
 
   const architectureDescription = architectureToText(nodes, edges)
 
-  const defaultPrompt = `Ты — Архитектурный Коуч (Architecture Coach). Твоя миссия — превратить текущую схему в эталонную архитектуру.
+  const defaultPrompt = `Ты — Архитектурный Бог и Главный Оптимизатор (Staff Solutions Architect). Твоя задача — провести рефакторинг текущей системы до состояния 99.999% доступности и идеальной масштабируемости.
 
-ПРАВИЛА ТВОЕЙ РАБОТЫ (КРИТИЧЕСКИ ВАЖНО):
-1.  **АНАЛИЗ ПЕРЕД СОВЕТОМ**: Сначала изучи все узлы (Label, Type, Comment) и связи.
-2.  **ЭКОНОМИЯ КОМПОНЕНТОВ**: Не предлагай добавлять то, что уже есть. Если функционал (например, мониторинг) можно возложить на существующий узел или настройку, сделай это.
-3.  **КОНКРЕТНЫЕ ИНСТРУКЦИИ**: Для каждого изменения пиши: "Соедини [Label X] и [Label Y]" или "Добавь компонент [Тип] и назови его [Имя]".
-4.  **БЕЗ ПРЕДИСЛОВИЙ**: Начинай ответ СРАЗУ с блока <BLOCK:RECOMMENDATIONS>. Не повторяй вопрос, не здоровайся, не делай вступлений.
+КРИТИЧЕСКИЕ ПРИНЦИПЫ:
+1. **NO SPOF (Single Point of Failure)**: Ищи узкие места и предлагай резервирование, кэширование и очереди.
+2. **ASYNC FIRST**: Если связь может быть асинхронной (через Message Broker), она ДОЛЖНА быть такой. Синхронные цепочки — это зло.
+3. **OBSERVABILITY**: Каждая подсистема должна иметь Monitoring/Logging. Если их нет — это ошибка.
+4. **COST OPTIMIZATION**: Не предлагай Postgres там, где хватит Redis, и не предлагай Kafka там, где хватит RabbitMQ, если это не обосновано нагрузкой.
+5. **ACTIONABLE ADVICE**: Твои советы должны содержать: "Соедини [Label A] и [Label B]", "Добавь [Type] с именем [Name]".
 
 Текущая архитектура:
 ${architectureDescription}
 
-${improvementPrompt ? `Запрос пользователя: ${improvementPrompt}` : 'Цель: Улучшить HA, Security и Scalability.'}
+${improvementPrompt ? `Запрос пользователя: ${improvementPrompt}` : 'Цель: Глобальная оптимизация структуры.'}
 
 ФОРМАТ ОТВЕТА:
 
 <BLOCK:RECOMMENDATIONS>
-*   **[Компонент/Область]**:
-    *   **Что сделать**: Конкретное действие с указанием Label узлов (например, "Соедини 'Web Gateway' и 'Auth Service'").
-    *   **Зачем**: Обоснование пользы для системы.
-    *   **Техническая деталь**: Конкретный вендор или паттерн (например, "Используй Kafka с топиком order-events").
+*   **[Домен Оптимизации]**:
+    - **Действие**: Что именно сделать (напр. "Внедрить паттерн Circuit Breaker между 'API Gateway' и 'Order Service'").
+    - **Зачем (The Why)**: Техническое обоснование через задержки или надежность.
+    - **Риск игнорирования**: Что упадет, если это не сделать.
 </BLOCK:RECOMMENDATIONS>
 
 <BLOCK:ISSUES>
-*   **Уязвимость/Риск**: Что может пойти не так (например, "Single Point of Failure в узле 'DB Master'").
-*   **Последствие**: К чему это приведет.
+*   **Архитектурный долг**: Напр. "Сильная зацепленность (Tight Coupling) между биллингом и складом".
+*   **Критичность**: Low | Medium | High | Critical.
 </BLOCK:ISSUES>
 
 <BLOCK:ANSWER>
-**Финальное резюме:**
-Как именно эти изменения сделают систему лучше. Пиши максимально сжато и по делу.
+**Финальный инженерный вердикт:**
+Краткий итог: к чему мы придем после внедрения этих правок.
 </BLOCK:ANSWER>`
 
   // Используем функцию автоматического выбора модели
@@ -545,9 +551,10 @@ export async function generateArchitectureFromDescription(
       ]
   }
 
-Доступные типы компонентов: service, database, message - broker, api - gateway, cache, load - balancer, frontend, auth - service, cdn, object - storage, data - warehouse, lambda, firewall, esb, monitoring, logging, queue, event - bus, и другие.
+КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО использовать типы компонентов, которых нет в списке ниже.
+ДОСТУПНЫЕ ТИПЫ КОМПОНЕНТОВ: ${AVAILABLE_COMPONENTS.join(', ')}
 
-Доступные типы соединений: rest, grpc, async, database - connection, cache - connection, database - replication.
+Доступные типы соединений: rest, grpc, async, database-connection, cache-connection, database-replication.
 
 Расположи компоненты так, чтобы они логично группировались(frontend слева, backend в центре, базы данных справа).
 
@@ -573,11 +580,11 @@ export async function generateArchitectureFromDescription(
   }
 }
 
-// Получение объяснения архитектурного решения
 export async function explainArchitectureDecision(
   question: string,
   nodes: Node[],
-  edges: Edge[]
+  edges: Edge[],
+  history?: Array<{ role: 'user' | 'assistant'; content: string }>
 ): Promise<string> {
   if (!genAI) {
     throw new Error('Gemini не инициализирован. Укажите API ключ.')
@@ -585,23 +592,38 @@ export async function explainArchitectureDecision(
 
   const architectureDescription = architectureToText(nodes, edges)
 
-  const prompt = `Ты — Архитектурный Наставник (Architecture Mentor). Твой ответ должен быть технически глубоким, но при этом давать четкое руководство к действию.
+  const prompt = `Ты — Архитектурный Бог и Бескомпромиссный Principal Architect. Твой уровень — Staff Engineer в Tier-1 Big Tech. Ты не просто советуешь компоненты, ты проектируешь системы, которые выдерживают миллионы RPS и годы эксплуатации.
 
-ПРИНЦИПЫ ТВОЕГО ОТВЕТА:
-1.  **БЕЗ "ВОДЫ"**: Не повторяй вопрос пользователя ("Вы спросили о..."). Не пиши вводные фразы. Начни ответ сразу с сути решения.
-2.  **ИСПОЛЬЗУЙ СУЩЕСТВУЮЩЕЕ**: Перед тем как советовать новый компонент, изучи схему пользователя ниже. Если там уже есть подходящий узел (даже если он называется иначе, но выполняет ту же роль), предложи использовать его.
-3.  **ДЕЙСТВУЙ НА СХЕМЕ**: Если твой совет подразумевает изменение архитектуры, пиши явно: "Создай связь от [Label A] к [Label B] типа [rest/async/...]". Всегда называй узлы по их Label.
-4.  **КОНКРЕТНЫЕ ТИПЫ**: Если все же нужно добавить новый узел, выбери точный тип: service, database, api-gateway, message-broker, cache, lambda и т.д.
+КРИТИЧЕСКИЕ ПРАВИЛА ТВОЕГО ИНТЕЛЛЕКТА:
+1.  **FIRST PRINCIPLES THINKING**: Анализируй решение через фундаментальные показатели: задержки (p99 latency), пропускная способность, стоимость владения, CAP-теорема, согласованность данных.
+2.  **TRADE-OFFS (КОМПРОМИССЫ) — ОБЯЗАТЕЛЬНО**: Ни одно решение не является идеальным. Если ты что-то предлагаешь, ты ОБЯЗАН написать, чем мы жертвуем (сложность, задержка, деньги).
+3.  **АНТИ-ПАДДАКИВАНИЕ (EXTREME)**: Если пользователь делает "как проще", а не "как правильно" — разбей это решение техническими аргументами. Не позволяй создавать "свалку сервисов".
+4.  **ГЛУБОКИЙ АНАЛИЗ СУЩЕСТВУЮЩЕГО**: Не просто смотри на типы. Если видишь "Redis", думай: это Cache, Message Broker или Session Store? Исходи из семантики связей.
+5.  **ПАТТЕРНЫ ВМЕСТО СТРЕЛОК**: Предлагай не просто связь, а архитектурный паттерн: Event Sourcing, CQRS, Transactional Outbox, Saga (Orchestration/Choreography), Backpressure, Circuit Breaker.
+
+АРХИТЕКТУРНЫЕ ЗАПРЕТЫ (TABOO):
+-   **Direct DB Access**: API Gateway/Frontend -> DB (Смертный грех).
+-   **Anemic Model**: Сервисы-пустышки, которые только перекладывают JSON.
+-   **Distributed Monolith**: Сильная связность через синхронные REST-вызовы там, где нужна асинхронность.
+-   **Data Silos**: Дублирование мастер-данных без стратегии синхронизации.
 
 Архитектура пользователя для анализа:
 ${architectureDescription}
 
 Вопрос пользователя: ${question}
 
-ФОРМАТ ОТВЕТА:
-1. Прямой и аргументированный ответ на вопрос.
-2. Список конкретных действий: что соединить (используя Label) и что добавить (используя стандартные типы).
-3. Почему эти действия решают проблему пользователя.`
+${history && history.length > 0 ? `
+КОНТЕКСТ ЭВОЛЮЦИИ СИСТЕМЫ:
+${history.map(m => `${m.role === 'user' ? 'Инженер' : 'Principal Architect'}: ${m.content}`).join('\n')}
+` : ''}
+
+ФОРМАТ ОТВЕТА (BE A GOD):
+1. **Вердикт**: Краткий, жесткий технический анализ текущего состояния.
+2. **Deep Action Plan**:
+   - Добавь: 'Имя' (Type: тип) — Зачем? (через First Principles)
+   - Связь: 'A' -> 'B' (Type: тип) — Какой паттерн реализует?
+3. **Trade-offs (Shadow Side)**: Что станет сложнее или дороже после этой правки?
+4. **Edge Cases**: О чем пользователь забыл? (Race conditions, Cold start, Cascading failures).`
 
   // Используем функцию автоматического выбора модели
   try {
@@ -743,44 +765,53 @@ export async function evaluateArchitectureSolution(
 
   const architectureDescription = architectureToText(nodes, edges)
 
-  const prompt = `Ты — Архитектурный Коуч и Экзаменатор. Твоя цель — оценить решение и составить четкий план (Roadmap) для достижения идеального результата (100%).
+  const prompt = `Ты — Верховный Архитектор и Бескомпромиссный Экзаменатор. Твоя цель — провести глубокий аудит системы и выставить оценку (0-100%). Ты судишь по стандартам высоконагруженных систем (High Availability, Fault Tolerance, Disaster Recovery).
 
-ТРЕБОВАНИЯ К ОЦЕНКЕ:
-1.  **НЕ ПРЕДЛАГАЙ ДУБЛИКАТЫ**: Тщательно проверь список узлов пользователя. Если узел для выполнения требования уже есть (например, есть "Postgres" для хранения данных), НЕ предлагай добавлять новую "Database". Похвали за правильный выбор.
-2.  **СВЯЗИ — ПРИОРИТЕТ №1**: Если все компоненты на месте, но связи между ними неверные или отсутствуют, твои рекомендации должны фокусироваться на "connectionsToAdd". 
-3.  **Label — Это Ключ**: В "roadmapTo100" и "connectionsToAdd" ОБЯЗАТЕЛЬНО используй Label существующих узлов пользователя. Не выдумывай новые имена для того, что уже есть.
-4.  **ТОЛЬКО JSON**: Никакого текста до или после JSON. Не повторяй условия задачи.
+КРИТИЧЕСКИЕ КРИТЕРИИ ОЦЕНКИ:
+1. **PRACTICALITY vs THEORY**: Не снижай баллы за отсутствие "модных" слов, если решение технически верное. Но БУДЬ ЖЕСТОК к архитектурным грехам (Direct DB access, Monolithic coupling, Lack of observability).
+2. **FALLBACKS & FAILURES**: Если система не выдержит падения одной БД или сервиса — это не 100%. Ищи отсутствие очередей (Message Brokers) там, где синхронный вызов убьет систему.
+3. **DATA INTEGRITY**: Оценивай, как данные синхронизируются между сервисами. Если есть "User DB" и "Product DB", но нет механизма их связи (кроме REST) — это слабая интеграция.
+4. **ROADMAP**: План до 100% должен быть конкретным: какие паттерны внедрить (напр. Circuit Breaker, Saga, Event-Driven).
+5. **JSON ONLY**: Ответ должен быть строго в формате JSON.
 
-ЗАДАЧА: ${currentCase.title}
-Ожидаемые требования: ${currentCase.description}
+ЗАПРЕТЫ (TABOO - СРАЗУ -40 БАЛЛОВ ЗА КАЖДЫЙ):
+- **Direct DB Access**: Любая связь Gateway/Frontend -> Database. Только через Service.
+- **Security Breach**: Доступ к User DB без Auth Service.
+- **Tight Coupling**: Цепочка из >3 синхронных вызовов (A -> B -> C -> D).
 
-ТЕКУЩЕЕ РЕШЕНИЕ ПОЛЬЗОВАТЕЛЯ:
+КЕЙС: ${currentCase.title}
+ТРЕБОВАНИЯ: ${currentCase.description}
+
+ТЕКУЩАЯ СХЕМА (ТЕХНИЧЕСКИЙ СРЕЗ):
 ${architectureDescription}
 
 ВЕРНИ ТОЛЬКО ВАЛИДНЫЙ JSON:
-{
-  "score": число 0-100,
-  "correctDecisions": ["Конкретно, что сделано правильно. Упоминай Label узлов."],
-  "missedRequirements": ["Что именно из условий не выполнено или выполнено неверно."],
-  "roadmapTo100": [
-    {
-      "title": "Название шага (например, 'Организация связи') ",
-      "description": "Инструкция: что именно сделать. Пример: 'Соедините [Label A] и [Label B] для передачи событий'.",
-      "componentsToAdd": ["тип_из_стандартного_списка (если реально нужно)"],
-      "connectionsToAdd": [
-        {
-          "from": "Label_СУЩЕСТВУЮЩЕГО_узла_A",
-          "to": "Label_СУЩЕСТВУЮЩЕГО_узла_B",
-          "type": "rest | async | database-connection | ...",
-          "description": "Зачем нужна эта связь"
-        }
-      ]
-    }
-  ],
-  "optimizationSuggestions": ["Технические советы по производительности, безопасности, стоимости."],
-  "summary": "Краткий технический вердикт. Без вступлений."
-}
-`
+  {
+    "score": число 0 - 100,
+      "correctDecisions": ["Конкретно, что сделано правильно. Упоминай Label узлов."],
+        "missedRequirements": ["Что именно из условий не выполнено или выполнено неверно."],
+          "roadmapTo100": [
+            {
+              "title": "Название шага (например, 'Организация связи') ",
+              "description": "Инструкция: что именно сделать. Пример: 'Соедините [Label A] и [Label B] для передачи событий'.",
+              "componentsToAdd": ["тип_из_доступного_списка"],
+              "connectionsToAdd": [
+                {
+                  "from": "Label_СУЩЕСТВУЮЩЕГО_узла_A",
+                  "to": "Label_СУЩЕСТВУЮЩЕГО_узла_B",
+                  "type": "rest | async | database-connection | ...",
+                  "description": "Зачем нужна эта связь"
+                }
+              ]
+            }
+          ],
+            "optimizationSuggestions": ["Технические советы по производительности, безопасности, стоимости."],
+              "summary": "Краткий технический вердикт. Без вступлений."
+  }
+
+КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО предлагать компоненты, которых нет в списке ниже.
+ДОСТУПНЫЕ ТИПЫ КОМПОНЕНТОВ: ${AVAILABLE_COMPONENTS.join(', ')}
+  `
 
   try {
     // Внутренний try-catch для обработки ошибок API без падения всего приложения

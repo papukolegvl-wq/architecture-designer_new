@@ -49,6 +49,7 @@ import {
   History,
   Waves,
   Repeat,
+  LayoutDashboard,
 } from 'lucide-react'
 
 const componentIcons: Record<string, React.ReactNode> = {
@@ -125,6 +126,7 @@ const componentIcons: Record<string, React.ReactNode> = {
   'reverse-etl': <Repeat size={32} />,
   'feature-store': <Warehouse size={32} />,
   lakehouse: <Waves size={32} />,
+  dashboard: <LayoutDashboard size={32} />,
 }
 
 const componentColors: Record<string, string> = {
@@ -199,6 +201,8 @@ const componentColors: Record<string, string> = {
   'reverse-etl': '#be4bdb',
   'feature-store': '#fd7e14',
   lakehouse: '#15aabf',
+  'business-process': '#ae3ec9',
+  dashboard: '#339af0',
 }
 
 interface CustomNodeProps extends NodeProps<ComponentData> {
@@ -693,6 +697,10 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
       return 'Feature Store'
     } else if (data.type === 'lakehouse') {
       return 'Lakehouse'
+    } else if (data.type === 'business-process') {
+      return 'Business Process'
+    } else if (data.type === 'dashboard') {
+      return 'Dashboard'
     }
     return data.connectionType === 'sync' ? 'Sync' : 'Async'
   }

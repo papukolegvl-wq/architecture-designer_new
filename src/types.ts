@@ -108,6 +108,8 @@ export type ComponentType =
   | 'feature-store'
   | 'cdc-service'
   | 'lakehouse'
+  | 'business-process'
+  | 'dashboard'
 
 export type ConnectionType = 'rest' | 'grpc' | 'async' | 'database-connection' | 'database-replication' | 'cache-connection' | 'dependency' | 'composition' | 'aggregation' | 'method-call' | 'inheritance' | 'bidirectional' | 'async-bidirectional'
 
@@ -1025,6 +1027,11 @@ export interface BusinessIntelligenceConfig {
   dataSourceCount?: number
 }
 
+export interface BusinessProcessConfig {
+  childNodes?: string[]
+  isManuallyResized?: boolean
+}
+
 export interface ComponentData {
   type: ComponentType
   label: string
@@ -1088,6 +1095,7 @@ export interface ComponentData {
   metadataCatalogConfig?: MetadataCatalogConfig
   reverseEtlConfig?: ReverseETLConfig
   featureStoreConfig?: FeatureStoreConfig
+  businessProcessConfig?: BusinessProcessConfig
 }
 
 export interface DatabaseReplicationConfig {
@@ -1139,4 +1147,13 @@ export interface LearningProject {
   chatMessages: { role: 'user' | 'assistant'; content: string }[]
   history: LearningHistoryItem[]
   currentEvaluation: ArchitectureEvaluation | null
+}
+
+export interface Workspace {
+  id: string
+  name: string
+  nodes: Node[]
+  edges: Edge[]
+  viewport?: { x: number; y: number; zoom: number }
+  isLocked?: boolean
 }
