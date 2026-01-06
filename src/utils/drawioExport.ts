@@ -444,9 +444,14 @@ export function saveToDrawIOFile(nodes: Node[], edges: Edge[]): void {
   const link = document.createElement('a')
   link.href = url
   const now = new Date()
-  const datePart = now.toISOString().split('T')[0]
-  const timePart = now.toTimeString().split(' ')[0].replace(/:/g, '-')
-  link.download = `c4-architecture-diagram-${datePart}_${timePart}.drawio`
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const hours = String(now.getHours()).padStart(2, '0')
+  const minutes = String(now.getMinutes()).padStart(2, '0')
+  const seconds = String(now.getSeconds()).padStart(2, '0')
+
+  link.download = `c4-architecture-diagram-${year}-${month}-${day}_${hours}-${minutes}-${seconds}.drawio`
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)

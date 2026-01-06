@@ -780,9 +780,14 @@ ${currentCase.expectedComponents.join(', ')}` : ''}
     const a = document.createElement('a');
     a.href = url;
     const now = new Date();
-    const datePart = now.toISOString().split('T')[0];
-    const timePart = now.toTimeString().split(' ')[0].replace(/:/g, '-');
-    a.download = `case-${currentCase.title.replace(/\s+/g, '-').toLowerCase()}-${datePart}_${timePart}.txt`;
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+
+    a.download = `case-${currentCase.title.replace(/\s+/g, '-').toLowerCase()}-${year}-${month}-${day}_${hours}-${minutes}-${seconds}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

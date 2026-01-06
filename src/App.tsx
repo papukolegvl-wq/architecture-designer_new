@@ -759,15 +759,6 @@ function App() {
 
 
 
-  // Загружаем сохраненный дескриптор файла при старте
-  useEffect(() => {
-    getPersistedHandle().then(handle => {
-      if (handle) {
-        console.log('Восстановлен дескриптор файла из хранилища')
-        fileHandleRef.current = handle
-      }
-    })
-  }, [])
 
   const [isSpacePressed, setIsSpacePressed] = useState(false)
 
@@ -1028,17 +1019,13 @@ function App() {
   )
 
   // Храним handle файла, чтобы не спрашивать каждый раз
-  const fileHandleRef = useRef<any>(null)
 
   const handleSave = useCallback(async () => {
     try {
-      const handle = await saveToFile(nodes, edges, fileHandleRef.current)
-      if (handle) {
-        fileHandleRef.current = handle
-        // Добавляем уведомление, чтобы пользователь видел, что что-то произошло
-        console.log('Файл успешно сохранен')
-        alert('Файл сохранен!')
-      }
+      await saveToFile(nodes, edges)
+      // Мы не сохраняем handle, чтобы следующее сохранение предложило новое имя с новым временем
+      console.log('Файл успешно сохранен')
+      alert('Файл сохранен!')
     } catch (err) {
       console.error('Ошибка при сохранении:', err)
       alert('Ошибка при сохранении файла. Попробуйте еще раз.')

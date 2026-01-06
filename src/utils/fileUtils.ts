@@ -105,66 +105,44 @@ export async function saveToFile(nodes: Node[], edges: Edge[], cachedHandle?: an
 
   const json = JSON.stringify(data, null, 2)
   const now = new Date()
-  const datePart = now.toISOString().split('T')[0]
-  const timePart = now.toTimeString().split(' ')[0].replace(/:/g, '-')
-  const filename = `architecture-${datePart}_${timePart}.json`
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const hours = String(now.getHours()).padStart(2, '0')
+  const minutes = String(now.getMinutes()).padStart(2, '0')
+  const seconds = String(now.getSeconds()).padStart(2, '0')
+
+  const filename = `architecture-${year}-${month}-${day}_${hours}-${minutes}-${seconds}.json`
 
   try {
     if ('showSaveFilePicker' in window) {
-      let fileHandle = cachedHandle
+      // Игнорируем cachedHandle, так как пользователь хочет новые файлы при каждом сохранении
+      console.log('Showing save file picker for a new file...')
+      try {
+        // @ts-ignore
+        const fileHandle = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [{
+            description: 'JSON Files',
+            accept: { 'application/json': ['.json'] },
+          }],
+        })
 
-      // Если в памяти нет, пробуем достать из IndexedDB
-      if (!fileHandle) {
-        fileHandle = await getPersistedHandle()
+        // Записываем данные в файл
+        console.log('Saving architecture to file...')
+        // @ts-ignore
+        const writable = await fileHandle.createWritable()
+        await writable.write(json)
+        await writable.close()
+
+        console.log('File saved successfully using File System Access API')
+        return fileHandle
+      } catch (pickerError) {
+        console.error('Picker error or cancelled:', pickerError)
+        // Если пользователь отменил выбор, выходим (не падаем в fallback)
+        if ((pickerError as Error).name === 'AbortError') return undefined
+        throw pickerError
       }
-
-      // Если хендл есть, проверяем разрешение
-      if (fileHandle) {
-        try {
-          const hasPermission = await verifyPermission(fileHandle, true)
-          if (!hasPermission) {
-            console.log('Permission not granted for cached handle, requesting new picker...')
-            fileHandle = null
-          }
-        } catch (e) {
-          console.warn('Error verifying cached handle permission:', e)
-          fileHandle = null
-        }
-      }
-
-      // Если хендла нет (или он невалиден), запрашиваем через диалог сохранения
-      if (!fileHandle) {
-        console.log('Showing save file picker...')
-        try {
-          // @ts-ignore
-          fileHandle = await window.showSaveFilePicker({
-            suggestedName: filename,
-            types: [{
-              description: 'JSON Files',
-              accept: { 'application/json': ['.json'] },
-            }],
-          })
-
-          // Сохраняем полученный хендл для будущего использования
-          await setPersistedHandle(fileHandle)
-          console.log('Obtained and persisted new file handle')
-        } catch (pickerError) {
-          console.error('Picker error or cancelled:', pickerError)
-          // Если пользователь отменил выбор, выходим (не падаем в fallback)
-          if ((pickerError as Error).name === 'AbortError') return undefined
-          throw pickerError
-        }
-      }
-
-      // Записываем данные в файл
-      console.log('Saving architecture to file...')
-      // @ts-ignore
-      const writable = await fileHandle.createWritable()
-      await writable.write(json)
-      await writable.close()
-
-      console.log('File saved successfully using File System Access API')
-      return fileHandle
     }
   } catch (error) {
     console.error('File System Access API error in saveToFile:', error)
@@ -212,24 +190,26 @@ import { LearningProject } from '../types'
 export async function saveLearningProject(project: LearningProject, cachedHandle?: any): Promise<any> {
   const json = JSON.stringify(project, null, 2)
   const now = new Date()
-  const datePart = now.toISOString().split('T')[0]
-  const timePart = now.toTimeString().split(' ')[0].replace(/:/g, '-')
-  const filename = `learning-project-${datePart}_${timePart}.json`
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const hours = String(now.getHours()).padStart(2, '0')
+  const minutes = String(now.getMinutes()).padStart(2, '0')
+  const seconds = String(now.getSeconds()).padStart(2, '0')
+
+  const filename = `learning-project-${year}-${month}-${day}_${hours}-${minutes}-${seconds}.json`
 
   try {
     if ('showSaveFilePicker' in window) {
-      let fileHandle = cachedHandle
-
-      if (!fileHandle) {
-        // @ts-ignore
-        fileHandle = await window.showSaveFilePicker({
-          suggestedName: filename,
-          types: [{
-            description: 'Learning Project JSON',
-            accept: { 'application/json': ['.json'] },
-          }],
-        })
-      }
+      console.log('Showing save file picker for new learning project...')
+      // @ts-ignore
+      const fileHandle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{
+          description: 'Learning Project JSON',
+          accept: { 'application/json': ['.json'] },
+        }],
+      })
 
       // @ts-ignore
       const writable = await fileHandle.createWritable()
