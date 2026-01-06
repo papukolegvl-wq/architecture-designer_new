@@ -2902,8 +2902,42 @@ function App() {
 
     console.log('📋 Найдено связей между выделенными узлами:', relatedEdges.length)
 
+    // Функция для расчета абсолютной позиции узла
+    const getAbsolutePosition = (nodeId: string, allNodes: Node[]): { x: number, y: number } => {
+      const node = allNodes.find(n => n.id === nodeId)
+      if (!node) return { x: 0, y: 0 }
+
+      let x = node.position.x
+      let y = node.position.y
+      let currentParentId = node.parentNode
+
+      while (currentParentId) {
+        const parent = allNodes.find(n => n.id === currentParentId)
+        if (parent) {
+          x += parent.position.x
+          y += parent.position.y
+          currentParentId = parent.parentNode
+        } else {
+          break
+        }
+      }
+      return { x, y }
+    }
+
+    // Сохраняем узлы с добавленной абсолютной позицией в data, чтобы использовать при вставке
+    const nodesWithAbsolutePos = nodesToCopy.map(node => {
+      const absPos = getAbsolutePosition(node.id, nodes)
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          __absolutePosition: absPos // Временное поле для логики вставки
+        }
+      }
+    })
+
     const copiedData = {
-      nodes: nodesToCopy.map(node => ({ ...node })),
+      nodes: nodesWithAbsolutePos,
       edges: relatedEdges.map(edge => ({ ...edge })),
     }
 
@@ -2973,20 +3007,71 @@ function App() {
       pasteOffsetY = flowCenter.y
     }
 
-    // Вычисляем минимальные координаты скопированных узлов для правильного смещения
-    const minX = Math.min(...dataToPaste.nodes.map(n => n.position.x))
-    const minY = Math.min(...dataToPaste.nodes.map(n => n.position.y))
+    // Helper to calculate absolute position within the isolated pasted group
+    const getSnapshotAbsolutePosition = (nodeId: string, snapshotNodes: Node[]): { x: number, y: number } => {
+      const node = snapshotNodes.find(n => n.id === nodeId)
+      if (!node) return { x: 0, y: 0 }
+
+      let x = node.position.x
+      let y = node.position.y
+      let currentParentId = node.parentNode
+
+      // Traverse up ONLY within the snapshot nodes
+      // If parent is not in snapshot, we stop (treat as root of the selection)
+      let iterations = 0
+      while (currentParentId && iterations < 50) {
+        const parent = snapshotNodes.find(n => n.id === currentParentId)
+        if (parent) {
+          x += parent.position.x
+          y += parent.position.y
+          currentParentId = parent.parentNode
+        } else {
+          break
+        }
+        iterations++
+      }
+      return { x, y }
+    }
+
+    // Вычисляем минимальные АБСОЛЮТНЫЕ координаты всей группы вставки
+    const nodesWithAbs = dataToPaste.nodes.map(n => {
+      const absPos = getSnapshotAbsolutePosition(n.id, dataToPaste.nodes)
+      return { ...n, absX: absPos.x, absY: absPos.y }
+    })
+
+    const minAbsX = Math.min(...nodesWithAbs.map(n => n.absX))
+    const minAbsY = Math.min(...nodesWithAbs.map(n => n.absY))
+
+    // ВАЖНО: pasteOffsetX/Y - это целевая точка вставки (обычно центр экрана)
+    // Мы смещаем всю группу так, чтобы её левый верхний угол (minAbsX, minAbsY)
+    // переместился в pasteOffsetX, pasteOffsetY.
+    const shiftX = pasteOffsetX - minAbsX
+    const shiftY = pasteOffsetY - minAbsY
+
+    console.log(`📋 Paste Geometry (Re-calc): MinAbsX=${minAbsX}, MinAbsY=${minAbsY}, ShiftX=${shiftX}, ShiftY=${shiftY}`)
 
     // Создаем новые ID для копируемых узлов
     const nodeIdMap = new Map<string, string>()
     const timestamp = Date.now()
-    const newNodes: Node[] = dataToPaste.nodes.map((node, index) => {
+
+    // Заполняем карту ID
+    dataToPaste.nodes.forEach((node, index) => {
       const newId = `${node.id}-copy-${timestamp}-${index}`
       nodeIdMap.set(node.id, newId)
+    })
+
+    const pastedNodeIds = new Set(dataToPaste.nodes.map(n => n.id))
+
+    const newNodes: Node[] = dataToPaste.nodes.map((node, index) => {
+      const newId = nodeIdMap.get(node.id)!
 
       const nodeData = node.data as ComponentData
-      // Для бизнес-домена назначаем новый цвет при вставке
       let updatedData = { ...node.data }
+
+      // Clean up temp data if present
+      if ('__absolutePosition' in updatedData) delete (updatedData as any).__absolutePosition
+
+      // Business domain color logic
       if (nodeData?.type === 'business-domain') {
         const existingDomains = nodes.filter(n => {
           const data = n.data as ComponentData
@@ -2998,7 +3083,7 @@ function App() {
         ]
         const newColor = domainColors[existingDomains.length % domainColors.length]
         updatedData = {
-          ...node.data,
+          ...nodeData,
           systemConfig: {
             ...(nodeData.systemConfig || { childNodes: [] }),
             domainColor: newColor,
@@ -3006,15 +3091,40 @@ function App() {
         }
       }
 
-      // Смещаем позицию относительно точки вставки
+      // Update parentNode
+      let newParentNode = node.parentNode
+      if (node.parentNode && nodeIdMap.has(node.parentNode)) {
+        newParentNode = nodeIdMap.get(node.parentNode)
+      }
+
+      // Determine position
+      // Node is "root" in this context if it has no parent OR its parent is not in the paste selection
+      const isPerceivedRoot = !node.parentNode || !pastedNodeIds.has(node.parentNode)
+
+      let newPosition = { ...node.position }
+
+      if (isPerceivedRoot) {
+        // For root nodes, we calculate new position based on their original absolute position + shift
+        // Since we are setting 'position' (which is relative to parent), and parent is effectively 'world' or 'unselected parent',
+        // we treat it as absolute mapping.
+
+        // Re-calculate *this specific node's* absolute position from the snapshot
+        // (It might be different from minAbsX)
+        const absPos = getSnapshotAbsolutePosition(node.id, dataToPaste.nodes)
+
+        newPosition = {
+          x: absPos.x + shiftX,
+          y: absPos.y + shiftY
+        }
+      }
+      // Inner nodes keep their relative positions
+
       const newNode: Node = {
         ...node,
         id: newId,
+        parentNode: newParentNode,
         data: updatedData,
-        position: {
-          x: pasteOffsetX + (node.position.x - minX),
-          y: pasteOffsetY + (node.position.y - minY),
-        },
+        position: newPosition,
       }
       newNode.selected = true
       return newNode
@@ -3026,46 +3136,77 @@ function App() {
 
     // Создаем новые edges с обновленными ID
     const newEdges: Edge[] = dataToPaste.edges.map((edge, index) => {
-      const isNewSource = nodeIdMap.has(edge.source)
-      const isNewTarget = nodeIdMap.has(edge.target)
+      const newSourceId = nodeIdMap.get(edge.source)
+      const newTargetId = nodeIdMap.get(edge.target)
 
-      const newSourceId = nodeIdMap.get(edge.source) || edge.source
-      const newTargetId = nodeIdMap.get(edge.target) || edge.target
+      const sourceNodeExistsInPaste = dataToPaste.nodes.some(n => n.id === edge.source)
+      const targetNodeExistsInPaste = dataToPaste.nodes.some(n => n.id === edge.target)
 
-      // Сохраняем все свойства edge, включая waypoints, pathType, labelPosition, verticalSegmentX
-      const newEdge: Edge = {
-        ...edge,
-        id: `${edge.id}-copy-${timestamp}-${index}`,
-        source: newSourceId,
-        target: newTargetId,
-        // Сохраняем Handle ID для новых связей, чтобы они оставались привязанными к тем же точкам
-        sourceHandle: edge.sourceHandle,
-        targetHandle: edge.targetHandle,
-        selected: true,
-        // Сохраняем все данные edge, включая waypoints, pathType, labelPosition, verticalSegmentX
-        data: {
-          ...edge.data,
-          // Waypoints нужно обновить координаты относительно новых позиций узлов
-          // МЫ смещаем их только если оба узла новые (целая ветка скопирована)
-          // Или если это "хвост" к старому узлу - тогда оставляем как есть или смещаем аккуратно
-          waypoints: edge.data?.waypoints ? edge.data.waypoints.map((wp: any) => ({
+      const isInternalEdge = (newSourceId !== undefined && newTargetId !== undefined) || (sourceNodeExistsInPaste && targetNodeExistsInPaste)
+      if (isInternalEdge) {
+        console.log(`📋 Pasting Internal Edge ${edge.id}: ShiftX=${shiftX}, ShiftY=${shiftY}`)
+        // console.log(`   Old VerticalSegmentX: ${edge.data?.verticalSegmentX}`)
+
+        // Shift geometric data
+        // Explicitly handle verticalSegmentX
+        let newVerticalSegmentX = undefined
+        if (edge.data?.verticalSegmentX !== undefined && edge.data?.verticalSegmentX !== null) {
+          const oldVal = Number(edge.data.verticalSegmentX)
+          if (!isNaN(oldVal)) {
+            newVerticalSegmentX = oldVal + shiftX
+          }
+        }
+
+        let newWaypoints = undefined
+        if (edge.data?.waypoints && Array.isArray(edge.data.waypoints)) {
+          newWaypoints = edge.data.waypoints.map((wp: any) => ({
             ...wp,
-            // Смещаем вейпоинт только если мы копируем "ветку" (оба узла новые)
-            x: isNewSource && isNewTarget ? wp.x - minX + pasteOffsetX : wp.x,
-            y: isNewSource && isNewTarget ? wp.y - minY + pasteOffsetY : wp.y,
-          })) : undefined,
-          // LabelPosition аналогично
-          labelPosition: edge.data?.labelPosition ? {
-            x: isNewSource && isNewTarget ? edge.data.labelPosition.x - minX + pasteOffsetX : edge.data.labelPosition.x,
-            y: isNewSource && isNewTarget ? edge.data.labelPosition.y - minY + pasteOffsetY : edge.data.labelPosition.y,
-          } : undefined,
-          // VerticalSegmentX аналогично
-          verticalSegmentX: edge.data?.verticalSegmentX !== undefined && isNewSource && isNewTarget
-            ? edge.data.verticalSegmentX - minX + pasteOffsetX
-            : edge.data?.verticalSegmentX,
-        },
+            x: Number(wp.x) + shiftX,
+            y: Number(wp.y) + shiftY,
+          }))
+        }
+
+        const newLabelPos = edge.data?.labelPosition ? {
+          x: Number(edge.data.labelPosition.x) + shiftX,
+          y: Number(edge.data.labelPosition.y) + shiftY,
+        } : undefined
+
+        const finalSourceId = newSourceId || nodeIdMap.get(edge.source) || edge.source
+        const finalTargetId = newTargetId || nodeIdMap.get(edge.target) || edge.target
+
+        return {
+          ...edge,
+          id: `${edge.id}-copy-${timestamp}-${index}`,
+          source: finalSourceId,
+          target: finalTargetId,
+          sourceHandle: edge.sourceHandle,
+          targetHandle: edge.targetHandle,
+          selected: true,
+          data: {
+            ...edge.data,
+            waypoints: newWaypoints,
+            labelPosition: newLabelPos,
+            verticalSegmentX: newVerticalSegmentX,
+            // Clear legacy single waypoint fields to avoid confusion
+            waypointX: undefined,
+            waypointY: undefined
+          }
+        }
+      } else {
+        // External edge 
+        const finalSourceId = newSourceId || (sourceNodeExistsInPaste ? nodeIdMap.get(edge.source) : edge.source) || edge.source
+        const finalTargetId = newTargetId || (targetNodeExistsInPaste ? nodeIdMap.get(edge.target) : edge.target) || edge.target
+        return {
+          ...edge,
+          id: `${edge.id}-copy-${timestamp}-${index}`,
+          source: finalSourceId,
+          target: finalTargetId,
+          sourceHandle: edge.sourceHandle,
+          targetHandle: edge.targetHandle,
+          selected: true,
+          data: { ...edge.data }
+        }
       }
-      return newEdge
     }).filter((edge): edge is Edge => edge !== null)
 
     // Добавляем новые узлы и связи
@@ -3202,7 +3343,22 @@ function App() {
       source: idMap.get(edge.source)!,
       target: idMap.get(edge.target)!,
       selected: true,
-      data: { ...edge.data }
+      data: {
+        ...edge.data,
+        // Shift waypoints and other positional data by the offset
+        waypoints: edge.data?.waypoints?.map((wp: any) => ({
+          ...wp,
+          x: wp.x + offset,
+          y: wp.y + offset
+        })),
+        waypointX: edge.data?.waypointX !== undefined ? edge.data.waypointX + offset : undefined,
+        waypointY: edge.data?.waypointY !== undefined ? edge.data.waypointY + offset : undefined,
+        labelPosition: edge.data?.labelPosition ? {
+          x: edge.data.labelPosition.x + offset,
+          y: edge.data.labelPosition.y + offset
+        } : undefined,
+        verticalSegmentX: edge.data?.verticalSegmentX !== undefined ? edge.data.verticalSegmentX + offset : undefined,
+      }
     }))
 
     // Снимаем выделение с текущих и добавляем новые

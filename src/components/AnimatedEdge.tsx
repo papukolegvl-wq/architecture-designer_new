@@ -19,7 +19,11 @@ function AnimatedEdge({
 }: EdgeProps) {
   // Получаем узлы для определения их типов
   const { setEdges, getViewport, screenToFlowPosition } = useReactFlow()
-  const zoom = useStore((s) => s.transform[2])
+
+  // Optimization: Subscribe to specific zoom thresholds to avoid re-rendering on every zoom frame
+  const isInteractive = useStore((s) => s.transform[2] > 0.4)
+  const showLabels = useStore((s) => s.transform[2] > 0.5)
+  const showAnimation = useStore((s) => s.transform[2] >= 0.6)
   const [, setTick] = useState(0)
 
   // Force update on mount to ensure coordinates are correctly resolved
@@ -890,7 +894,7 @@ function AnimatedEdge({
         <title>{selected ? 'Кликните на линию для добавления вершины изгиба. Перетащите вершины для изменения траектории.' : 'Кликните на линию для выделения и редактирования вершин изгиба.'}</title>
 
         {/* Вершины изгиба линии - видны только при выделении линии и зуме */}
-        {selected && zoom > 0.4 && waypointsRef.current.map((wp) => (
+        {selected && isInteractive && waypointsRef.current.map((wp) => (
           <g key={wp.id}>
             {/* Внешний круг для лучшей видимости */}
             <circle
@@ -982,7 +986,7 @@ function AnimatedEdge({
         ))}
 
         {/* Узлы редактирования на концах линии (source и target) - только при выделении и достаточном зуме */}
-        {selected && zoom > 0.4 && (
+        {selected && isInteractive && (
           <>
 
             {/* Узлы редактирования на концах линии (source и target) - всегда видимые при выделении */}
@@ -1030,7 +1034,7 @@ function AnimatedEdge({
           </>
         )}
         {/* Анимированная точка, показывающая поток данных (только при достаточном зуме) */}
-        {zoom >= 0.6 && (
+        {showAnimation && (
           <>
             <path
               d="M -10,-5 L 0,0 L -10,5 Z"
@@ -1136,7 +1140,7 @@ function AnimatedEdge({
       )}
 
       {/* Relationship labels for table connections (only at sufficient zoom) */}
-      {data?.relationshipType && zoom > 0.5 && (
+      {data?.relationshipType && showLabels && (
         <EdgeLabelRenderer>
           <div
             style={{
@@ -1178,8 +1182,5 @@ function AnimatedEdge({
   )
 }
 
-// Мемоизируем компонент для оптимизации производительности
-// НЕ мемоизируем слишком строго, чтобы анимация работала
-// Export directly without memo to ensure updates are not blocked
-// Export directly without memo to ensure updates are not blocked on initial render
+// Memoize the component to prevent unnecessary re-renders
 export default AnimatedEdge

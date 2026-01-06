@@ -220,7 +220,10 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
   const [isHovered, setIsHovered] = useState(false)
   const [label, setLabel] = useState(data.label)
   const inputRef = useRef<HTMLInputElement>(null)
-  const zoom = useStore((s) => s.transform[2])
+  /* Optimization: Subscribe to specific zoom thresholds to avoid re-rendering on every zoom frame */
+  const isSimple = useStore((s) => s.transform[2] < 0.4)
+  const isMedium = useStore((s) => s.transform[2] < 0.7)
+
   const connectedHandleIds = useStore((s) => {
     // Оптимизированный селектор: фильтруем только те грани, которые связаны с этим узлом
     const ids: string[] = []
@@ -244,9 +247,6 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
       return () => clearTimeout(timer);
     }
   }, [isConnecting, wasConnecting]);
-
-  const isSimple = zoom < 0.4
-  const isMedium = zoom < 0.7
 
   const handleInfoClick = (e: React.MouseEvent) => {
     e.stopPropagation()
