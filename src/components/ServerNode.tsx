@@ -1,0 +1,404 @@
+import React, { useState, useEffect, memo, useRef } from 'react'
+import { NodeProps, useReactFlow, NodeResizer, Handle, Position, useStore } from 'reactflow'
+import { ComponentData } from '../types'
+import { Server, Link as LinkIcon, Link2 } from 'lucide-react'
+
+function ServerNode({
+    id,
+    data,
+    selected,
+    onLinkClick,
+    onLinkConfigClick
+}: NodeProps<ComponentData> & {
+    onLinkClick?: (link: any) => void,
+    onLinkConfigClick?: (nodeId: string) => void
+}) {
+    const { getNodes } = useReactFlow()
+    const [label, setLabel] = useState(data.label || 'Сервер')
+    const [isEditing, setIsEditing] = useState(false)
+    const [childNodes, setChildNodes] = useState<string[]>(data.serverConfig?.childNodes || [])
+    // Инициализируем isManuallyResized из данных, если они есть
+    const [isManuallyResized, setIsManuallyResized] = useState(false)
+
+    // Эффект для инициализации и обновления из пропсов
+    useEffect(() => {
+        if (data.serverConfig?.isManuallyResized !== undefined) {
+            setIsManuallyResized(data.serverConfig.isManuallyResized)
+        }
+    }, [data.serverConfig?.isManuallyResized])
+    // Ref to track if component is mounted
+    const isMounted = useRef(true)
+
+    useEffect(() => {
+        isMounted.current = true
+        return () => {
+            isMounted.current = false
+        }
+    }, [])
+
+    const [isHovered, setIsHovered] = useState(false)
+    const zoom = useStore((s) => s.transform[2])
+    const connectedHandleIds = useStore((s) =>
+        s.edges
+            .filter((e) => e.source === id || e.target === id)
+            .map((e) => (e.source === id ? e.sourceHandle : e.targetHandle))
+    )
+    const isConnecting = useStore((s) => !!s.connectionStartHandle);
+    const isSimple = zoom < 0.4
+    const isMedium = zoom < 0.7
+
+    // Функция для обновления размера сервера
+    const updateServerSize = React.useCallback(() => {
+        if (!isMounted.current) return
+        const allNodes = getNodes()
+        const serverNode = allNodes.find(n => n.id === id)
+        if (!serverNode) return
+
+        const padding = 30 // Отступ от краев
+        const minWidth = 300
+        const minHeight = 200
+
+        const serverX = serverNode.position.x
+        const serverY = serverNode.position.y
+        const currentWidth = serverNode.width || minWidth
+        const currentHeight = serverNode.height || minHeight
+
+        // Находим узлы внутри сервера
+        let insideNodes = allNodes.filter(node => {
+            if (node.id === id || node.type === 'server' || node.type === 'container' || node.type === 'system') return false
+            const nodeX = node.position.x
+            const nodeY = node.position.y
+            const nodeWidth = node.width || 200
+            const nodeHeight = node.height || 120
+
+            const nodeCenterX = nodeX + nodeWidth / 2
+            const nodeCenterY = nodeY + nodeHeight / 2
+
+            return (
+                nodeCenterX >= serverX &&
+                nodeCenterY >= serverY &&
+                nodeCenterX <= serverX + currentWidth &&
+                nodeCenterY <= serverY + currentHeight
+            )
+        })
+
+        // Обновляем список дочерних узлов
+        const childIds = insideNodes.map(n => n.id)
+
+        // Проверяем, изменился ли состав дочерних узлов
+        const childrenChanged = JSON.stringify(childIds.sort()) !== JSON.stringify(childNodes.sort())
+
+        if (childrenChanged) {
+            if (isMounted.current) {
+                setChildNodes(childIds)
+            }
+        }
+
+        // Если есть изменения в детях или размерах (и не ручной режим), отправляем обновление
+        if (childrenChanged || (!isManuallyResized && insideNodes.length > 0)) {
+            // Вычисляем границы всех дочерних узлов
+            let minX = Infinity
+            let minY = Infinity
+            let maxX = -Infinity
+            let maxY = -Infinity
+
+            insideNodes.forEach(node => {
+                const nodeX = node.position.x
+                const nodeY = node.position.y
+                const nodeWidth = node.width || 200
+                const nodeHeight = node.height || 120
+
+                minX = Math.min(minX, nodeX)
+                minY = Math.min(minY, nodeY)
+                maxX = Math.max(maxX, nodeX + nodeWidth)
+                maxY = Math.max(maxY, nodeY + nodeHeight)
+            })
+
+            // Вычисляем новый размер сервера (только если не ручной режим)
+            let newWidth = serverNode.width || minWidth
+            let newHeight = serverNode.height || minHeight
+
+            if (!isManuallyResized && insideNodes.length > 0) {
+                newWidth = Math.max(minWidth, maxX - minX + padding * 2)
+                newHeight = Math.max(minHeight, maxY - minY + padding * 2)
+            }
+
+            // Обновляем если размеры изменились или изменился состав детей
+            if (serverNode.width !== newWidth || serverNode.height !== newHeight || childrenChanged) {
+                const event = new CustomEvent('serverSizeUpdate', {
+                    detail: {
+                        serverId: id,
+                        childNodes: childIds,
+                        width: newWidth,
+                        height: newHeight,
+                        position: { x: serverX, y: serverY },
+                    },
+                })
+                window.dispatchEvent(event)
+            }
+        }
+    }, [id, getNodes, isManuallyResized, childNodes])
+
+    useEffect(() => {
+        if (isMounted.current) {
+            setTimeout(updateServerSize, 0)
+        }
+        const interval = setInterval(() => {
+            if (isMounted.current) {
+                updateServerSize()
+            }
+        }, 2000)
+        return () => clearInterval(interval)
+    }, [updateServerSize])
+
+    // Слушаем изменения узлов
+    useEffect(() => {
+        const handleNodesChange = () => {
+            if (isMounted.current) {
+                updateServerSize()
+            }
+        }
+        window.addEventListener('nodesChange', handleNodesChange)
+        return () => window.removeEventListener('nodesChange', handleNodesChange)
+    }, [updateServerSize])
+
+    const handleLabelDoubleClick = () => {
+        setIsEditing(true)
+    }
+
+    const handleLabelBlur = () => {
+        setIsEditing(false)
+        if (label.trim()) {
+            const event = new CustomEvent('nodeLabelUpdate', {
+                detail: { nodeId: id, label: label.trim() }
+            })
+            window.dispatchEvent(event)
+        } else {
+            setLabel(data.label || 'Сервер')
+        }
+    }
+
+    const handleLabelKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            handleLabelBlur()
+        } else if (e.key === 'Escape') {
+            setLabel(data.label || 'Сервер')
+            setIsEditing(false)
+        }
+    }
+
+    const serverColor = '#339af0' // Синий цвет для серверов (из componentColors)
+    const borderColor = selected ? '#4dabf7' : serverColor
+
+    return (
+        <div
+            style={{
+                width: '100%',
+                height: '100%',
+                backgroundColor: isSimple ? 'transparent' : serverColor + '15',
+                border: isSimple ? 'none' : `2px solid ${borderColor}`,
+                borderRadius: '12px',
+                padding: isSimple ? '10px' : '20px',
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: selected && !isSimple ? `0 0 20px ${borderColor}40` : 'none',
+                overflow: 'visible',
+            }}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+        >
+            {/* Генерируем точки подключения по всему периметру */}
+            {([Position.Top, Position.Bottom, Position.Left, Position.Right] as Position[]).map((pos) =>
+                [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map((p) => {
+                    const isHorizontal = pos === Position.Top || pos === Position.Bottom;
+                    const isCenter = p === 50;
+                    const color = borderColor;
+
+                    const targetId = `${pos}-target-${p}`;
+                    const sourceId = `${pos}-source-${p}`;
+
+                    const isTargetConnected = connectedHandleIds.includes(targetId);
+                    const isSourceConnected = connectedHandleIds.includes(sourceId);
+                    const shouldRender = isHovered || isTargetConnected || isSourceConnected || isConnecting || isCenter || selected;
+
+                    if (!shouldRender) return null;
+
+                    const style: React.CSSProperties = {
+                        [isHorizontal ? 'left' : 'top']: `${p}%`,
+                        [pos]: '-5px',
+                        opacity: isHovered || isConnecting || selected ? (isCenter ? 0.8 : 0.3) : (isTargetConnected || isSourceConnected ? 0.6 : 0),
+                        borderRadius: '50%',
+                        width: isCenter ? '12px' : '10px',
+                        height: isCenter ? '12px' : '10px',
+                        background: isCenter ? color : `${color}40`,
+                        border: isCenter ? `2px solid #fff` : `1px solid ${color}60`,
+                        cursor: 'crosshair',
+                        transform: isHorizontal ? 'translateX(-50%)' : 'translateY(-50%)',
+                        zIndex: isCenter ? 30 : 25,
+                        boxShadow: isCenter && (isHovered || isConnecting || selected) ? `0 0 8px ${color}` : undefined,
+                    };
+
+                    return (
+                        <React.Fragment key={`${pos}-${p}`}>
+                            <Handle
+                                type="target"
+                                position={pos}
+                                id={targetId}
+                                style={style}
+                            />
+                            <Handle
+                                type="source"
+                                position={pos}
+                                id={sourceId}
+                                style={style}
+                            />
+                        </React.Fragment>
+                    );
+                })
+            )}
+            <NodeResizer
+                color={borderColor}
+                isVisible={selected}
+                minWidth={300}
+                minHeight={200}
+                onResizeStart={() => {
+                    setIsManuallyResized(true)
+                    // Persist the manual resize state
+                    const event = new CustomEvent('serverManualResize', {
+                        detail: { serverId: id, isManuallyResized: true }
+                    })
+                    window.dispatchEvent(event)
+                }}
+            />
+
+            {!isSimple && (
+                <div
+                    style={{
+                        position: 'absolute',
+                        top: '8px',
+                        right: '8px',
+                        display: 'flex',
+                        gap: '4px',
+                        opacity: isHovered ? 1 : 0,
+                        transition: 'opacity 0.2s',
+                        zIndex: 100,
+                    }}
+                >
+                    {data.link && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                if (onLinkClick) onLinkClick(data.link)
+                            }}
+                            style={{
+                                background: 'rgba(0,0,0,0.5)',
+                                border: 'none',
+                                borderRadius: '4px',
+                                color: '#51cf66',
+                                padding: '4px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                            title="Перейти по ссылке"
+                        >
+                            <LinkIcon size={12} />
+                        </button>
+                    )}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            if (onLinkConfigClick) onLinkConfigClick(id)
+                        }}
+                        style={{
+                            background: 'rgba(0,0,0,0.5)',
+                            border: 'none',
+                            borderRadius: '4px',
+                            color: data.link ? '#51cf66' : '#888',
+                            padding: '4px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
+                        title={data.link ? 'Изменить ссылку' : 'Добавить ссылку'}
+                    >
+                        <Link2 size={12} />
+                    </button>
+                </div>
+            )}
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                <Server size={24} color={serverColor} />
+                {isEditing ? (
+                    <input
+                        type="text"
+                        value={label}
+                        onChange={(e) => setLabel(e.target.value)}
+                        onBlur={handleLabelBlur}
+                        onKeyDown={handleLabelKeyDown}
+                        autoFocus
+                        style={{
+                            flex: 1,
+                            backgroundColor: '#1e1e1e',
+                            border: '1px solid #4dabf7',
+                            borderRadius: '4px',
+                            padding: '4px 8px',
+                            color: '#fff',
+                            fontSize: '16px',
+                            fontWeight: 'bold',
+                        }}
+                    />
+                ) : (
+                    <h3
+                        onDoubleClick={handleLabelDoubleClick}
+                        style={{
+                            margin: 0,
+                            color: '#fff',
+                            fontSize: '18px',
+                            fontWeight: 'bold',
+                            cursor: 'text',
+                            flex: 1,
+                        }}
+                    >
+                        {label}
+                    </h3>
+                )}
+            </div>
+
+            {!isMedium && data.serverConfig?.vendor && (
+                <div style={{ color: '#888', fontSize: '12px', marginBottom: '4px' }}>
+                    {data.serverConfig.vendor}
+                </div>
+            )}
+
+            {!isMedium && childNodes.length > 0 && (
+                <div style={{
+                    color: '#888',
+                    fontSize: '12px',
+                    marginTop: 'auto',
+                    paddingTop: '10px',
+                    borderTop: '1px solid #555'
+                }}>
+                    Компонентов внутри: {childNodes.length}
+                </div>
+            )}
+        </div>
+    )
+}
+
+// Мемоизируем компонент для оптимизации производительности
+export default memo(ServerNode, (prevProps: any, nextProps: any) => {
+    return (
+        prevProps.id === nextProps.id &&
+        prevProps.selected === nextProps.selected &&
+        prevProps.data?.label === nextProps.data?.label &&
+        prevProps.data?.serverConfig?.childNodes?.length === nextProps.data?.serverConfig?.childNodes?.length &&
+        prevProps.data?.serverConfig?.isManuallyResized === nextProps.data?.serverConfig?.isManuallyResized &&
+        // Важно: проверяем размеры, так как NodeResizer зависит от них
+        prevProps.width === nextProps.width &&
+        prevProps.height === nextProps.height
+    )
+})

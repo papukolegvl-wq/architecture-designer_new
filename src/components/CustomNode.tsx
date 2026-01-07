@@ -130,6 +130,8 @@ const componentIcons: Record<string, React.ReactNode> = {
   dashboard: <LayoutDashboard size={32} />,
   'workflow-engine': <Workflow size={32} />,
   scheduler: <Calendar size={32} />,
+  volume: <HardDrive size={32} />,
+  cpu: <Cpu size={32} />,
 }
 
 const componentColors: Record<string, string> = {
@@ -208,6 +210,8 @@ const componentColors: Record<string, string> = {
   dashboard: '#339af0',
   'workflow-engine': '#845ef7',
   scheduler: '#ffd43b',
+  volume: '#666',
+  cpu: '#ffa94d',
 }
 
 interface CustomNodeProps extends NodeProps<ComponentData> {
@@ -357,6 +361,7 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
       }
       return 'Frontend'
     } else if (data.type === 'service') {
+      const parts: string[] = []
       if (data.serviceConfig?.language) {
         const languageLabels: Record<string, string> = {
           java: 'Java',
@@ -368,9 +373,14 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
           kotlin: 'Kotlin',
           scala: 'Scala',
         }
-        return languageLabels[data.serviceConfig.language] || 'Service'
+        if (languageLabels[data.serviceConfig.language]) {
+          parts.push(languageLabels[data.serviceConfig.language])
+        }
       }
-      return 'Service'
+      if (data.serviceConfig?.endpoints && data.serviceConfig.endpoints.length > 0) {
+        parts.push(`${data.serviceConfig.endpoints.length} EP`)
+      }
+      return parts.length > 0 ? parts.join(' | ') : 'Service'
     } else if (data.type === 'data-warehouse') {
       if (data.dataWarehouseConfig?.vendor) {
         const vendorLabels: Record<string, string> = {

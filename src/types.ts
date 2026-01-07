@@ -144,6 +144,8 @@ export type ComponentType =
   | 'master-data-management'
   | 'media-transcoder'
   | 'media-streaming'
+  | 'volume'
+  | 'cpu'
 
 export type ConnectionType = 'rest' | 'grpc' | 'async' | 'get-information' | 'send-information' | 'database-connection' | 'database-replication' | 'cache-connection' | 'dependency' | 'composition' | 'aggregation' | 'method-call' | 'inheritance' | 'bidirectional' | 'async-bidirectional'
 
@@ -385,8 +387,15 @@ export type ESBVendor =
   | 'oracle-service-bus'
   | 'ibm-integration-bus'
 
+export interface ServiceEndpoint {
+  path: string
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
+  description?: string
+}
+
 export interface ServiceConfig {
   language?: ServiceLanguage
+  endpoints?: ServiceEndpoint[]
 }
 
 export interface FrontendConfig {
@@ -1204,6 +1213,8 @@ export interface ServerConfig {
   vendor?: ServerVendor
   osVersion?: string
   cpu?: string
+  childNodes?: string[]
+  isManuallyResized?: boolean
 }
 
 export interface WebServerConfig {

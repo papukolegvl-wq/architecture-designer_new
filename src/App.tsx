@@ -22,6 +22,7 @@ import SystemNode from './components/SystemNode'
 import BusinessDomainNode from './components/BusinessDomainNode'
 import BusinessProcessNode from './components/BusinessProcessNode'
 import ContainerNode from './components/ContainerNode'
+import ServerNode from './components/ServerNode'
 import GroupNode from './components/GroupNode'
 import NoteNode from './components/NoteNode'
 import AnimatedEdge from './components/AnimatedEdge'
@@ -988,6 +989,7 @@ function App() {
 
       const isSystemType = type === 'system' || type === 'external-system' || type === 'business-domain'
       const isContainerType = type === 'container'
+      const isServerType = type === 'server'
       const isGroupType = type === 'group'
       const isTableType = type === 'table'
 
@@ -1045,7 +1047,7 @@ function App() {
 
       const newNode: Node = {
         id: `${type}-${Date.now()}`,
-        type: isSystemType ? (type === 'business-domain' ? 'business-domain' : 'system') : isContainerType ? 'container' : type === 'business-process' ? 'business-process' : isGroupType ? 'group' : 'custom',
+        type: isSystemType ? (type === 'business-domain' ? 'business-domain' : 'system') : isContainerType ? 'container' : isServerType ? 'server' : type === 'business-process' ? 'business-process' : isGroupType ? 'group' : 'custom',
         position: finalPosition,
         data: {
           type,
@@ -1076,6 +1078,11 @@ function App() {
               childNodes: []
             }
           }),
+          ...(isServerType && {
+            serverConfig: {
+              childNodes: []
+            }
+          }),
           ...(isGroupType && {
             groupConfig: {
               childNodes: [],
@@ -1102,6 +1109,11 @@ function App() {
           style: { zIndex: -1 },
         }),
         ...(isContainerType && {
+          width: 300,
+          height: 200,
+          style: { zIndex: 0 },
+        }),
+        ...(isServerType && {
           width: 300,
           height: 200,
           style: { zIndex: 0 },
@@ -3381,7 +3393,7 @@ function App() {
           targetHandle: edge.targetHandle,
           selected: true,
           data: { ...edge.data }
-        }
+        } as Edge
       }
     }).filter((edge): edge is Edge => edge !== null)
 
@@ -4002,6 +4014,32 @@ function App() {
   )
 
   // Обработка переименования узлов и обновления размеров систем
+  // Миграция старых узлов типа 'server'
+  React.useEffect(() => {
+    setNodes((nds) => {
+      let hasChanges = false
+      const newNodes = nds.map((node) => {
+        if (node.type === 'custom' && node.data?.type === 'server') {
+          hasChanges = true
+          return {
+            ...node,
+            type: 'server',
+            data: {
+              ...node.data,
+              serverConfig: {
+                ...node.data.serverConfig,
+                // Ensure childNodes is initialized
+                childNodes: node.data.serverConfig?.childNodes || []
+              }
+            }
+          }
+        }
+        return node
+      })
+      return hasChanges ? newNodes : nds
+    })
+  }, [])
+
   React.useEffect(() => {
     const handleNodeLabelUpdate = (event: CustomEvent<{ nodeId: string; label: string }>) => {
       setNodes((nds) =>
@@ -4384,12 +4422,118 @@ function App() {
 
     window.addEventListener('storage', handleStorageSync as EventListener)
 
+    const handleServerSizeUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent<{ serverId: string; childNodes: string[]; width: number; height: number; position: { x: number; y: number } }>
+      const { serverId, childNodes: newChildNodes, width, height } = customEvent.detail
+
+      let hasChanges = false
+
+      setNodes((nds) => {
+        const serverNode = nds.find(n => n.id === serverId)
+        if (!serverNode) return nds
+
+        // Проверяем, изменились ли размеры
+        if (serverNode.width !== width || serverNode.height !== height) {
+          hasChanges = true
+        }
+
+        // Проверяем, изменились ли дочерние узлы
+        const currentRefData = serverNode.data.serverConfig?.childNodes || []
+        if (JSON.stringify(currentRefData.sort()) !== JSON.stringify(newChildNodes.sort())) {
+          hasChanges = true
+        }
+
+        if (hasChanges) {
+          return nds.map((node) => {
+            if (node.id === serverId) {
+              return {
+                ...node,
+                width,
+                height,
+                data: {
+                  ...node.data,
+                  serverConfig: {
+                    ...node.data.serverConfig,
+                    childNodes: newChildNodes,
+                  },
+                },
+              }
+            }
+
+            // Обновляем groupId для дочерних узлов
+            if (newChildNodes.includes(node.id)) {
+              if (node.data.serverConfig?.groupId !== serverId) {
+                return {
+                  ...node,
+                  data: {
+                    ...node.data,
+                    groupId: serverId,
+                  },
+                  extent: 'parent',
+                  parentNode: serverId,
+                  position: {
+                    x: node.position.x - serverNode.position.x,
+                    y: node.position.y - serverNode.position.y
+                  }
+                }
+              }
+            } else if (node.data.groupId === serverId && !newChildNodes.includes(node.id)) {
+              // Если узел был в сервере, но больше не входит в него - убираем привязку
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  groupId: undefined,
+                },
+                extent: undefined,
+                parentNode: undefined,
+                position: {
+                  x: node.position.x + serverNode.position.x,
+                  y: node.position.y + serverNode.position.y
+                }
+              }
+            }
+
+            return node
+          })
+        }
+        return nds
+      })
+    }
+
+    window.addEventListener('serverSizeUpdate', handleServerSizeUpdate as EventListener)
+
+    const handleServerManualResize = (event: Event) => {
+      const customEvent = event as CustomEvent<{ serverId: string; isManuallyResized: boolean }>
+      setNodes((nds) =>
+        nds.map((node) => {
+          if (node.id === customEvent.detail.serverId) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                serverConfig: {
+                  ...node.data.serverConfig,
+                  isManuallyResized: customEvent.detail.isManuallyResized,
+                },
+              },
+            }
+          }
+          return node
+        })
+      )
+    }
+
+    window.addEventListener('serverManualResize', handleServerManualResize as EventListener)
+
     return () => {
       window.removeEventListener('nodeLabelUpdate', handleNodeLabelUpdate as EventListener)
       window.removeEventListener('systemSizeUpdate', handleSystemSizeUpdate as EventListener)
       window.removeEventListener('systemNodesUpdate', handleSystemNodesUpdate as EventListener)
       window.removeEventListener('containerSizeUpdate', handleContainerSizeUpdate as EventListener)
       window.removeEventListener('containerManualResize', handleContainerManualResize as EventListener)
+      window.removeEventListener('serverSizeUpdate', handleServerSizeUpdate as EventListener)
+      window.removeEventListener('serverManualResize', handleServerManualResize as EventListener)
       window.removeEventListener('businessProcessSizeUpdate', handleBusinessProcessSizeUpdate as EventListener)
       window.removeEventListener('businessProcessManualResize', handleBusinessProcessManualResize as EventListener)
       window.removeEventListener('componentInfoClick', handleComponentInfoClick as EventListener)
@@ -4444,6 +4588,19 @@ function App() {
     ),
     container: (props: NodeProps) => (
       <ContainerNode
+        {...props}
+        onLinkClick={(link) => {
+          const event = new CustomEvent('componentLinkClick', { detail: { link } })
+          window.dispatchEvent(event)
+        }}
+        onLinkConfigClick={(nodeId) => {
+          const event = new CustomEvent('componentLinkConfigClick', { detail: { nodeId } })
+          window.dispatchEvent(event)
+        }}
+      />
+    ),
+    server: (props: NodeProps) => (
+      <ServerNode
         {...props}
         onLinkClick={(link) => {
           const event = new CustomEvent('componentLinkClick', { detail: { link } })

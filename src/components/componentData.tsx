@@ -48,6 +48,8 @@ export const components: Component[] = [
     { id: 'gen-group', type: 'group', label: 'Группа', icon: <Layers size={24} />, color: '#845ef7', category: 'infrastructure' },
     { id: 'gen-client', type: 'client', label: 'Клиент', icon: <User size={24} />, color: '#ff8787', category: 'infrastructure' },
     { id: 'gen-process', type: 'business-process', label: 'Процесс', icon: <Workflow size={24} />, color: '#ae3ec9', category: 'infrastructure' },
+    { id: 'gen-volume', type: 'volume', label: 'Volume (Диск)', icon: <HardDrive size={24} />, color: '#666', category: 'infrastructure' },
+    { id: 'gen-cpu', type: 'cpu', label: 'CPU', icon: <Cpu size={24} />, color: '#ffa94d', category: 'infrastructure' },
 
     // --- Данные (Generic) ---
     { id: 'gen-db', type: 'database', label: 'База данных', icon: <Database size={24} />, color: '#51cf66', category: 'data' },

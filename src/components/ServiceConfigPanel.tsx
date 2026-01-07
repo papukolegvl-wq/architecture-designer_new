@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Node } from 'reactflow'
-import { ComponentData, ServiceLanguage } from '../types'
+import { ComponentData, ServiceLanguage, ServiceEndpoint } from '../types'
+import { Plus, Trash2 } from 'lucide-react'
 
 interface ServiceConfigPanelProps {
   node: Node
-  onUpdate: (nodeId: string, config: { language: ServiceLanguage }) => void
+  onUpdate: (nodeId: string, config: { language: ServiceLanguage; endpoints?: ServiceEndpoint[] }) => void
   onClose: () => void
 }
 
@@ -28,12 +29,29 @@ export default function ServiceConfigPanel({
   const [language, setLanguage] = useState<ServiceLanguage | undefined>(
     data.serviceConfig?.language
   )
+  const [endpoints, setEndpoints] = useState<ServiceEndpoint[]>(
+    data.serviceConfig?.endpoints || []
+  )
+  const [newPath, setNewPath] = useState('')
+  const [newMethod, setNewMethod] = useState<'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'>('GET')
 
   const handleSave = () => {
     if (language) {
-      onUpdate(node.id, { language })
+      onUpdate(node.id, { language, endpoints })
     }
     onClose()
+  }
+
+  const handleAddEndpoint = () => {
+    if (newPath.trim()) {
+      setEndpoints([...endpoints, { path: newPath.trim(), method: newMethod }])
+      setNewPath('')
+      setNewMethod('GET')
+    }
+  }
+
+  const handleRemoveEndpoint = (index: number) => {
+    setEndpoints(endpoints.filter((_, i) => i !== index))
   }
 
   return (
@@ -46,10 +64,12 @@ export default function ServiceConfigPanel({
         border: '2px solid #4dabf7',
         borderRadius: '12px',
         padding: '25px',
-        minWidth: '350px',
-        maxWidth: '400px',
+        minWidth: '400px',
+        maxWidth: '450px',
         boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
         zIndex: 1001,
+        maxHeight: '90vh',
+        overflowY: 'auto'
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -125,6 +145,123 @@ export default function ServiceConfigPanel({
               </span>
             </label>
           ))}
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '20px' }}>
+        <label
+          style={{
+            display: 'block',
+            marginBottom: '10px',
+            fontSize: '14px',
+            fontWeight: '500',
+            color: '#ccc',
+          }}
+        >
+          Endpoints:
+        </label>
+
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+          <select
+            value={newMethod}
+            onChange={(e) => setNewMethod(e.target.value as any)}
+            style={{
+              padding: '8px',
+              borderRadius: '6px',
+              border: '1px solid #555',
+              backgroundColor: '#3d3d3d',
+              color: '#fff',
+              outline: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            <option value="GET">GET</option>
+            <option value="POST">POST</option>
+            <option value="PUT">PUT</option>
+            <option value="DELETE">DELETE</option>
+            <option value="PATCH">PATCH</option>
+          </select>
+          <input
+            type="text"
+            value={newPath}
+            onChange={(e) => setNewPath(e.target.value)}
+            placeholder="/api/path"
+            style={{
+              flex: 1,
+              padding: '8px',
+              borderRadius: '6px',
+              border: '1px solid #555',
+              backgroundColor: '#3d3d3d',
+              color: '#fff',
+              outline: 'none',
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleAddEndpoint()
+              e.stopPropagation()
+            }}
+          />
+          <button
+            onClick={handleAddEndpoint}
+            style={{
+              padding: '8px',
+              borderRadius: '6px',
+              border: 'none',
+              backgroundColor: '#4dabf7',
+              color: '#fff',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            disabled={!newPath.trim()}
+          >
+            <Plus size={18} />
+          </button>
+        </div>
+
+        <div style={{ maxHeight: '150px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {endpoints.map((ep, index) => (
+            <div key={index} style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '8px',
+              backgroundColor: '#3d3d3d',
+              borderRadius: '6px',
+              border: '1px solid #555'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  backgroundColor: ep.method === 'GET' ? '#4dabf7' : ep.method === 'POST' ? '#51cf66' : ep.method === 'DELETE' ? '#ff6b6b' : '#ffa94d',
+                  color: '#fff'
+                }}>{ep.method}</span>
+                <span style={{ color: '#fff', fontSize: '13px', fontFamily: 'monospace' }}>{ep.path}</span>
+              </div>
+              <button
+                onClick={() => handleRemoveEndpoint(index)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#ff6b6b',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          ))}
+          {endpoints.length === 0 && (
+            <div style={{ color: '#777', fontSize: '12px', textAlign: 'center', padding: '10px' }}>
+              Нет добавленных endpoints
+            </div>
+          )}
         </div>
       </div>
 
