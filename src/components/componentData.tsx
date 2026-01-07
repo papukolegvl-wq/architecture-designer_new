@@ -1,0 +1,269 @@
+import React from 'react'
+import { ComponentType } from '../types'
+import {
+    Server, Database, MessageSquare, Globe, HardDrive, Cloud, Zap, Shield, Loader, Box, Warehouse, Lock, Network, Layers, GitBranch, User, ExternalLink, Building2, Settings, Archive, Code, Search, Activity, FileText, BarChart3, Clock, Key, FileCode, Cpu, Wifi, Mail, MessageCircle, Link as LinkIcon, Package, Brain, Bot, Workflow, Sparkles, ShieldAlert, ShieldCheck, Eye, Book, ArrowLeftRight, History, Waves, Repeat, LayoutDashboard, CreditCard, Calendar, Share2, ArrowRightLeft, Fingerprint, Video, Briefcase, Wallet, FileSearch, Binary, Globe2, Map as MapIcon
+} from 'lucide-react'
+
+export type ComponentCategory = 'all' | 'infrastructure' | 'data' | 'security' | 'development' | 'monitoring' | 'integration' | 'communication' | 'text' | 'ai' | 'data-engineering' | 'business' | 'aws' | 'azure' | 'gcp' | 'oracle'
+
+export interface Component {
+    id: string
+    type: ComponentType
+    label: string
+    icon: React.ReactNode
+    color: string
+    category: ComponentCategory
+    vendor?: string
+    defaultLabel?: string
+}
+
+export const components: Component[] = [
+    // --- Инфраструктура (Generic) ---
+    { id: 'gen-server', type: 'server', label: 'Сервер', icon: <Server size={24} />, color: '#339af0', category: 'infrastructure' },
+    { id: 'gen-container', type: 'container', label: 'Контейнер', icon: <Package size={24} />, color: '#51cf66', category: 'infrastructure' },
+    { id: 'gen-orchestrator', type: 'orchestrator', label: 'Оркестратор', icon: <Layers size={24} />, color: '#20c997', category: 'infrastructure' },
+    { id: 'gen-web-server', type: 'web-server', label: 'Веб-сервер', icon: <Globe size={24} />, color: '#51cf66', category: 'infrastructure' },
+    { id: 'gen-load-balancer', type: 'load-balancer', label: 'Балансировщик', icon: <Loader size={24} />, color: '#4dabf7', category: 'infrastructure' },
+    { id: 'gen-service-discovery', type: 'service-discovery', label: 'Обнаружение сервисов', icon: <Search size={24} />, color: '#4dabf7', category: 'infrastructure' },
+    { id: 'gen-cdn', type: 'cdn', label: 'CDN', icon: <Cloud size={24} />, color: '#51cf66', category: 'infrastructure' },
+    { id: 'gen-service-mesh', type: 'service-mesh', label: 'Сервисная сеть', icon: <Network size={24} />, color: '#9c88ff', category: 'infrastructure' },
+    { id: 'gen-config-mgmt', type: 'configuration-management', label: 'Конфигурация', icon: <Settings size={24} />, color: '#ffa94d', category: 'infrastructure' },
+    { id: 'gen-ci-cd', type: 'ci-cd-pipeline', label: 'CI/CD пайплайн', icon: <GitBranch size={24} />, color: '#20c997', category: 'infrastructure' },
+    { id: 'gen-backup', type: 'backup-service', label: 'Резервное копирование', icon: <HardDrive size={24} />, color: '#666', category: 'infrastructure' },
+    { id: 'gen-proxy', type: 'proxy', label: 'Прокси', icon: <Server size={24} />, color: '#666', category: 'infrastructure' },
+    { id: 'gen-dns', type: 'dns-service', label: 'DNS сервис', icon: <Globe size={24} />, color: '#51cf66', category: 'infrastructure' },
+    { id: 'gen-edge', type: 'edge-computing', label: 'Граничные вычисления', icon: <Cpu size={24} />, color: '#ffa94d', category: 'infrastructure' },
+    { id: 'gen-iot', type: 'iot-gateway', label: 'IoT шлюз', icon: <Wifi size={24} />, color: '#4dabf7', category: 'infrastructure' },
+    { id: 'gen-vpc', type: 'vpc', label: 'VPC', icon: <Cloud size={24} />, color: '#339af0', category: 'infrastructure' },
+    { id: 'gen-subnet', type: 'subnet', label: 'Подсеть', icon: <Layers size={24} />, color: '#4dabf7', category: 'infrastructure' },
+    { id: 'gen-routing', type: 'routing-table', label: 'Маршрутизация', icon: <MapIcon size={24} />, color: '#4dabf7', category: 'infrastructure' },
+    { id: 'gen-internet-gw', type: 'internet-gateway', label: 'Internet GW', icon: <Globe2 size={24} />, color: '#51cf66', category: 'infrastructure' },
+    { id: 'gen-nat-gw', type: 'nat-gateway', label: 'NAT шлюз', icon: <ArrowRightLeft size={24} />, color: '#ffa94d', category: 'infrastructure' },
+    { id: 'gen-transit-gw', type: 'transit-gateway', label: 'Transit Gateway', icon: <Share2 size={24} />, color: '#9c88ff', category: 'infrastructure' },
+    { id: 'gen-direct-connect', type: 'direct-connect', label: 'Direct Connect', icon: <ArrowLeftRight size={24} />, color: '#666', category: 'infrastructure' },
+    { id: 'gen-registry', type: 'container-registry', label: 'Реестр контейнеров', icon: <Archive size={24} />, color: '#20c997', category: 'infrastructure' },
+    { id: 'gen-system', type: 'system', label: 'Система', icon: <Layers size={24} />, color: '#4dabf7', category: 'infrastructure' },
+    { id: 'gen-system-component', type: 'system-component', label: 'Компонент системы', icon: <Box size={24} />, color: '#4dabf7', category: 'infrastructure' },
+    { id: 'gen-domain', type: 'business-domain', label: 'Бизнес-домен', icon: <Building2 size={24} />, color: '#ffa94d', category: 'infrastructure' },
+    { id: 'gen-group', type: 'group', label: 'Группа', icon: <Layers size={24} />, color: '#845ef7', category: 'infrastructure' },
+    { id: 'gen-client', type: 'client', label: 'Клиент', icon: <User size={24} />, color: '#ff8787', category: 'infrastructure' },
+    { id: 'gen-process', type: 'business-process', label: 'Процесс', icon: <Workflow size={24} />, color: '#ae3ec9', category: 'infrastructure' },
+
+    // --- Данные (Generic) ---
+    { id: 'gen-db', type: 'database', label: 'База данных', icon: <Database size={24} />, color: '#51cf66', category: 'data' },
+    { id: 'gen-dwh', type: 'data-warehouse', label: 'DWH', icon: <Warehouse size={24} />, color: '#20c997', category: 'data' },
+    { id: 'gen-cache', type: 'cache', label: 'Кэш', icon: <Zap size={24} />, color: '#845ef7', category: 'data' },
+    { id: 'gen-object-store', type: 'object-storage', label: 'Объектное хранилище', icon: <Box size={24} />, color: '#fd7e14', category: 'data' },
+    { id: 'gen-graph-db', type: 'graph-database', label: 'Графовая БД', icon: <Network size={24} />, color: '#51cf66', category: 'data' },
+    { id: 'gen-ts-db', type: 'time-series-database', label: 'Time Series БД', icon: <Clock size={24} />, color: '#845ef7', category: 'data' },
+    { id: 'gen-data-lake', type: 'data-lake', label: 'Data Lake', icon: <Waves size={24} />, color: '#51cf66', category: 'data' },
+    { id: 'gen-search', type: 'search-engine', label: 'Поиск', icon: <Search size={24} />, color: '#20c997', category: 'data' },
+    { id: 'gen-table', type: 'table', label: 'Таблица', icon: <Database size={24} />, color: '#5C7CFA', category: 'data' },
+    { id: 'gen-block-store', type: 'block-storage', label: 'Блочное хранилище', icon: <HardDrive size={24} />, color: '#666', category: 'data' },
+    { id: 'gen-file-store', type: 'file-storage', label: 'Файловое хранилище', icon: <FileText size={24} />, color: '#4dabf7', category: 'data' },
+    { id: 'gen-archive', type: 'archive-storage', label: 'Архив', icon: <Archive size={24} />, color: '#495057', category: 'data' },
+
+    // --- Безопасность (Generic) ---
+    { id: 'gen-firewall', type: 'firewall', label: 'Firewall', icon: <Shield size={24} />, color: '#dc3545', category: 'security' },
+    { id: 'gen-auth', type: 'auth-service', label: 'Auth Service', icon: <Lock size={24} />, color: '#ff6b6b', category: 'security' },
+    { id: 'gen-idp', type: 'identity-provider', label: 'Identity Provider', icon: <Key size={24} />, color: '#ff6b6b', category: 'security' },
+    { id: 'gen-secrets', type: 'secret-management', label: 'Secrets', icon: <Lock size={24} />, color: '#dc3545', category: 'security' },
+    { id: 'gen-vpn', type: 'vpn-gateway', label: 'VPN', icon: <Shield size={24} />, color: '#dc3545', category: 'security' },
+    { id: 'gen-waf', type: 'waf', label: 'WAF', icon: <ShieldAlert size={24} />, color: '#ff6b6b', category: 'security' },
+    { id: 'gen-ddos', type: 'shield', label: 'DDoS Shield', icon: <ShieldCheck size={24} />, color: '#dc3545', category: 'security' },
+    { id: 'gen-hsm', type: 'hsm', label: 'HSM', icon: <Lock size={24} />, color: '#be4bdb', category: 'security' },
+    { id: 'gen-kms', type: 'kms', label: 'KMS', icon: <Key size={24} />, color: '#be4bdb', category: 'security' },
+    { id: 'gen-iam', type: 'iam-policy', label: 'IAM Policy', icon: <Fingerprint size={24} />, color: '#ff6b6b', category: 'security' },
+    { id: 'gen-sg', type: 'security-group', label: 'Security Group', icon: <Shield size={24} />, color: '#f03e3e', category: 'security' },
+    { id: 'gen-soc', type: 'soc-siem', label: 'SOC / SIEM', icon: <FileSearch size={24} />, color: '#333', category: 'security' },
+
+    // --- Разработка (Generic) ---
+    { id: 'gen-service', type: 'service', label: 'Сервис', icon: <Server size={24} />, color: '#4dabf7', category: 'development' },
+    { id: 'gen-frontend', type: 'frontend', label: 'Frontend', icon: <Globe size={24} />, color: '#339af0', category: 'development' },
+    { id: 'gen-lambda', type: 'lambda', label: 'Функция', icon: <Zap size={24} />, color: '#ffd43b', category: 'development' },
+    { id: 'gen-controller', type: 'controller', label: 'Контроллер', icon: <Settings size={24} />, color: '#4dabf7', category: 'development' },
+    { id: 'gen-repo', type: 'repository', label: 'Репозиторий', icon: <Archive size={24} />, color: '#51cf66', category: 'development' },
+    { id: 'gen-class', type: 'class', label: 'Класс', icon: <Code size={24} />, color: '#845ef7', category: 'development' },
+    { id: 'gen-batch', type: 'batch-processor', label: 'Batch Job', icon: <Cpu size={24} />, color: '#845ef7', category: 'development' },
+    { id: 'gen-blockchain', type: 'blockchain', label: 'Блокчейн', icon: <LinkIcon size={24} />, color: '#333', category: 'development' },
+    { id: 'gen-scheduler', type: 'scheduler', label: 'Планировщик', icon: <Calendar size={24} />, color: '#ffd43b', category: 'development' },
+    { id: 'gen-workflow', type: 'workflow-engine', label: 'Workflow Engine', icon: <Workflow size={24} />, color: '#845ef7', category: 'development' },
+    { id: 'gen-fsm', type: 'state-machine', label: 'State Machine', icon: <Repeat size={24} />, color: '#4dabf7', category: 'development' },
+
+    // --- Интеграция (Generic) ---
+    { id: 'gen-api-gw', type: 'api-gateway', label: 'API Gateway', icon: <Network size={24} />, color: '#ff6b6b', category: 'integration' },
+    { id: 'gen-broker', type: 'message-broker', label: 'Брокер сообщений', icon: <MessageSquare size={24} />, color: '#ffd43b', category: 'integration' },
+    { id: 'gen-esb', type: 'esb', label: 'ESB', icon: <GitBranch size={24} />, color: '#9c88ff', category: 'integration' },
+    { id: 'gen-queue', type: 'queue', label: 'Очередь', icon: <MessageSquare size={24} />, color: '#ffd43b', category: 'integration' },
+    { id: 'gen-event-bus', type: 'event-bus', label: 'Event Bus', icon: <Layers size={24} />, color: '#845ef7', category: 'integration' },
+    { id: 'gen-stream', type: 'stream-processor', label: 'Stream Processor', icon: <Zap size={24} />, color: '#4dabf7', category: 'integration' },
+    { id: 'gen-eip', type: 'integration-platform', label: 'iPaaS', icon: <GitBranch size={24} />, color: '#9c88ff', category: 'integration' },
+    { id: 'gen-api-client', type: 'api-client', label: 'API Client', icon: <LinkIcon size={24} />, color: '#4dabf7', category: 'integration' },
+    { id: 'gen-api-doc', type: 'api-documentation', label: 'API Docs', icon: <FileCode size={24} />, color: '#339af0', category: 'integration' },
+    { id: 'gen-external', type: 'external-system', label: 'Внешняя система', icon: <ExternalLink size={24} />, color: '#ffa94d', category: 'integration' },
+    { id: 'gen-media', type: 'media-transcoder', label: 'Транскодер', icon: <Binary size={24} />, color: '#be4bdb', category: 'integration' },
+
+    // --- Коммуникации (Generic) ---
+    { id: 'gen-notify', type: 'notification-service', label: 'Уведомления', icon: <MessageCircle size={24} />, color: '#ffd43b', category: 'communication' },
+    { id: 'gen-email', type: 'email-service', label: 'Email', icon: <Mail size={24} />, color: '#339af0', category: 'communication' },
+    { id: 'gen-sms', type: 'sms-gateway', label: 'SMS', icon: <MessageCircle size={24} />, color: '#4dabf7', category: 'communication' },
+    { id: 'gen-video', type: 'media-streaming', label: 'Видео Стриминг', icon: <Video size={24} />, color: '#f03e3e', category: 'communication' },
+
+    // --- AWS (Amazon Web Services) ---
+    { id: 'aws-ec2', type: 'server', label: 'EC2', defaultLabel: 'EC2 Instance', vendor: 'aws', icon: <Server size={24} />, color: '#FF9900', category: 'aws' },
+    { id: 'aws-lambda', type: 'lambda', label: 'Lambda', defaultLabel: 'Lambda Function', vendor: 'aws', icon: <Zap size={24} />, color: '#FF9900', category: 'aws' },
+    { id: 'aws-ecs', type: 'container', label: 'ECS', defaultLabel: 'ECS Task', vendor: 'aws', icon: <Package size={24} />, color: '#FF9900', category: 'aws' },
+    { id: 'aws-eks', type: 'orchestrator', label: 'EKS', defaultLabel: 'EKS Cluster', vendor: 'aws', icon: <Layers size={24} />, color: '#FF9900', category: 'aws' },
+    { id: 'aws-fargate', type: 'container', label: 'Fargate', defaultLabel: 'Fargate', vendor: 'aws', icon: <Box size={24} />, color: '#FF9900', category: 'aws' },
+    { id: 'aws-s3', type: 'object-storage', label: 'S3', defaultLabel: 'S3 Bucket', vendor: 'aws', icon: <HardDrive size={24} />, color: '#FF9900', category: 'aws' },
+    { id: 'aws-ebs', type: 'block-storage', label: 'EBS', defaultLabel: 'EBS Volume', vendor: 'aws', icon: <HardDrive size={24} />, color: '#FF9900', category: 'aws' },
+    { id: 'aws-efs', type: 'file-storage', label: 'EFS', defaultLabel: 'EFS', vendor: 'aws', icon: <FileText size={24} />, color: '#FF9900', category: 'aws' },
+    { id: 'aws-glacier', type: 'archive-storage', label: 'Glacier', defaultLabel: 'Glacier Vault', vendor: 'aws', icon: <Archive size={24} />, color: '#FF9900', category: 'aws' },
+    { id: 'aws-rds', type: 'database', label: 'RDS', defaultLabel: 'RDS Instance', vendor: 'aws', icon: <Database size={24} />, color: '#FF9900', category: 'aws' },
+    { id: 'aws-dynamodb', type: 'database', label: 'DynamoDB', defaultLabel: 'DynamoDB Table', vendor: 'aws', icon: <Database size={24} />, color: '#FF9900', category: 'aws' },
+    { id: 'aws-aurora', type: 'database', label: 'Aurora', defaultLabel: 'Aurora Cluster', vendor: 'aws', icon: <Database size={24} />, color: '#FF9900', category: 'aws' },
+    { id: 'aws-elasticache', type: 'cache', label: 'ElastiCache', defaultLabel: 'ElastiCache', vendor: 'aws', icon: <Zap size={24} />, color: '#FF9900', category: 'aws' },
+    { id: 'aws-redshift', type: 'data-warehouse', label: 'Redshift', defaultLabel: 'Redshift Cluster', vendor: 'aws', icon: <Warehouse size={24} />, color: '#FF9900', category: 'aws' },
+    { id: 'aws-vpc', type: 'vpc', label: 'VPC', defaultLabel: 'VPC', vendor: 'aws', icon: <Cloud size={24} />, color: '#FF9900', category: 'aws' },
+    { id: 'aws-cloudfront', type: 'cdn', label: 'CloudFront', defaultLabel: 'CloudFront Dist', vendor: 'aws', icon: <Globe size={24} />, color: '#FF9900', category: 'aws' },
+    { id: 'aws-route53', type: 'dns-service', label: 'Route 53', defaultLabel: 'Route 53 Hosted Zone', vendor: 'aws', icon: <Globe size={24} />, color: '#FF9900', category: 'aws' },
+    { id: 'aws-api-gw', type: 'api-gateway', label: 'API Gateway', defaultLabel: 'API Gateway', vendor: 'aws', icon: <Network size={24} />, color: '#FF9900', category: 'aws' },
+    { id: 'aws-sns', type: 'message-broker', label: 'SNS', defaultLabel: 'SNS Topic', vendor: 'aws', icon: <MessageSquare size={24} />, color: '#FF9900', category: 'aws' },
+    { id: 'aws-sqs', type: 'queue', label: 'SQS', defaultLabel: 'SQS Queue', vendor: 'aws', icon: <MessageSquare size={24} />, color: '#FF9900', category: 'aws' },
+    { id: 'aws-kinesis', type: 'stream-processor', label: 'Kinesis', defaultLabel: 'Kinesis Stream', vendor: 'aws', icon: <Activity size={24} />, color: '#FF9900', category: 'aws' },
+    { id: 'aws-eventbridge', type: 'event-bus', label: 'EventBridge', defaultLabel: 'EventBridge Bus', vendor: 'aws', icon: <Layers size={24} />, color: '#FF9900', category: 'aws' },
+    { id: 'aws-cloudwatch', type: 'monitoring', label: 'CloudWatch', defaultLabel: 'CloudWatch', vendor: 'aws', icon: <Activity size={24} />, color: '#FF9900', category: 'aws' },
+    { id: 'aws-iam', type: 'iam-policy', label: 'IAM', defaultLabel: 'IAM Role', vendor: 'aws', icon: <Lock size={24} />, color: '#FF9900', category: 'aws' },
+    { id: 'aws-kms', type: 'kms', label: 'KMS', defaultLabel: 'KMS Key', vendor: 'aws', icon: <Key size={24} />, color: '#FF9900', category: 'aws' },
+    { id: 'aws-waf', type: 'waf', label: 'WAF', defaultLabel: 'WAF Web ACL', vendor: 'aws', icon: <Shield size={24} />, color: '#FF9900', category: 'aws' },
+    { id: 'aws-glue', type: 'etl-service', label: 'Glue', defaultLabel: 'Glue Job', vendor: 'aws', icon: <Code size={24} />, color: '#FF9900', category: 'aws' },
+    { id: 'aws-athena', type: 'analytics-service', label: 'Athena', defaultLabel: 'Athena', vendor: 'aws', icon: <Search size={24} />, color: '#FF9900', category: 'aws' },
+
+    // --- Azure (Microsoft Azure) ---
+    { id: 'azure-vm', type: 'server', label: 'VM', defaultLabel: 'Azure VM', vendor: 'azure', icon: <Server size={24} />, color: '#0078D4', category: 'azure' },
+    { id: 'azure-functions', type: 'lambda', label: 'Functions', defaultLabel: 'Azure Function', vendor: 'azure', icon: <Zap size={24} />, color: '#0078D4', category: 'azure' },
+    { id: 'azure-aks', type: 'orchestrator', label: 'AKS', defaultLabel: 'AKS Cluster', vendor: 'azure', icon: <Layers size={24} />, color: '#0078D4', category: 'azure' },
+    { id: 'azure-aci', type: 'container', label: 'Container Instances', defaultLabel: 'ACI', vendor: 'azure', icon: <Package size={24} />, color: '#0078D4', category: 'azure' },
+    { id: 'azure-app-service', type: 'web-server', label: 'App Service', defaultLabel: 'App Service', vendor: 'azure', icon: <Globe size={24} />, color: '#0078D4', category: 'azure' },
+    { id: 'azure-blob', type: 'object-storage', label: 'Blob Storage', defaultLabel: 'Blob Container', vendor: 'azure', icon: <HardDrive size={24} />, color: '#0078D4', category: 'azure' },
+    { id: 'azure-file', type: 'file-storage', label: 'Files', defaultLabel: 'Azure Files', vendor: 'azure', icon: <FileText size={24} />, color: '#0078D4', category: 'azure' },
+    { id: 'azure-sql', type: 'database', label: 'SQL DB', defaultLabel: 'Azure SQL DB', vendor: 'azure', icon: <Database size={24} />, color: '#0078D4', category: 'azure' },
+    { id: 'azure-cosmos', type: 'database', label: 'Cosmos DB', defaultLabel: 'Cosmos DB', vendor: 'azure', icon: <Database size={24} />, color: '#0078D4', category: 'azure' },
+    { id: 'azure-synapse', type: 'data-warehouse', label: 'Synapse', defaultLabel: 'Synapse Analytics', vendor: 'azure', icon: <Warehouse size={24} />, color: '#0078D4', category: 'azure' },
+    { id: 'azure-redis', type: 'cache', label: 'Cache for Redis', defaultLabel: 'Azure Redis', vendor: 'azure', icon: <Zap size={24} />, color: '#0078D4', category: 'azure' },
+    { id: 'azure-vnet', type: 'vpc', label: 'VNet', defaultLabel: 'Virtual Network', vendor: 'azure', icon: <Network size={24} />, color: '#0078D4', category: 'azure' },
+    { id: 'azure-cdn', type: 'cdn', label: 'CDN', defaultLabel: 'Azure CDN', vendor: 'azure', icon: <Globe size={24} />, color: '#0078D4', category: 'azure' },
+    { id: 'azure-dns', type: 'dns-service', label: 'DNS', defaultLabel: 'Azure DNS', vendor: 'azure', icon: <Globe size={24} />, color: '#0078D4', category: 'azure' },
+    { id: 'azure-agw', type: 'load-balancer', label: 'App Gateway', defaultLabel: 'Application Gateway', vendor: 'azure', icon: <Network size={24} />, color: '#0078D4', category: 'azure' },
+    { id: 'azure-apim', type: 'api-gateway', label: 'API Mgmt', defaultLabel: 'API Management', vendor: 'azure', icon: <Network size={24} />, color: '#0078D4', category: 'azure' },
+    { id: 'azure-service-bus', type: 'message-broker', label: 'Service Bus', defaultLabel: 'Service Bus', vendor: 'azure', icon: <MessageSquare size={24} />, color: '#0078D4', category: 'azure' },
+    { id: 'azure-event-hubs', type: 'stream-processor', label: 'Event Hubs', defaultLabel: 'Event Hub', vendor: 'azure', icon: <Activity size={24} />, color: '#0078D4', category: 'azure' },
+    { id: 'azure-event-grid', type: 'event-bus', label: 'Event Grid', defaultLabel: 'Event Grid', vendor: 'azure', icon: <Layers size={24} />, color: '#0078D4', category: 'azure' },
+    { id: 'azure-monitor', type: 'monitoring', label: 'Monitor', defaultLabel: 'Azure Monitor', vendor: 'azure', icon: <Activity size={24} />, color: '#0078D4', category: 'azure' },
+    { id: 'azure-ad', type: 'identity-provider', label: 'Entra ID (AD)', defaultLabel: 'Entra ID', vendor: 'azure', icon: <User size={24} />, color: '#0078D4', category: 'azure' },
+    { id: 'azure-keyvault', type: 'kms', label: 'Key Vault', defaultLabel: 'Key Vault', vendor: 'azure', icon: <Key size={24} />, color: '#0078D4', category: 'azure' },
+    { id: 'azure-data-factory', type: 'etl-service', label: 'Data Factory', defaultLabel: 'Data Factory', vendor: 'azure', icon: <Workflow size={24} />, color: '#0078D4', category: 'azure' },
+
+    // --- GCP (Google Cloud Platform) ---
+    { id: 'gcp-gce', type: 'server', label: 'Compute Engine', defaultLabel: 'GCE Instance', vendor: 'gcp', icon: <Server size={24} />, color: '#4285F4', category: 'gcp' },
+    { id: 'gcp-functions', type: 'lambda', label: 'Cloud Functions', defaultLabel: 'Cloud Function', vendor: 'gcp', icon: <Zap size={24} />, color: '#4285F4', category: 'gcp' },
+    { id: 'gcp-run', type: 'container', label: 'Cloud Run', defaultLabel: 'Cloud Run Service', vendor: 'gcp', icon: <Package size={24} />, color: '#4285F4', category: 'gcp' },
+    { id: 'gcp-gke', type: 'orchestrator', label: 'GKE', defaultLabel: 'GKE Cluster', vendor: 'gcp', icon: <Layers size={24} />, color: '#4285F4', category: 'gcp' },
+    { id: 'gcp-app-engine', type: 'web-server', label: 'App Engine', defaultLabel: 'App Engine', vendor: 'gcp', icon: <Globe size={24} />, color: '#4285F4', category: 'gcp' },
+    { id: 'gcp-storage', type: 'object-storage', label: 'Cloud Storage', defaultLabel: 'GCS Bucket', vendor: 'gcp', icon: <HardDrive size={24} />, color: '#4285F4', category: 'gcp' },
+    { id: 'gcp-sql', type: 'database', label: 'Cloud SQL', defaultLabel: 'Cloud SQL Instance', vendor: 'gcp', icon: <Database size={24} />, color: '#4285F4', category: 'gcp' },
+    { id: 'gcp-firestore', type: 'database', label: 'Firestore', defaultLabel: 'Firestore', vendor: 'gcp', icon: <Database size={24} />, color: '#4285F4', category: 'gcp' },
+    { id: 'gcp-spanner', type: 'database', label: 'Cloud Spanner', defaultLabel: 'Spanner', vendor: 'gcp', icon: <Database size={24} />, color: '#4285F4', category: 'gcp' },
+    { id: 'gcp-bigtable', type: 'database', label: 'Bigtable', defaultLabel: 'Bigtable', vendor: 'gcp', icon: <Database size={24} />, color: '#4285F4', category: 'gcp' },
+    { id: 'gcp-bigquery', type: 'data-warehouse', label: 'BigQuery', defaultLabel: 'BigQuery Dataset', vendor: 'gcp', icon: <Warehouse size={24} />, color: '#4285F4', category: 'gcp' },
+    { id: 'gcp-memorystore', type: 'cache', label: 'Memorystore', defaultLabel: 'Memorystore', vendor: 'gcp', icon: <Zap size={24} />, color: '#4285F4', category: 'gcp' },
+    { id: 'gcp-vpc', type: 'vpc', label: 'VPC', defaultLabel: 'VPC', vendor: 'gcp', icon: <Cloud size={24} />, color: '#4285F4', category: 'gcp' },
+    { id: 'gcp-lb', type: 'load-balancer', label: 'Load Balancer', defaultLabel: 'Cloud Load Balancer', vendor: 'gcp', icon: <Network size={24} />, color: '#4285F4', category: 'gcp' },
+    { id: 'gcp-cdn', type: 'cdn', label: 'Cloud CDN', defaultLabel: 'Cloud CDN', vendor: 'gcp', icon: <Globe size={24} />, color: '#4285F4', category: 'gcp' },
+    { id: 'gcp-dns', type: 'dns-service', label: 'Cloud DNS', defaultLabel: 'Cloud DNS', vendor: 'gcp', icon: <Globe size={24} />, color: '#4285F4', category: 'gcp' },
+    { id: 'gcp-apigee', type: 'api-gateway', label: 'Apigee', defaultLabel: 'Apigee', vendor: 'gcp', icon: <Network size={24} />, color: '#4285F4', category: 'gcp' },
+    { id: 'gcp-pubsub', type: 'message-broker', label: 'Pub/Sub', defaultLabel: 'Pub/Sub Topic', vendor: 'gcp', icon: <MessageSquare size={24} />, color: '#4285F4', category: 'gcp' },
+    { id: 'gcp-dataflow', type: 'stream-processor', label: 'Dataflow', defaultLabel: 'Dataflow Job', vendor: 'gcp', icon: <Activity size={24} />, color: '#4285F4', category: 'gcp' },
+    { id: 'gcp-monitoring', type: 'monitoring', label: 'Cloud Monitoring', defaultLabel: 'Cloud Monitoring', vendor: 'gcp', icon: <Activity size={24} />, color: '#4285F4', category: 'gcp' },
+    { id: 'gcp-iam', type: 'iam-policy', label: 'Cloud IAM', defaultLabel: 'IAM Policy', vendor: 'gcp', icon: <Lock size={24} />, color: '#4285F4', category: 'gcp' },
+    { id: 'gcp-kms', type: 'kms', label: 'Cloud KMS', defaultLabel: 'Cloud KMS', vendor: 'gcp', icon: <Key size={24} />, color: '#4285F4', category: 'gcp' },
+    { id: 'gcp-dataproc', type: 'etl-service', label: 'Dataproc', defaultLabel: 'Dataproc Cluster', vendor: 'gcp', icon: <Code size={24} />, color: '#4285F4', category: 'gcp' },
+    { id: 'gcp-vertex', type: 'ml-training', label: 'Vertex AI', defaultLabel: 'Vertex AI', vendor: 'gcp', icon: <Brain size={24} />, color: '#4285F4', category: 'gcp' },
+
+    // --- Oracle (OCI) ---
+    { id: 'oci-compute', type: 'server', label: 'Compute', defaultLabel: 'OCI Compute', vendor: 'oracle', icon: <Server size={24} />, color: '#C74634', category: 'oracle' },
+    { id: 'oci-oke', type: 'orchestrator', label: 'OKE', defaultLabel: 'OKE Cluster', vendor: 'oracle', icon: <Layers size={24} />, color: '#C74634', category: 'oracle' },
+    { id: 'oci-functions', type: 'lambda', label: 'Functions', defaultLabel: 'OCI Function', vendor: 'oracle', icon: <Zap size={24} />, color: '#C74634', category: 'oracle' },
+    { id: 'oci-object-storage', type: 'object-storage', label: 'Object Storage', defaultLabel: 'Object Storage Bucket', vendor: 'oracle', icon: <HardDrive size={24} />, color: '#C74634', category: 'oracle' },
+    { id: 'oci-block-volume', type: 'block-storage', label: 'Block Volume', defaultLabel: 'Block Volume', vendor: 'oracle', icon: <HardDrive size={24} />, color: '#C74634', category: 'oracle' },
+    { id: 'oci-autonomous-db', type: 'database', label: 'Autonomous DB', defaultLabel: 'Autonomous DB', vendor: 'oracle', icon: <Database size={24} />, color: '#C74634', category: 'oracle' },
+    { id: 'oci-mysql', type: 'database', label: 'MySQL HeatWave', defaultLabel: 'MySQL HeatWave', vendor: 'oracle', icon: <Database size={24} />, color: '#C74634', category: 'oracle' },
+    { id: 'oci-nosql', type: 'database', label: 'NoSQL', defaultLabel: 'Oracle NoSQL', vendor: 'oracle', icon: <Database size={24} />, color: '#C74634', category: 'oracle' },
+    { id: 'oci-vcn', type: 'vpc', label: 'VCN', defaultLabel: 'VCN', vendor: 'oracle', icon: <Cloud size={24} />, color: '#C74634', category: 'oracle' },
+    { id: 'oci-lb', type: 'load-balancer', label: 'Load Balancer', defaultLabel: 'OCI Load Balancer', vendor: 'oracle', icon: <Network size={24} />, color: '#C74634', category: 'oracle' },
+    { id: 'oci-dns', type: 'dns-service', label: 'DNS', defaultLabel: 'OCI DNS', vendor: 'oracle', icon: <Globe size={24} />, color: '#C74634', category: 'oracle' },
+    { id: 'oci-api-gw', type: 'api-gateway', label: 'API Gateway', defaultLabel: 'OCI API Gateway', vendor: 'oracle', icon: <Network size={24} />, color: '#C74634', category: 'oracle' },
+    { id: 'oci-streaming', type: 'stream-processor', label: 'Streaming', defaultLabel: 'OCI Streaming', vendor: 'oracle', icon: <Activity size={24} />, color: '#C74634', category: 'oracle' },
+    { id: 'oci-monitoring', type: 'monitoring', label: 'Monitoring', defaultLabel: 'OCI Monitoring', vendor: 'oracle', icon: <Activity size={24} />, color: '#C74634', category: 'oracle' },
+    { id: 'oci-iam', type: 'iam-policy', label: 'IAM Identity', defaultLabel: 'OCI IAM', vendor: 'oracle', icon: <Lock size={24} />, color: '#C74634', category: 'oracle' },
+    { id: 'oci-vault', type: 'kms', label: 'Vault', defaultLabel: 'OCI Vault', vendor: 'oracle', icon: <Key size={24} />, color: '#C74634', category: 'oracle' },
+
+    // --- Monitoring & Others (Generic IDs update) ---
+    { id: 'gen-monitoring', type: 'monitoring', label: 'Мониторинг', icon: <Activity size={24} />, color: '#ff6b6b', category: 'monitoring' },
+    { id: 'gen-logging', type: 'logging', label: 'Логирование', icon: <FileText size={24} />, color: '#ffa94d', category: 'monitoring' },
+    { id: 'gen-analytics', type: 'analytics-service', label: 'Аналитика', icon: <BarChart3 size={24} />, color: '#339af0', category: 'monitoring' },
+    { id: 'gen-bi', type: 'business-intelligence', label: 'BI', icon: <BarChart3 size={24} />, color: '#4dabf7', category: 'monitoring' },
+    { id: 'gen-dashboard', type: 'dashboard', label: 'Дашборд', icon: <LayoutDashboard size={24} />, color: '#339af0', category: 'monitoring' },
+
+    // --- Business (Generic IDs update) ---
+    { id: 'gen-crm', type: 'crm', label: 'CRM', icon: <Briefcase size={24} />, color: '#ffa94d', category: 'business' },
+    { id: 'gen-erp', type: 'erp', label: 'ERP', icon: <Building2 size={24} />, color: '#4dabf7', category: 'business' },
+    { id: 'gen-billing', type: 'billing-system', label: 'Биллинг', icon: <Wallet size={24} />, color: '#51cf66', category: 'business' },
+    { id: 'gen-payment', type: 'payment-gateway', label: 'Платежный шлюз', icon: <CreditCard size={24} />, color: '#ff6b6b', category: 'business' },
+
+    // --- Text (Generic IDs update) ---
+    { id: 'gen-note', type: 'note', label: 'Заметка', icon: <FileText size={24} />, color: '#ffd666', category: 'text' },
+
+    // --- AI (Generic IDs update) ---
+    { id: 'gen-llm', type: 'llm-model', label: 'LLM модель', icon: <Brain size={24} />, color: '#ae3ec9', category: 'ai' },
+    { id: 'gen-vector-db', type: 'vector-database', label: 'Векторная БД', icon: <Database size={24} />, color: '#748ffc', category: 'ai' },
+    { id: 'gen-ai-agent', type: 'ai-agent', label: 'AI Агент', icon: <Bot size={24} />, color: '#f03e3e', category: 'ai' },
+    { id: 'gen-ml-train', type: 'ml-training', label: 'Обучение моделей', icon: <Activity size={24} />, color: '#fcc419', category: 'ai' },
+    { id: 'gen-ml-infer', type: 'ml-inference', label: 'Инференс', icon: <Cpu size={24} />, color: '#37b24d', category: 'ai' },
+    { id: 'gen-ml-pipe', type: 'ml-data-pipeline', label: 'ML Пайплайн', icon: <Workflow size={24} />, color: '#4dabf7', category: 'ai' },
+    { id: 'gen-ml-service', type: 'ml-ai-service', label: 'ML сервис', icon: <Sparkles size={24} />, color: '#fab005', category: 'ai' },
+    { id: 'gen-gpu', type: 'gpu-cluster', label: 'GPU кластер', icon: <Server size={24} />, color: '#228be6', category: 'ai' },
+
+    // --- Data Engineering (Generic IDs update) ---
+    { id: 'gen-etl', type: 'etl-service', label: 'ETL сервис', icon: <Database size={24} />, color: '#20c997', category: 'data-engineering' },
+    { id: 'gen-cdc', type: 'cdc-service', label: 'CDC сервис', icon: <History size={24} />, color: '#fab005', category: 'data-engineering' },
+    { id: 'gen-data-qual', type: 'data-quality', label: 'Качество данных', icon: <ShieldCheck size={24} />, color: '#40c057', category: 'data-engineering' },
+    { id: 'gen-data-obs', type: 'data-observability', label: 'Observability', icon: <Eye size={24} />, color: '#228be6', category: 'data-engineering' },
+    { id: 'gen-metadata', type: 'metadata-catalog', label: 'Каталог метаданных', icon: <Book size={24} />, color: '#7950f2', category: 'data-engineering' },
+    { id: 'gen-reverse-etl', type: 'reverse-etl', label: 'Reverse ETL', icon: <Repeat size={24} />, color: '#be4bdb', category: 'data-engineering' },
+    { id: 'gen-feature-store', type: 'feature-store', label: 'Feature Store', icon: <Warehouse size={24} />, color: '#fd7e14', category: 'data-engineering' },
+    { id: 'gen-lakehouse', type: 'lakehouse', label: 'Data Lakehouse', icon: <Waves size={24} />, color: '#15aabf', category: 'data-engineering' },
+    { id: 'gen-data-mesh', type: 'data-mesh-node', label: 'Data Mesh Node', icon: <Network size={24} />, color: '#4dabf7', category: 'data-engineering' },
+    { id: 'gen-governance', type: 'data-governance', label: 'Data Governance', icon: <Shield size={24} />, color: '#51cf66', category: 'data-engineering' },
+    { id: 'gen-schema-reg', type: 'schema-registry', label: 'Schema Registry', icon: <FileCode size={24} />, color: '#ffd43b', category: 'data-engineering' },
+    { id: 'gen-mdm', type: 'master-data-management', label: 'MDM', icon: <Database size={24} />, color: '#339af0', category: 'data-engineering' },
+]
+
+export const categoryLabels: Record<ComponentCategory, string> = {
+    all: 'Все',
+    infrastructure: 'Инфраструктура',
+    data: 'Данные',
+    security: 'Безопасность',
+    development: 'Разработка',
+    monitoring: 'Мониторинг',
+    integration: 'Интеграция',
+    communication: 'Коммуникации',
+    text: 'Текст',
+    ai: 'AI / ML',
+    'data-engineering': 'Data Engineering',
+    business: 'Бизнес',
+    aws: 'AWS',
+    azure: 'Azure',
+    gcp: 'Google Cloud',
+    oracle: 'Oracle Cloud',
+}

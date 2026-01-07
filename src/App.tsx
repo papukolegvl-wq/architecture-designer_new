@@ -29,6 +29,7 @@ import StatisticsPanel from './components/StatisticsPanel'
 import VectorDatabaseConfigPanel from './components/VectorDatabaseConfigPanel'
 import ConnectionPanel from './components/ConnectionPanel'
 import ConnectionTypeSelector from './components/ConnectionTypeSelector'
+import ErrorBoundary from './components/ErrorBoundary'
 import DatabaseConfigPanel from './components/DatabaseConfigPanel'
 import DatabaseSchemaEditor from './components/DatabaseSchemaEditor'
 import TableEditor from './components/TableEditor'
@@ -890,7 +891,7 @@ function App() {
   }, [undo, redo, isSpacePressed])
 
   const addComponent = useCallback(
-    (type: ComponentType, position?: { x: number; y: number }) => {
+    (type: ComponentType, position?: { x: number; y: number }, vendor?: string, customLabel?: string) => {
       let finalPosition = position
 
       // Если позиция не указана, добавляем в центр видимой области
@@ -911,6 +912,35 @@ function App() {
       const isContainerType = type === 'container'
       const isGroupType = type === 'group'
       const isTableType = type === 'table'
+
+      // Configs based on vendor
+      let databaseConfig = undefined
+      if (type === 'database' && vendor) {
+        let dbType: DatabaseType = 'sql'
+        let nosqlType: any = undefined
+
+        if (['mongodb', 'dynamodb', 'couchbase', 'elasticsearch'].includes(vendor)) {
+          dbType = 'nosql'
+          nosqlType = 'document'
+        } else if (vendor === 'cassandra' || vendor === 'hbase') {
+          dbType = 'nosql'
+          nosqlType = 'column'
+        } else if (vendor === 'redis' || vendor === 'memcached') {
+          dbType = 'nosql'
+          nosqlType = 'key-value'
+        } else if (vendor === 'neo4j' || vendor === 'amazon-neptune') {
+          dbType = 'nosql'
+          nosqlType = 'graph'
+        } else if (vendor === 'influxdb' || vendor === 'timescale') {
+          dbType = 'nosql'
+          nosqlType = 'time-series'
+        }
+        databaseConfig = { vendor, dbType, nosqlType }
+      }
+
+      const getVendorConfig = (configName: string) => {
+        return vendor ? { [configName]: { vendor } } : {}
+      }
 
       // Для бизнес-домена определяем уникальный цвет
       let domainColor = '#ffa94d' // Цвет по умолчанию
@@ -941,8 +971,22 @@ function App() {
         position: finalPosition,
         data: {
           type,
-          label: getComponentLabel(type),
+          label: customLabel || getComponentLabel(type),
           connectionType: getDefaultConnectionMode(type),
+
+          // Vendor configs
+          ...(databaseConfig ? { databaseConfig: { name: 'NewDB', ...databaseConfig } } : {}),
+          ...(type === 'data-warehouse' ? getVendorConfig('dataWarehouseConfig') : {}),
+          ...(type === 'search-engine' ? getVendorConfig('searchEngineConfig') : {}),
+          ...(type === 'message-broker' ? getVendorConfig('messageBrokerConfig') : {}),
+          ...(type === 'queue' ? getVendorConfig('queueConfig') : {}),
+          ...(type === 'cache' ? getVendorConfig('cacheConfig') : {}),
+          ...(type === 'etl-service' ? getVendorConfig('etlServiceConfig') : {}),
+          ...(type === 'stream-processor' ? getVendorConfig('streamProcessorConfig') : {}),
+          ...(type === 'api-gateway' ? getVendorConfig('apiGatewayConfig') : {}),
+          ...(type === 'batch-processor' ? getVendorConfig('batchProcessorConfig') : {}),
+          ...(vendor ? { vendor } : {}),
+
           ...(isSystemType && {
             systemConfig: {
               childNodes: [],
@@ -1006,7 +1050,7 @@ function App() {
         return updated
       })
     },
-    [setNodes, reactFlowInstance]
+    [setNodes, reactFlowInstance, nodes]
   )
 
 
@@ -2378,6 +2422,9 @@ function App() {
 
       // Пробуем получить данные из разных источников для совместимости
       let componentType = event.dataTransfer.getData('application/reactflow') as ComponentType
+      const vendor = event.dataTransfer.getData('application/reactflow/vendor')
+      const label = event.dataTransfer.getData('application/reactflow/label')
+
       if (!componentType) {
         componentType = event.dataTransfer.getData('text/plain') as ComponentType
       }
@@ -2386,23 +2433,27 @@ function App() {
 
       // Если ReactFlow еще не инициализирован, добавляем в центр
       if (!reactFlowInstance) {
-        addComponent(componentType)
+        addComponent(componentType, undefined, vendor, label)
         return
       }
 
       const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect()
       if (!reactFlowBounds) {
-        addComponent(componentType)
+        addComponent(componentType, undefined, vendor, label)
         return
       }
 
       // Получаем координаты относительно ReactFlow
+      // Важно: screenToFlowPosition использует экранные координаты (event.clientX), но в этом проекте
+      // исторически использовались координаты относительно контейнера. Оставляем для совместимости,
+      // или используем project() если это было намерением.
+      // В данном случае, судя по предыдущему коду, использовались координаты внутри bounds.
       const position = reactFlowInstance.screenToFlowPosition({
         x: event.clientX - reactFlowBounds.left,
         y: event.clientY - reactFlowBounds.top,
       })
 
-      addComponent(componentType, position)
+      addComponent(componentType, position, vendor, label)
     },
     [reactFlowInstance, addComponent]
   )
@@ -2687,9 +2738,7 @@ function App() {
       setSelectedGroupId(null)
     }
 
-    if (params.edges.length > 0) {
-      setSelectedEdge(params.edges[0])
-    } else {
+    if (params.edges.length === 0) {
       setSelectedEdge(null)
     }
   }, [nodes])
@@ -4402,7 +4451,7 @@ function App() {
   }, [edges, nodes])
 
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
+    <div className="notranslate" translate="no" style={{ width: '100vw', height: '100vh', position: 'relative' }}>
       <TabsPanel
         tabs={workspaces.map(w => ({ id: w.id, name: w.name, isLocked: w.isLocked }))}
         activeTabId={activeWorkspaceId}
@@ -4411,10 +4460,12 @@ function App() {
         onNewTab={handleNewTab}
         onTabRename={handleTabRename}
       />
-      <ComponentPalette
-        onComponentClick={handleAddComponentClick}
-        onRecommendationClick={() => setShowRecommendationPanel(true)}
-      />
+      <ErrorBoundary componentName="ComponentPalette">
+        <ComponentPalette
+          onComponentClick={handleAddComponentClick}
+          onRecommendationClick={() => setShowRecommendationPanel(true)}
+        />
+      </ErrorBoundary>
       {showRecommendationPanel && (
         <RecommendationPanel
           onClose={() => setShowRecommendationPanel(false)}

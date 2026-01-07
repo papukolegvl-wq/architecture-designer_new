@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo } from 'react'
+import React, { useState, useEffect, memo, useRef } from 'react'
 import { NodeProps, useReactFlow, NodeResizer, Handle, Position, useStore } from 'reactflow'
 import { ComponentData } from '../types'
 import { Package, Link as LinkIcon, Link2 } from 'lucide-react'
@@ -26,6 +26,16 @@ function ContainerNode({
       setIsManuallyResized(data.containerConfig.isManuallyResized)
     }
   }, [data.containerConfig?.isManuallyResized])
+  // Ref to track if component is mounted
+  const isMounted = useRef(true)
+
+  useEffect(() => {
+    isMounted.current = true
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
+
   const [isHovered, setIsHovered] = useState(false)
   const zoom = useStore((s) => s.transform[2])
   const connectedHandleIds = useStore((s) =>
@@ -39,6 +49,7 @@ function ContainerNode({
 
   // Функция для обновления размера контейнера
   const updateContainerSize = React.useCallback(() => {
+    if (!isMounted.current) return
     const allNodes = getNodes()
     const containerNode = allNodes.find(n => n.id === id)
     if (!containerNode) return
@@ -78,7 +89,9 @@ function ContainerNode({
     const childrenChanged = JSON.stringify(childIds.sort()) !== JSON.stringify(childNodes.sort())
 
     if (childrenChanged) {
-      setChildNodes(childIds)
+      if (isMounted.current) {
+        setChildNodes(childIds)
+      }
     }
 
     // Если есть изменения в детях или размерах (и не ручной режим), отправляем обновление
@@ -128,15 +141,23 @@ function ContainerNode({
   }, [id, getNodes, isManuallyResized, childNodes])
 
   useEffect(() => {
-    updateContainerSize()
-    const interval = setInterval(updateContainerSize, 500)
+    if (isMounted.current) {
+      setTimeout(updateContainerSize, 0)
+    }
+    const interval = setInterval(() => {
+      if (isMounted.current) {
+        updateContainerSize()
+      }
+    }, 2000) // Increased to 2000ms
     return () => clearInterval(interval)
   }, [updateContainerSize])
 
   // Слушаем изменения узлов
   useEffect(() => {
     const handleNodesChange = () => {
-      updateContainerSize()
+      if (isMounted.current) {
+        updateContainerSize()
+      }
     }
     window.addEventListener('nodesChange', handleNodesChange)
     return () => window.removeEventListener('nodesChange', handleNodesChange)

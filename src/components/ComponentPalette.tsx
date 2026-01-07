@@ -2,236 +2,17 @@ import React, { useState, useRef, useEffect } from 'react'
 import { ComponentType } from '../types'
 import { getComponentDefinition } from '../utils/componentDefinitions'
 import {
-  Server,
-  Database,
-  MessageSquare,
-  Globe,
-  HardDrive,
-  Cloud,
-  Zap,
-  Shield,
-  Loader,
-  Box,
-  Warehouse,
-  Lock,
-  Network,
-  Layers,
-  GitBranch,
-  User,
-  ExternalLink,
-  Building2,
-  Settings,
-  Archive,
-  Code,
   Search,
-  Activity,
-  FileText,
+  X,
   ChevronDown,
   ChevronUp,
-  X,
-  BarChart3,
-  Clock,
-  Key,
-  FileCode,
-  Cpu,
-  Wifi,
-  Mail,
-  MessageCircle,
-  Link as LinkIcon,
-  Package,
-  Brain,
-  Bot,
-  Workflow,
-  Sparkles,
   Lightbulb,
-  ShieldCheck,
-  Eye,
-  Book,
-  ArrowLeftRight,
-  History,
-  Waves,
-  Repeat,
-  LayoutDashboard,
-  CreditCard,
-  Calendar,
-  Share2,
-  ArrowRightLeft,
-  Fingerprint,
-  ShieldAlert,
-  Video,
-  Briefcase,
-  Wallet,
-  FileSearch,
-  Binary,
-  Globe2,
-  Map as MapIcon,
 } from 'lucide-react'
+import { components, categoryLabels, ComponentCategory, Component } from './componentData'
 
 interface ComponentPaletteProps {
   onComponentClick: (type: ComponentType) => void
   onRecommendationClick?: () => void
-}
-
-type ComponentCategory = 'all' | 'infrastructure' | 'data' | 'security' | 'development' | 'monitoring' | 'integration' | 'communication' | 'text' | 'ai' | 'data-engineering' | 'business'
-
-interface Component {
-  type: ComponentType
-  label: string
-  icon: React.ReactNode
-  color: string
-  category: ComponentCategory
-}
-
-const components: Component[] = [
-  // Инфраструктура
-  { type: 'server', label: 'Сервер', icon: <Server size={24} />, color: '#339af0', category: 'infrastructure' },
-  { type: 'container', label: 'Контейнер', icon: <Package size={24} />, color: '#51cf66', category: 'infrastructure' },
-  { type: 'orchestrator', label: 'Оркестратор', icon: <Layers size={24} />, color: '#20c997', category: 'infrastructure' },
-  { type: 'web-server', label: 'Веб-сервер', icon: <Globe size={24} />, color: '#51cf66', category: 'infrastructure' },
-  { type: 'load-balancer', label: 'Балансировщик', icon: <Loader size={24} />, color: '#4dabf7', category: 'infrastructure' },
-  { type: 'service-discovery', label: 'Обнаружение сервисов', icon: <Search size={24} />, color: '#4dabf7', category: 'infrastructure' },
-  { type: 'cdn', label: 'CDN', icon: <Cloud size={24} />, color: '#51cf66', category: 'infrastructure' },
-  { type: 'service-mesh', label: 'Сервисная сеть', icon: <Network size={24} />, color: '#9c88ff', category: 'infrastructure' },
-  { type: 'configuration-management', label: 'Управление конфигурацией', icon: <Settings size={24} />, color: '#ffa94d', category: 'infrastructure' },
-  { type: 'ci-cd-pipeline', label: 'CI/CD пайплайн', icon: <GitBranch size={24} />, color: '#20c997', category: 'infrastructure' },
-  { type: 'backup-service', label: 'Резервное копирование', icon: <HardDrive size={24} />, color: '#666', category: 'infrastructure' },
-  { type: 'proxy', label: 'Прокси', icon: <Server size={24} />, color: '#666', category: 'infrastructure' },
-  { type: 'dns-service', label: 'DNS сервис', icon: <Globe size={24} />, color: '#51cf66', category: 'infrastructure' },
-  { type: 'edge-computing', label: 'Граничные вычисления', icon: <Cpu size={24} />, color: '#ffa94d', category: 'infrastructure' },
-  { type: 'iot-gateway', label: 'IoT шлюз', icon: <Wifi size={24} />, color: '#4dabf7', category: 'infrastructure' },
-  { type: 'vpc', label: 'VPC', icon: <Cloud size={24} />, color: '#339af0', category: 'infrastructure' },
-  { type: 'subnet', label: 'Подсеть', icon: <Layers size={24} />, color: '#4dabf7', category: 'infrastructure' },
-  { type: 'routing-table', label: 'Таблица маршрутизации', icon: <MapIcon size={24} />, color: '#4dabf7', category: 'infrastructure' },
-  { type: 'internet-gateway', label: 'Internet Gateway', icon: <Globe2 size={24} />, color: '#51cf66', category: 'infrastructure' },
-  { type: 'nat-gateway', label: 'NAT шлюз', icon: <ArrowRightLeft size={24} />, color: '#ffa94d', category: 'infrastructure' },
-  { type: 'transit-gateway', label: 'Transit Gateway', icon: <Share2 size={24} />, color: '#9c88ff', category: 'infrastructure' },
-  { type: 'direct-connect', label: 'Direct Connect', icon: <ArrowLeftRight size={24} />, color: '#666', category: 'infrastructure' },
-  { type: 'container-registry', label: 'Реестр контейнеров', icon: <Archive size={24} />, color: '#20c997', category: 'infrastructure' },
-
-  // Данные
-  { type: 'database', label: 'База данных', icon: <Database size={24} />, color: '#51cf66', category: 'data' },
-  { type: 'data-warehouse', label: 'Хранилище данных', icon: <Warehouse size={24} />, color: '#20c997', category: 'data' },
-  { type: 'cache', label: 'Кэш', icon: <HardDrive size={24} />, color: '#845ef7', category: 'data' },
-  { type: 'object-storage', label: 'Объектное хранилище', icon: <Box size={24} />, color: '#fd7e14', category: 'data' },
-  { type: 'graph-database', label: 'Графовая БД', icon: <Network size={24} />, color: '#51cf66', category: 'data' },
-  { type: 'time-series-database', label: 'Временные ряды', icon: <Clock size={24} />, color: '#845ef7', category: 'data' },
-  { type: 'data-lake', label: 'Data Lake', icon: <Warehouse size={24} />, color: '#51cf66', category: 'data' },
-  { type: 'search-engine', label: 'Поисковая система', icon: <Search size={24} />, color: '#20c997', category: 'data' },
-  { type: 'table', label: 'Таблица БД', icon: <Database size={24} />, color: '#5C7CFA', category: 'data' },
-  { type: 'block-storage', label: 'Блочное хранилище', icon: <HardDrive size={24} />, color: '#666', category: 'data' },
-  { type: 'file-storage', label: 'Файловое хранилище', icon: <FileText size={24} />, color: '#4dabf7', category: 'data' },
-  { type: 'archive-storage', label: 'Архивное хранилище', icon: <Archive size={24} />, color: '#495057', category: 'data' },
-
-  // Безопасность
-  { type: 'firewall', label: 'Межсетевой экран', icon: <Shield size={24} />, color: '#dc3545', category: 'security' },
-  { type: 'auth-service', label: 'Сервис аутентификации', icon: <Lock size={24} />, color: '#ff6b6b', category: 'security' },
-  { type: 'identity-provider', label: 'Провайдер идентичности', icon: <Key size={24} />, color: '#ff6b6b', category: 'security' },
-  { type: 'secret-management', label: 'Управление секретами', icon: <Lock size={24} />, color: '#dc3545', category: 'security' },
-  { type: 'vpn-gateway', label: 'VPN шлюз', icon: <Shield size={24} />, color: '#dc3545', category: 'security' },
-  { type: 'waf', label: 'WAF', icon: <ShieldAlert size={24} />, color: '#ff6b6b', category: 'security' },
-  { type: 'shield', label: 'DDoS Shield', icon: <ShieldCheck size={24} />, color: '#dc3545', category: 'security' },
-  { type: 'hsm', label: 'HSM', icon: <Lock size={24} />, color: '#be4bdb', category: 'security' },
-  { type: 'kms', label: 'KMS', icon: <Key size={24} />, color: '#be4bdb', category: 'security' },
-  { type: 'iam-policy', label: 'IAM Политика', icon: <Fingerprint size={24} />, color: '#ff6b6b', category: 'security' },
-  { type: 'security-group', label: 'Security Group', icon: <Shield size={24} />, color: '#f03e3e', category: 'security' },
-  { type: 'soc-siem', label: 'SOC / SIEM', icon: <FileSearch size={24} />, color: '#333', category: 'security' },
-
-  // Разработка
-  { type: 'service', label: 'Сервис', icon: <Server size={24} />, color: '#4dabf7', category: 'development' },
-  { type: 'frontend', label: 'Клиентское приложение', icon: <Globe size={24} />, color: '#339af0', category: 'development' },
-  { type: 'lambda', label: 'Бессерверная функция', icon: <Zap size={24} />, color: '#ffd43b', category: 'development' },
-  { type: 'controller', label: 'Контроллер', icon: <Settings size={24} />, color: '#4dabf7', category: 'development' },
-  { type: 'repository', label: 'Репозиторий', icon: <Archive size={24} />, color: '#51cf66', category: 'development' },
-  { type: 'class', label: 'Класс', icon: <Code size={24} />, color: '#845ef7', category: 'development' },
-  { type: 'batch-processor', label: 'Пакетный обработчик', icon: <Cpu size={24} />, color: '#845ef7', category: 'development' },
-  { type: 'blockchain', label: 'Блокчейн', icon: <LinkIcon size={24} />, color: '#333', category: 'development' },
-  { type: 'scheduler', label: 'Планировщик', icon: <Calendar size={24} />, color: '#ffd43b', category: 'development' },
-  { type: 'workflow-engine', label: 'Движок воркфлоу', icon: <Workflow size={24} />, color: '#845ef7', category: 'development' },
-  { type: 'state-machine', label: 'State Machine', icon: <Repeat size={24} />, color: '#4dabf7', category: 'development' },
-
-  // Мониторинг
-  { type: 'monitoring', label: 'Мониторинг', icon: <Activity size={24} />, color: '#ff6b6b', category: 'monitoring' },
-  { type: 'logging', label: 'Логирование', icon: <FileText size={24} />, color: '#ffa94d', category: 'monitoring' },
-  { type: 'analytics-service', label: 'Аналитика', icon: <BarChart3 size={24} />, color: '#339af0', category: 'monitoring' },
-  { type: 'business-intelligence', label: 'Business Intelligence', icon: <BarChart3 size={24} />, color: '#4dabf7', category: 'monitoring' },
-  { type: 'dashboard', label: 'Дашборд', icon: <LayoutDashboard size={24} />, color: '#339af0', category: 'monitoring' },
-
-  // Интеграция
-  { type: 'api-gateway', label: 'API Gateway', icon: <Network size={24} />, color: '#ff6b6b', category: 'integration' },
-  { type: 'message-broker', label: 'Брокер сообщений', icon: <MessageSquare size={24} />, color: '#ffd43b', category: 'integration' },
-  { type: 'esb', label: 'ESB (Корпоративная сервисная шина)', icon: <GitBranch size={24} />, color: '#9c88ff', category: 'integration' },
-  { type: 'queue', label: 'Очередь', icon: <MessageSquare size={24} />, color: '#ffd43b', category: 'integration' },
-  { type: 'event-bus', label: 'Шина событий', icon: <Layers size={24} />, color: '#845ef7', category: 'integration' },
-  { type: 'stream-processor', label: 'Потоковый обработчик', icon: <Zap size={24} />, color: '#4dabf7', category: 'integration' },
-  { type: 'integration-platform', label: 'Платформа интеграций', icon: <GitBranch size={24} />, color: '#9c88ff', category: 'integration' },
-  { type: 'api-client', label: 'API клиент', icon: <LinkIcon size={24} />, color: '#4dabf7', category: 'integration' },
-  { type: 'api-documentation', label: 'Документация API', icon: <FileCode size={24} />, color: '#339af0', category: 'integration' },
-
-  // Бизнес-системы
-  { type: 'crm', label: 'CRM', icon: <Briefcase size={24} />, color: '#ffa94d', category: 'business' },
-  { type: 'erp', label: 'ERP', icon: <Building2 size={24} />, color: '#4dabf7', category: 'business' },
-  { type: 'billing-system', label: 'Биллинг', icon: <Wallet size={24} />, color: '#51cf66', category: 'business' },
-  { type: 'payment-gateway', label: 'Платежный шлюз', icon: <CreditCard size={24} />, color: '#ff6b6b', category: 'business' },
-
-  // Организация
-  { type: 'system', label: 'Система', icon: <Layers size={24} />, color: '#4dabf7', category: 'infrastructure' },
-  { type: 'system-component', label: 'Система (компонент)', icon: <Box size={24} />, color: '#4dabf7', category: 'infrastructure' },
-  { type: 'business-domain', label: 'Бизнес-домен', icon: <Building2 size={24} />, color: '#ffa94d', category: 'infrastructure' },
-  { type: 'group', label: 'Группа', icon: <Layers size={24} />, color: '#845ef7', category: 'infrastructure' },
-  { type: 'client', label: 'Клиент', icon: <User size={24} />, color: '#ff8787', category: 'infrastructure' },
-  { type: 'external-system', label: 'Внешняя система', icon: <ExternalLink size={24} />, color: '#ffa94d', category: 'integration' },
-
-  // Коммуникации
-  { type: 'notification-service', label: 'Сервис уведомлений', icon: <MessageCircle size={24} />, color: '#ffd43b', category: 'communication' },
-  { type: 'email-service', label: 'Email сервис', icon: <Mail size={24} />, color: '#339af0', category: 'communication' },
-  { type: 'sms-gateway', label: 'SMS шлюз', icon: <MessageCircle size={24} />, color: '#4dabf7', category: 'communication' },
-
-  // Медиа
-  { type: 'media-transcoder', label: 'Транскодер', icon: <Binary size={24} />, color: '#be4bdb', category: 'integration' },
-  { type: 'media-streaming', label: 'Стриминг медиа', icon: <Video size={24} />, color: '#f03e3e', category: 'communication' },
-
-  // Текст и аннотации
-  { type: 'note', label: 'Заметка', icon: <FileText size={24} />, color: '#ffd666', category: 'text' },
-
-  // AI / ML
-  { type: 'llm-model', label: 'LLM модель', icon: <Brain size={24} />, color: '#ae3ec9', category: 'ai' },
-  { type: 'vector-database', label: 'Векторная БД', icon: <Database size={24} />, color: '#748ffc', category: 'ai' },
-  { type: 'ai-agent', label: 'AI Агент', icon: <Bot size={24} />, color: '#f03e3e', category: 'ai' },
-  { type: 'ml-training', label: 'Обучение моделей', icon: <Activity size={24} />, color: '#fcc419', category: 'ai' },
-  { type: 'ml-inference', label: 'Инференс', icon: <Cpu size={24} />, color: '#37b24d', category: 'ai' },
-  { type: 'ml-data-pipeline', label: 'ML Дата-пайплайн', icon: <Workflow size={24} />, color: '#4dabf7', category: 'ai' },
-  { type: 'ml-ai-service', label: 'ML/AI сервис', icon: <Sparkles size={24} />, color: '#fab005', category: 'ai' },
-  { type: 'gpu-cluster', label: 'GPU кластер', icon: <Server size={24} />, color: '#228be6', category: 'ai' },
-
-  // Data Engineering
-  { type: 'etl-service', label: 'ETL сервис', icon: <Database size={24} />, color: '#20c997', category: 'data-engineering' },
-  { type: 'cdc-service', label: 'CDC сервис', icon: <History size={24} />, color: '#fab005', category: 'data-engineering' },
-  { type: 'data-quality', label: 'Качество данных', icon: <ShieldCheck size={24} />, color: '#40c057', category: 'data-engineering' },
-  { type: 'data-observability', label: 'Observability данных', icon: <Eye size={24} />, color: '#228be6', category: 'data-engineering' },
-  { type: 'metadata-catalog', label: 'Каталог метаданных', icon: <Book size={24} />, color: '#7950f2', category: 'data-engineering' },
-  { type: 'reverse-etl', label: 'Reverse ETL', icon: <Repeat size={24} />, color: '#be4bdb', category: 'data-engineering' },
-  { type: 'feature-store', label: 'Feature Store', icon: <Warehouse size={24} />, color: '#fd7e14', category: 'data-engineering' },
-  { type: 'lakehouse', label: 'Data Lakehouse', icon: <Waves size={24} />, color: '#15aabf', category: 'data-engineering' },
-  { type: 'business-process', label: 'Бизнес процесс', icon: <Workflow size={24} />, color: '#ae3ec9', category: 'infrastructure' },
-  { type: 'data-mesh-node', label: 'Узел Data Mesh', icon: <Network size={24} />, color: '#4dabf7', category: 'data-engineering' },
-  { type: 'data-governance', label: 'Data Governance', icon: <Shield size={24} />, color: '#51cf66', category: 'data-engineering' },
-  { type: 'schema-registry', label: 'Schema Registry', icon: <FileCode size={24} />, color: '#ffd43b', category: 'data-engineering' },
-  { type: 'master-data-management', label: 'MDM', icon: <Database size={24} />, color: '#339af0', category: 'data-engineering' },
-]
-
-const categoryLabels: Record<ComponentCategory, string> = {
-  all: 'Все',
-  infrastructure: 'Инфраструктура',
-  data: 'Данные',
-  security: 'Безопасность',
-  development: 'Разработка',
-  monitoring: 'Мониторинг',
-  integration: 'Интеграция',
-  communication: 'Коммуникации',
-  text: 'Текст',
-  ai: 'AI / ML',
-  'data-engineering': 'Data Engineering',
-  business: 'Бизнес',
 }
 
 export default function ComponentPalette({ onComponentClick, onRecommendationClick }: ComponentPaletteProps) {
@@ -246,9 +27,12 @@ export default function ComponentPalette({ onComponentClick, onRecommendationCli
 
   // Фильтрация компонентов
   const filteredComponents = components.filter(component => {
+    const term = searchQuery.toLowerCase()
     const matchesSearch = searchQuery === '' ||
-      component.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      component.type.toLowerCase().includes(searchQuery.toLowerCase())
+      component.label.toLowerCase().includes(term) ||
+      component.type.toLowerCase().includes(term) ||
+      (component.vendor && component.vendor.toLowerCase().includes(term))
+
     const matchesCategory = selectedCategory === 'all' || component.category === selectedCategory
     return matchesSearch && matchesCategory
   })
@@ -324,9 +108,11 @@ export default function ComponentPalette({ onComponentClick, onRecommendationCli
     }
   }, [isDragging, dragOffset])
 
-  const handleDragStart = (e: React.DragEvent, type: ComponentType) => {
-    e.dataTransfer.setData('application/reactflow', type)
-    e.dataTransfer.setData('text/plain', type)
+  const handleDragStart = (e: React.DragEvent, component: Component) => {
+    e.dataTransfer.setData('application/reactflow', component.type)
+    e.dataTransfer.setData('application/reactflow/vendor', component.vendor || '')
+    e.dataTransfer.setData('application/reactflow/label', component.defaultLabel || component.label)
+    e.dataTransfer.setData('text/plain', component.type)
     e.dataTransfer.effectAllowed = 'move'
   }
 
@@ -558,9 +344,9 @@ export default function ComponentPalette({ onComponentClick, onRecommendationCli
             >
               {filteredComponents.map((component) => (
                 <div
-                  key={component.type}
+                  key={component.id}
                   draggable
-                  onDragStart={(e) => handleDragStart(e, component.type)}
+                  onDragStart={(e) => handleDragStart(e, component)}
                   onClick={() => onComponentClick(component.type)}
                   style={{
                     padding: '8px',
@@ -658,6 +444,11 @@ export default function ComponentPalette({ onComponentClick, onRecommendationCli
                   lineHeight: '1.4'
                 }}>
                   {getComponentDefinition(hoveredComponent.type).description}
+                  {hoveredComponent.vendor && (
+                    <div style={{ marginTop: '4px', color: '#666' }}>
+                      Вендор: {hoveredComponent.vendor.toUpperCase()}
+                    </div>
+                  )}
                 </div>
               </>
             ) : (

@@ -130,47 +130,55 @@ function SystemNode({ id, data, selected, onLinkClick, onLinkConfigClick }: Syst
     window.dispatchEvent(event)
   }, [id, getNodes, childNodes])
 
+  // Ref to track if component is mounted to avoid state updates on unmounted components
+  const isMounted = useRef(true)
+
+  useEffect(() => {
+    isMounted.current = true
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
+
   // Отслеживаем изменения размера узла для определения ручного изменения
   useEffect(() => {
-    const allNodes = getNodes()
-    const systemNode = allNodes.find(n => n.id === id)
-    if (!systemNode) return
+    // Only set up interval if we can access nodes
+    const intervalId = setInterval(() => {
+      if (!isMounted.current) return
 
-    // Если размер узла изменился, но это не было вызвано нашим обновлением,
-    // значит пользователь изменил размер вручную
-    const checkManualResize = () => {
-      const currentNodes = getNodes()
-      const currentNode = currentNodes.find(n => n.id === id)
-      if (!currentNode) return
-
+      const allNodes = getNodes()
       const systemNode = allNodes.find(n => n.id === id)
       if (!systemNode) return
+
+      // Если размер узла изменился, но это не было вызвано нашим обновлением,
+      // значит пользователь изменил размер вручную
+      const currentNode = getNodes().find(n => n.id === id)
+      if (!currentNode) return
 
       // Проверяем, изменился ли размер
       const widthChanged = Math.abs((currentNode.width || 400) - (systemNode.width || 400)) > 5
       const heightChanged = Math.abs((currentNode.height || 300) - (systemNode.height || 300)) > 5
 
       if (widthChanged || heightChanged) {
-        // Небольшая задержка, чтобы убедиться, что это не наше автоматическое обновление
-        setTimeout(() => {
-          setIsManuallyResized(true)
-        }, 200)
+        setIsManuallyResized(true)
       }
-    }
+    }, 500) // Increased from 100ms to 500ms to reduce load
 
-    const interval = setInterval(checkManualResize, 100)
-    return () => clearInterval(interval)
+    return () => clearInterval(intervalId)
   }, [id, getNodes])
 
   // Автоматически определяем узлы внутри системы и подстраиваем размер
   useEffect(() => {
     // Обновляем сразу при монтировании
-    if (!isManuallyResized) {
-      updateSystemSize()
+    if (!isManuallyResized && isMounted.current) {
+      // Use setTimeout to avoid synchronous updates during render
+      setTimeout(updateSystemSize, 0)
     }
 
     // Обновляем при изменениях узлов с дебаунсингом
     const handleNodesChange = () => {
+      if (!isMounted.current) return
+
       // Очищаем предыдущий таймаут
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current)
@@ -178,30 +186,34 @@ function SystemNode({ id, data, selected, onLinkClick, onLinkConfigClick }: Syst
 
       // Устанавливаем новый таймаут с задержкой
       debounceTimeoutRef.current = window.setTimeout(() => {
+        if (!isMounted.current) return
+        
         if (!isManuallyResized) {
           updateSystemSize()
         } else {
           // Даже при ручном размере обновляем список узлов
           updateSystemSize()
         }
-      }, 150) // Увеличено с 50ms до 150ms для дебаунсинга
+      }, 200) // Increased debounce time
     }
 
     // Слушаем события изменения узлов
     window.addEventListener('nodeschange', handleNodesChange)
     window.addEventListener('nodeadd', handleNodesChange)
-    window.addEventListener('nodesremove', handleNodesChange) // При удалении узлов
+    window.addEventListener('nodesremove', handleNodesChange)
 
     // Также периодически проверяем (на случай, если события не сработали)
     // Увеличиваем интервал для лучшей производительности при большом количестве компонентов
     const interval = setInterval(() => {
+      if (!isMounted.current) return
+
       if (!isManuallyResized) {
         updateSystemSize()
       } else {
         // Обновляем только список узлов, не размер
         updateSystemSize()
       }
-    }, 500) // Увеличено с 100ms до 500ms для лучшей производительности
+    }, 2000) // Significantly increased from 500ms to 2000ms
 
     return () => {
       clearInterval(interval)
