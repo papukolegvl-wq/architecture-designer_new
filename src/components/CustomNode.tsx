@@ -50,6 +50,7 @@ import {
   Waves,
   Repeat,
   LayoutDashboard,
+  Calendar,
 } from 'lucide-react'
 
 const componentIcons: Record<string, React.ReactNode> = {
@@ -127,6 +128,8 @@ const componentIcons: Record<string, React.ReactNode> = {
   'feature-store': <Warehouse size={32} />,
   lakehouse: <Waves size={32} />,
   dashboard: <LayoutDashboard size={32} />,
+  'workflow-engine': <Workflow size={32} />,
+  scheduler: <Calendar size={32} />,
 }
 
 const componentColors: Record<string, string> = {
@@ -203,6 +206,8 @@ const componentColors: Record<string, string> = {
   lakehouse: '#15aabf',
   'business-process': '#ae3ec9',
   dashboard: '#339af0',
+  'workflow-engine': '#845ef7',
+  scheduler: '#ffd43b',
 }
 
 interface CustomNodeProps extends NodeProps<ComponentData> {
@@ -526,18 +531,27 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
       }
       return 'Class'
     } else if (data.type === 'server') {
+      if (data.serverConfig?.vendor) return data.serverConfig.vendor
       return 'Server'
     } else if (data.type === 'orchestrator') {
+      if (data.orchestratorConfig?.vendor) return data.orchestratorConfig.vendor
       return 'Orchestrator'
     } else if (data.type === 'group') {
       return 'Group'
     } else if (data.type === 'service-discovery') {
       return 'Service Discovery'
     } else if (data.type === 'web-server') {
+      if (data.webServerConfig?.vendor) return data.webServerConfig.vendor
       return 'Web Server'
     } else if (data.type === 'monitoring') {
+      if (data.monitoringConfig?.vendor) {
+        return data.monitoringConfig.vendor
+      }
       return 'Monitoring'
     } else if (data.type === 'logging') {
+      if (data.loggingConfig?.vendor) {
+        return data.loggingConfig.vendor
+      }
       return 'Logging'
     } else if (data.type === 'queue') {
       if (data.queueConfig?.vendor) {
@@ -624,10 +638,42 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
         return data.dataLakeConfig.vendor
       }
       return 'Data Lake'
+    } else if (data.type === 'internet-gateway') {
+      if (data.internetGatewayConfig?.vendor) return data.internetGatewayConfig.vendor
+      return 'Internet Gateway'
+    } else if (data.type === 'nat-gateway') {
+      if (data.natGatewayConfig?.vendor) return data.natGatewayConfig.vendor
+      return 'NAT Gateway'
     } else if (data.type === 'edge-computing') {
+      if (data.edgeComputingConfig?.vendor) return data.edgeComputingConfig.vendor
       return 'Edge Computing'
     } else if (data.type === 'iot-gateway') {
+      if (data.iotGatewayConfig?.vendor) return data.iotGatewayConfig.vendor
       return 'IoT Gateway'
+    } else if (data.type === 'block-storage') {
+      if (data.blockStorageConfig?.vendor) return data.blockStorageConfig.vendor
+      return 'Block Storage'
+    } else if (data.type === 'file-storage') {
+      if (data.fileStorageConfig?.vendor) return data.fileStorageConfig.vendor
+      return 'File Storage'
+    } else if (data.type === 'archive-storage') {
+      if (data.archiveStorageConfig?.vendor) return data.archiveStorageConfig.vendor
+      return 'Archive Storage'
+    } else if (data.type === 'llm-model') {
+      if (data.llmModelConfig?.vendor) return data.llmModelConfig.vendor
+      return 'LLM Model'
+    } else if (data.type === 'ai-agent') {
+      if (data.aiAgentConfig?.vendor) return data.aiAgentConfig.vendor
+      return 'AI Agent'
+    } else if (data.type === 'ml-training') {
+      if (data.mlTrainingConfig?.vendor) return data.mlTrainingConfig.vendor
+      return 'ML Training'
+    } else if (data.type === 'ml-inference') {
+      if (data.mlInferenceConfig?.vendor) return data.mlInferenceConfig.vendor
+      return 'ML Inference'
+    } else if (data.type === 'ml-data-pipeline') {
+      if (data.mlDataPipelineConfig?.vendor) return data.mlDataPipelineConfig.vendor
+      return 'ML Pipeline'
     } else if (data.type === 'blockchain') {
       return 'Blockchain'
     } else if (data.type === 'system-component') {
@@ -684,23 +730,45 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
       }
       return 'Vector Database'
     } else if (data.type === 'cdc-service') {
+      if (data.cdcServiceConfig?.vendor) return data.cdcServiceConfig.vendor
       return 'CDC'
     } else if (data.type === 'data-quality') {
+      if (data.dataQualityConfig?.vendor) return data.dataQualityConfig.vendor
       return 'Data Quality'
     } else if (data.type === 'data-observability') {
+      if (data.dataObservabilityConfig?.vendor) return data.dataObservabilityConfig.vendor
       return 'Observability'
     } else if (data.type === 'metadata-catalog') {
+      if (data.metadataCatalogConfig?.vendor) return data.metadataCatalogConfig.vendor
       return 'Metadata'
     } else if (data.type === 'reverse-etl') {
+      if (data.reverseEtlConfig?.vendor) return data.reverseEtlConfig.vendor
       return 'Reverse ETL'
     } else if (data.type === 'feature-store') {
+      if (data.featureStoreConfig?.vendor) return data.featureStoreConfig.vendor
       return 'Feature Store'
     } else if (data.type === 'lakehouse') {
+      if (data.lakehouseConfig?.vendor) return data.lakehouseConfig.vendor
       return 'Lakehouse'
     } else if (data.type === 'business-process') {
       return 'Business Process'
     } else if (data.type === 'dashboard') {
       return 'Dashboard'
+    } else if (data.type === 'workflow-engine') {
+      if (data.workflowEngineConfig?.vendor) {
+        return data.workflowEngineConfig.vendor
+      }
+      return 'Workflow Engine'
+    } else if (data.type === 'scheduler') {
+      if (data.schedulerConfig?.vendor) {
+        return data.schedulerConfig.vendor
+      }
+      return 'Scheduler'
+    } else if (data.type === 'soc-siem') {
+      if (data.socSiemConfig?.vendor) {
+        return data.socSiemConfig.vendor
+      }
+      return 'SOC / SIEM'
     }
     return data.connectionType === 'sync' ? 'Sync' : 'Async'
   }
@@ -741,7 +809,7 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
         background: isSimple ? color : backgroundColor,
         border: `${borderWidth} ${borderStyle} ${selected ? color : isSimple ? 'transparent' : borderColor}`,
         color: '#f8f9fa',
-        minWidth: isSimple ? '60px' : '200px',
+        width: isSimple ? '60px' : '240px',
         minHeight: isSimple ? '60px' : '110px',
         boxShadow: boxShadow,
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -1048,7 +1116,11 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
                   fontSize: isMedium ? '12px' : '16px',
                   fontWeight: 'bold',
                   textAlign: 'center',
-                  wordBreak: 'break-word',
+                  wordWrap: 'break-word',
+                  overflowWrap: 'break-word',
+                  whiteSpace: 'pre-wrap',
+                  lineHeight: '1.2',
+                  maxWidth: '100%',
                 }}
               >
                 {label}

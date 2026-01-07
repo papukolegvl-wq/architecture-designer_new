@@ -41,6 +41,16 @@ import DataWarehouseConfigPanel from './components/DataWarehouseConfigPanel'
 import DataWarehouseDataPanel from './components/DataWarehouseDataPanel'
 import MessageBrokerConfigPanel from './components/MessageBrokerConfigPanel'
 import MessageBrokerMessagesPanel from './components/MessageBrokerMessagesPanel'
+
+import BatchProcessorConfigPanel from './components/BatchProcessorConfigPanel'
+import WorkflowEngineConfigPanel from './components/WorkflowEngineConfigPanel'
+import SchedulerConfigPanel from './components/SchedulerConfigPanel'
+import SOCSIEMConfigPanel from './components/SOCSIEMConfigPanel'
+import MonitoringConfigPanel from './components/MonitoringConfigPanel'
+import LoggingConfigPanel from './components/LoggingConfigPanel'
+import GenericComponentConfigPanel, { VendorOption } from './components/GenericComponentConfigPanel'
+import * as Vendors from './vendorData'
+import { ComponentData } from './types'
 import CDNConfigPanel from './components/CDNConfigPanel'
 import LambdaConfigPanel from './components/LambdaConfigPanel'
 import ObjectStorageConfigPanel from './components/ObjectStorageConfigPanel'
@@ -68,7 +78,7 @@ import VPNGatewayConfigPanel from './components/VPNGatewayConfigPanel'
 import { Lock, Unlock } from 'lucide-react'
 import ConnectionMarkers from './components/ConnectionMarkers'
 import { AIGeneratedArchitecture } from './utils/geminiService'
-import { ComponentType, ConnectionType, ComponentData, DatabaseType, NoSQLType, ReplicationApproach, ReplicationTool, CacheType, ServiceLanguage, FrontendFramework, DataWarehouseVendor, DatabaseVendor, MessageBrokerVendor, MessageDeliveryType, CDNVendor, LambdaVendor, ObjectStorageVendor, AuthServiceVendor, FirewallVendor, LoadBalancerVendor, ApiGatewayVendor, ESBVendor, DatabaseTable, ObjectStorageDirection, ComponentLink, EdgePathType, BackupServiceVendor, QueueVendor, ProxyVendor, VPNGatewayVendor, Workspace } from './types'
+import { ComponentType, ConnectionType, DatabaseType, NoSQLType, ReplicationApproach, ReplicationTool, CacheType, ServiceLanguage, FrontendFramework, DataWarehouseVendor, DatabaseVendor, MessageBrokerVendor, MessageDeliveryType, CDNVendor, LambdaVendor, ObjectStorageVendor, AuthServiceVendor, FirewallVendor, LoadBalancerVendor, ApiGatewayVendor, ESBVendor, DatabaseTable, ObjectStorageDirection, ComponentLink, EdgePathType, BackupServiceVendor, QueueVendor, ProxyVendor, VPNGatewayVendor, Workspace } from './types'
 import { usePersistence } from './hooks/usePersistence'
 import { useHistory } from './hooks/useHistory'
 import { ensureEdgesNotAutoDeleted, saveWorkspacesToLocalStorage } from './utils/persistenceUtils'
@@ -80,6 +90,68 @@ const edgeTypes = {
   animated: AnimatedEdge,
 }
 
+const GENERIC_COMPONENTS: Record<string, { configKey: string, vendors: VendorOption[], title: string }> = {
+  'orchestrator': { configKey: 'orchestratorConfig', vendors: Vendors.orchestratorVendors, title: 'Оркестратор' },
+  'event-bus': { configKey: 'eventBusConfig', vendors: Vendors.eventBusVendors, title: 'Шина событий' },
+  'stream-processor': { configKey: 'streamProcessorConfig', vendors: Vendors.streamProcessorVendors, title: 'Потоковый обработчик' },
+  'search-engine': { configKey: 'searchEngineConfig', vendors: Vendors.searchEngineVendors, title: 'Поисковый движок' },
+  'graph-database': { configKey: 'graphDatabaseConfig', vendors: Vendors.graphDatabaseVendors, title: 'Графовая БД' },
+  'time-series-database': { configKey: 'timeSeriesDatabaseConfig', vendors: Vendors.timeSeriesDatabaseVendors, title: 'Time Series БД' },
+  'service-mesh': { configKey: 'serviceMeshConfig', vendors: Vendors.serviceMeshVendors, title: 'Service Mesh' },
+  'configuration-management': { configKey: 'configurationManagementConfig', vendors: Vendors.configurationManagementVendors, title: 'Config Mgmt' },
+  'ci-cd-pipeline': { configKey: 'ciCdPipelineConfig', vendors: Vendors.ciCdPipelineVendors, title: 'CI/CD Pipeline' },
+  'identity-provider': { configKey: 'identityProviderConfig', vendors: Vendors.identityProviderVendors, title: 'Identity Provider' },
+  'secret-management': { configKey: 'secretManagementConfig', vendors: Vendors.secretManagementVendors, title: 'Secret Mgmt' },
+  'integration-platform': { configKey: 'integrationPlatformConfig', vendors: Vendors.integrationPlatformVendors, title: 'Integration Platform' },
+  'etl-service': { configKey: 'etlServiceConfig', vendors: Vendors.etlServiceVendors, title: 'ETL Service' },
+  'cdc-service': { configKey: 'cdcServiceConfig', vendors: Vendors.cdcServiceVendors, title: 'CDC Service' },
+  'lakehouse': { configKey: 'lakehouseConfig', vendors: Vendors.lakehouseVendors, title: 'Lakehouse' },
+  'data-quality': { configKey: 'dataQualityConfig', vendors: Vendors.dataQualityVendors, title: 'Data Quality' },
+  'data-observability': { configKey: 'dataObservabilityConfig', vendors: Vendors.dataObservabilityVendors, title: 'Data Observability' },
+  'metadata-catalog': { configKey: 'metadataCatalogConfig', vendors: Vendors.metadataCatalogVendors, title: 'Metadata Catalog' },
+  'reverse-etl': { configKey: 'reverseEtlConfig', vendors: Vendors.reverseEtlVendors, title: 'Reverse ETL' },
+  'feature-store': { configKey: 'featureStoreConfig', vendors: Vendors.featureStoreVendors, title: 'Feature Store' },
+  'data-lake': { configKey: 'dataLakeConfig', vendors: Vendors.dataLakeVendors, title: 'Data Lake' },
+  'ml-ai-service': { configKey: 'mlServiceConfig', vendors: Vendors.mlAiServiceVendors, title: 'ML/AI Service' },
+  'notification-service': { configKey: 'notificationServiceConfig', vendors: Vendors.notificationServiceVendors, title: 'Notification Service' },
+  'email-service': { configKey: 'emailServiceConfig', vendors: Vendors.emailServiceVendors, title: 'Email Service' },
+  'sms-gateway': { configKey: 'smsGatewayConfig', vendors: Vendors.smsGatewayVendors, title: 'SMS Gateway' },
+  'dns-service': { configKey: 'dnsServiceConfig', vendors: Vendors.dnsServiceVendors, title: 'DNS Service' },
+  'server': { configKey: 'serverConfig', vendors: Vendors.serverVendors, title: 'Сервер' }, // Assuming serverConfig needs to be added to types
+  'web-server': { configKey: 'webServerConfig', vendors: Vendors.webServerVendors, title: 'Web Server' }, // Assuming webServerConfig needs to be added
+  'container': { configKey: 'containerConfig', vendors: Vendors.containerVendors, title: 'Контейнер' },
+  'internet-gateway': { configKey: 'internetGatewayConfig', vendors: Vendors.internetGatewayVendors, title: 'Internet Gateway' },
+  'nat-gateway': { configKey: 'natGatewayConfig', vendors: Vendors.natGatewayVendors, title: 'NAT Gateway' },
+  'iot-gateway': { configKey: 'iotGatewayConfig', vendors: Vendors.iotGatewayVendors, title: 'IoT Gateway' },
+  'edge-computing': { configKey: 'edgeComputingConfig', vendors: Vendors.edgeComputingVendors, title: 'Edge Computing' },
+  'block-storage': { configKey: 'blockStorageConfig', vendors: Vendors.blockStorageVendors, title: 'Block Storage' },
+  'file-storage': { configKey: 'fileStorageConfig', vendors: Vendors.fileStorageVendors, title: 'File Storage' },
+  'archive-storage': { configKey: 'archiveStorageConfig', vendors: Vendors.archiveStorageVendors, title: 'Archive Storage' },
+  'llm-model': { configKey: 'llmModelConfig', vendors: Vendors.llmVendors, title: 'LLM Model' },
+  'ai-agent': { configKey: 'aiAgentConfig', vendors: Vendors.aiAgentVendors, title: 'AI Agent' },
+  'ml-training': { configKey: 'mlTrainingConfig', vendors: Vendors.mlTrainingVendors, title: 'ML Training' },
+  'ml-inference': { configKey: 'mlInferenceConfig', vendors: Vendors.mlInferenceVendors, title: 'ML Inference' },
+  'ml-data-pipeline': { configKey: 'mlDataPipelineConfig', vendors: Vendors.pipelineVendors, title: 'ML Pipeline' },
+  'vpn-gateway': { configKey: 'vpnGatewayConfig', vendors: Vendors.vpnGatewayVendors, title: 'VPN Gateway' },
+  'proxy': { configKey: 'proxyConfig', vendors: Vendors.proxyVendors, title: 'Proxy' },
+  'backup-service': { configKey: 'backupServiceConfig', vendors: Vendors.backupServiceVendors, title: 'Backup Service' },
+  'cdn': { configKey: 'cdnConfig', vendors: Vendors.cdnVendors, title: 'CDN' },
+  'vector-database': { configKey: 'vectorDatabaseConfig', vendors: Vendors.vectorDbVendors, title: 'Vector DB' },
+  'master-data-management': { configKey: 'mdmConfig', vendors: Vendors.mdmVendors, title: 'MDM' },
+  'service-discovery': { configKey: 'serviceDiscoveryConfig', vendors: Vendors.serviceDiscoveryVendors, title: 'Service Discovery' },
+  'vpc': { configKey: 'vpcConfig', vendors: Vendors.vpcVendors, title: 'VPC' },
+  'subnet': { configKey: 'subnetConfig', vendors: Vendors.subnetVendors, title: 'Subnet' },
+  'routing-table': { configKey: 'routingTableConfig', vendors: Vendors.routingTableVendors, title: 'Routing Table' },
+  'waf': { configKey: 'wafConfig', vendors: Vendors.wafVendors, title: 'WAF' },
+  'shield': { configKey: 'ddosProtectionConfig', vendors: Vendors.ddosVendors, title: 'DDoS Shield' },
+  'hsm': { configKey: 'hsmConfig', vendors: Vendors.hsmVendors, title: 'HSM' },
+  'kms': { configKey: 'kmsConfig', vendors: Vendors.kmsVendors, title: 'KMS' },
+  'transit-gateway': { configKey: 'transitGatewayConfig', vendors: Vendors.transitGatewayVendors, title: 'Transit Gateway' },
+  'direct-connect': { configKey: 'directConnectConfig', vendors: Vendors.directConnectVendors, title: 'Direct Connect' },
+  'container-registry': { configKey: 'containerRegistryConfig', vendors: Vendors.containerRegistryVendors, title: 'Container Registry' },
+  'batch-processor': { configKey: 'batchProcessorConfig', vendors: Vendors.batchProcessorVendors, title: 'Пакетный обработчик' },
+  'client': { configKey: 'clientConfig', vendors: Vendors.clientVendors, title: 'Клиент' },
+}
 
 function App() {
   const { workspaces, setWorkspaces, activeWorkspaceId, setActiveWorkspaceId, saveWorkspaceState } = usePersistence()
@@ -727,6 +799,12 @@ function App() {
   const [smsGatewayConfigNode, setSmsGatewayConfigNode] = useState<Node | null>(null)
   const [analyticsServiceConfigNode, setAnalyticsServiceConfigNode] = useState<Node | null>(null)
   const [businessIntelligenceConfigNode, setBusinessIntelligenceConfigNode] = useState<Node | null>(null)
+  const [workflowEngineConfigNode, setWorkflowEngineConfigNode] = useState<Node | null>(null)
+  const [schedulerConfigNode, setSchedulerConfigNode] = useState<Node | null>(null)
+  const [socSiemConfigNode, setSocSiemConfigNode] = useState<Node | null>(null)
+  const [monitoringConfigNode, setMonitoringConfigNode] = useState<Node | null>(null)
+  const [loggingConfigNode, setLoggingConfigNode] = useState<Node | null>(null)
+  const [genericConfigNode, setGenericConfigNode] = useState<Node | null>(null)
   const [showAIAssistant, setShowAIAssistant] = useState(false)
   const [commentNode, setCommentNode] = useState<Node | null>(null)
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([])
@@ -885,7 +963,7 @@ function App() {
     window.addEventListener('keydown', handleKeyDown)
     window.addEventListener('keyup', handleKeyUp)
     return () => {
-      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keydown', handleKeyUp)
       window.removeEventListener('keyup', handleKeyUp)
     }
   }, [undo, redo, isSpacePressed])
@@ -2078,6 +2156,59 @@ function App() {
     [updateNodesWithHistory]
   )
 
+  const handleBatchProcessorConfigUpdate = useCallback(
+    (nodeId: string, config: any) => {
+      handleComponentConfigUpdate(nodeId, 'batchProcessorConfig', config)
+    },
+    [handleComponentConfigUpdate]
+  )
+
+  const handleWorkflowEngineConfigUpdate = useCallback(
+    (nodeId: string, config: any) => {
+      handleComponentConfigUpdate(nodeId, 'workflowEngineConfig', config)
+    },
+    [handleComponentConfigUpdate]
+  )
+
+  const handleSchedulerConfigUpdate = useCallback(
+    (nodeId: string, config: any) => {
+      handleComponentConfigUpdate(nodeId, 'schedulerConfig', config)
+    },
+    [handleComponentConfigUpdate]
+  )
+
+  const handleSOCSIEMConfigUpdate = useCallback(
+    (nodeId: string, config: any) => {
+      handleComponentConfigUpdate(nodeId, 'socSiemConfig', config)
+    },
+    [handleComponentConfigUpdate]
+  )
+
+  const handleMonitoringConfigUpdate = useCallback(
+    (nodeId: string, config: any) => {
+      handleComponentConfigUpdate(nodeId, 'monitoringConfig', config)
+    },
+    [handleComponentConfigUpdate]
+  )
+
+  const handleLoggingConfigUpdate = useCallback(
+    (nodeId: string, config: any) => {
+      handleComponentConfigUpdate(nodeId, 'loggingConfig', config)
+    },
+    [handleComponentConfigUpdate]
+  )
+
+  const handleGenericConfigUpdate = useCallback(
+    (nodeId: string, config: any) => {
+      if (!genericConfigNode) return
+      const mapping = GENERIC_COMPONENTS[genericConfigNode.data.type]
+      if (mapping) {
+        handleComponentConfigUpdate(nodeId, mapping.configKey as keyof ComponentData, config)
+      }
+    },
+    [handleComponentConfigUpdate, genericConfigNode]
+  )
+
   const handleControllerConfigUpdate = useCallback(
     (nodeId: string, config: { endpoints: any[] }) => {
       updateNodesWithHistory((nds) =>
@@ -2122,7 +2253,20 @@ function App() {
     [updateNodesWithHistory]
   )
 
-  const onNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
+  const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+    // Обработка множественного выбора с Ctrl/Meta
+    if (event.ctrlKey || event.metaKey) {
+      setSelectedNodes((prev) => {
+        const isSelected = prev.some((n) => n.id === node.id)
+        if (isSelected) {
+          return prev.filter((n) => n.id !== node.id)
+        }
+        return [...prev, node]
+      })
+      // При множественном выборе не открываем панели настройки и не закрываем текущие
+      return
+    }
+
     const nodeData = node.data as ComponentData
     // Закрываем все панели
     setDatabaseConfigNode(null)
@@ -2164,6 +2308,12 @@ function App() {
     setSecretManagementConfigNode(null)
     setIntegrationPlatformConfigNode(null)
     setBatchProcessorConfigNode(null)
+    setWorkflowEngineConfigNode(null)
+    setSchedulerConfigNode(null)
+    setSocSiemConfigNode(null)
+    setMonitoringConfigNode(null)
+    setLoggingConfigNode(null)
+    setGenericConfigNode(null)
     setEtlServiceConfigNode(null)
     setDataLakeConfigNode(null)
     setMlServiceConfigNode(null)
@@ -2262,48 +2412,25 @@ function App() {
       setProxyConfigNode(node)
     } else if (nodeData.type === 'vpn-gateway') {
       setVpnGatewayConfigNode(node)
-    } else if (nodeData.type === 'dns-service') {
-      setDnsServiceConfigNode(node)
-    } else if (nodeData.type === 'event-bus') {
-      setEventBusConfigNode(node)
-    } else if (nodeData.type === 'stream-processor') {
-      setStreamProcessorConfigNode(node)
-    } else if (nodeData.type === 'search-engine') {
-      setSearchEngineConfigNode(node)
-    } else if (nodeData.type === 'graph-database') {
-      setGraphDatabaseConfigNode(node)
-    } else if (nodeData.type === 'time-series-database') {
-      setTimeSeriesDatabaseConfigNode(node)
-    } else if (nodeData.type === 'service-mesh') {
-      setServiceMeshConfigNode(node)
-    } else if (nodeData.type === 'configuration-management') {
-      setConfigurationManagementConfigNode(node)
-    } else if (nodeData.type === 'ci-cd-pipeline') {
-      setCiCdPipelineConfigNode(node)
-    } else if (nodeData.type === 'identity-provider') {
-      setIdentityProviderConfigNode(node)
-    } else if (nodeData.type === 'secret-management') {
-      setSecretManagementConfigNode(node)
-    } else if (nodeData.type === 'integration-platform') {
-      setIntegrationPlatformConfigNode(node)
-    } else if (nodeData.type === 'batch-processor') {
-      setBatchProcessorConfigNode(node)
-    } else if (nodeData.type === 'etl-service') {
-      setEtlServiceConfigNode(node)
-    } else if (nodeData.type === 'data-lake') {
-      setDataLakeConfigNode(node)
-    } else if (nodeData.type === 'ml-ai-service') {
-      setMlServiceConfigNode(node)
-    } else if (nodeData.type === 'notification-service') {
-      setNotificationServiceConfigNode(node)
-    } else if (nodeData.type === 'email-service') {
-      setEmailServiceConfigNode(node)
-    } else if (nodeData.type === 'sms-gateway') {
-      setSmsGatewayConfigNode(node)
+
+
+
+    } else if (nodeData.type === 'workflow-engine') {
+      setWorkflowEngineConfigNode(node)
+    } else if (nodeData.type === 'scheduler') {
+      setSchedulerConfigNode(node)
+    } else if (nodeData.type === 'soc-siem') {
+      setSocSiemConfigNode(node)
+    } else if (nodeData.type === 'monitoring') {
+      setMonitoringConfigNode(node)
+    } else if (nodeData.type === 'logging') {
+      setLoggingConfigNode(node)
     } else if (nodeData.type === 'analytics-service') {
       setAnalyticsServiceConfigNode(node)
     } else if (nodeData.type === 'business-intelligence') {
       setBusinessIntelligenceConfigNode(node)
+    } else if (GENERIC_COMPONENTS[nodeData.type]) {
+      setGenericConfigNode(node)
     } else if (nodeData.type === 'business-domain' || nodeData.type === 'system' || nodeData.type === 'external-system') {
       // Для business-domain, system и external-system просто выделяем
       setSelectedNodes([node])
@@ -5036,6 +5163,58 @@ function App() {
               )
             }}
             onClose={() => setCommentNode(null)}
+          />
+        )}
+        {batchProcessorConfigNode && (
+          <BatchProcessorConfigPanel
+            node={batchProcessorConfigNode}
+            onUpdate={handleBatchProcessorConfigUpdate}
+            onClose={() => setBatchProcessorConfigNode(null)}
+          />
+        )}
+        {workflowEngineConfigNode && (
+          <WorkflowEngineConfigPanel
+            node={workflowEngineConfigNode}
+            onUpdate={handleWorkflowEngineConfigUpdate}
+            onClose={() => setWorkflowEngineConfigNode(null)}
+          />
+        )}
+        {schedulerConfigNode && (
+          <SchedulerConfigPanel
+            node={schedulerConfigNode}
+            onUpdate={handleSchedulerConfigUpdate}
+            onClose={() => setSchedulerConfigNode(null)}
+          />
+        )}
+        {socSiemConfigNode && (
+          <SOCSIEMConfigPanel
+            node={socSiemConfigNode}
+            onUpdate={handleSOCSIEMConfigUpdate}
+            onClose={() => setSocSiemConfigNode(null)}
+          />
+        )}
+        {monitoringConfigNode && (
+          <MonitoringConfigPanel
+            node={monitoringConfigNode}
+            onUpdate={handleMonitoringConfigUpdate}
+            onClose={() => setMonitoringConfigNode(null)}
+          />
+        )}
+        {loggingConfigNode && (
+          <LoggingConfigPanel
+            node={loggingConfigNode}
+            onUpdate={handleLoggingConfigUpdate}
+            onClose={() => setLoggingConfigNode(null)}
+          />
+        )}
+        {genericConfigNode && GENERIC_COMPONENTS[genericConfigNode.data.type] && (
+          <GenericComponentConfigPanel
+            node={genericConfigNode}
+            configKey={GENERIC_COMPONENTS[genericConfigNode.data.type].configKey as keyof ComponentData}
+            vendorList={GENERIC_COMPONENTS[genericConfigNode.data.type].vendors}
+            title={GENERIC_COMPONENTS[genericConfigNode.data.type].title}
+            onUpdate={handleGenericConfigUpdate}
+            onClose={() => setGenericConfigNode(null)}
           />
         )}
         {showAIAssistant && (

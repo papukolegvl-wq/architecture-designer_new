@@ -369,6 +369,12 @@ function ContainerNode({
         )}
       </div>
 
+      {!isMedium && data.containerConfig?.vendor && (
+        <div style={{ color: '#888', fontSize: '12px', marginBottom: '4px' }}>
+          {data.containerConfig.vendor}
+        </div>
+      )}
+
       {!isMedium && data.containerConfig?.image && (
         <div style={{ color: '#888', fontSize: '12px', marginBottom: '8px' }}>
           Образ: {data.containerConfig.image}

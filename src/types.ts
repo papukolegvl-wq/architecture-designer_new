@@ -502,6 +502,7 @@ export interface SystemConfig {
 }
 
 export interface ContainerConfig {
+  vendor?: ContainerVendor
   childNodes?: string[] // IDs узлов внутри контейнера (обычно серверы)
   image?: string // Docker образ
   ports?: string[] // Публикуемые порты
@@ -667,6 +668,7 @@ export type BatchProcessorVendor =
   | 'step-functions'
   | 'dask'
   | 'apache-beam'
+  | 'spring-batch'
 
 export type ETLServiceVendor =
   | 'talend'
@@ -849,6 +851,95 @@ export type FeatureStoreVendor =
   | 'tecton'
   | 'hopsworks'
 
+export type WorkflowEngineVendor =
+  | 'temporal'
+  | 'camunda'
+  | 'airflow'
+  | 'prefect'
+  | 'n8n'
+  | 'dagster'
+  | 'argo-workflows'
+  | 'conductor'
+  | 'logic-apps'
+  | 'step-functions'
+  | 'dkron'
+
+export interface WorkflowEngineConfig {
+  vendor?: WorkflowEngineVendor
+  version?: string
+  workflowCount?: number
+}
+
+export type SchedulerVendor =
+  | 'cron'
+  | 'quartz'
+  | 'hangfire'
+  | 'aws-cloudwatch-events'
+  | 'google-cloud-scheduler'
+  | 'azure-scheduler'
+  | 'apache-airflow'
+  | 'rundeck'
+  | 'celery-beat'
+  | 'kubernetes-cronjob'
+
+export interface SchedulerConfig {
+  vendor?: SchedulerVendor
+  schedule?: string // cron expression
+  timezone?: string
+}
+
+export type SOCSIEMVendor =
+  | 'splunk'
+  | 'elastic-security'
+  | 'azure-sentinel'
+  | 'aws-security-hub'
+  | 'google-chronicle'
+  | 'datadog'
+  | 'ibm-qradar'
+  | 'alienvault'
+  | 'rapid7'
+  | 'wazuh'
+
+export interface SOCSIEMConfig {
+  vendor?: SOCSIEMVendor
+  logRetentionDays?: number
+  features?: string[]
+}
+
+export type MonitoringVendor =
+  | 'prometheus'
+  | 'grafana'
+  | 'datadog'
+  | 'new-relic'
+  | 'zabbix'
+  | 'nagios'
+  | 'dynatrace'
+  | 'appdynamics'
+  | 'aws-cloudwatch'
+  | 'google-cloud-monitoring'
+  | 'azure-monitor'
+
+export interface MonitoringConfig {
+  vendor?: MonitoringVendor
+  metricsRetentionDays?: number
+}
+
+export type LoggingVendor =
+  | 'elastic-stack'
+  | 'fluentd'
+  | 'graylog'
+  | 'splunk'
+  | 'datadog-logs'
+  | 'aws-cloudwatch-logs'
+  | 'google-cloud-logging'
+  | 'loki'
+  | 'rsyslog'
+
+export interface LoggingConfig {
+  vendor?: LoggingVendor
+  logRetentionDays?: number
+}
+
 // Конфигурации для новых компонентов
 export interface QueueConfig {
   vendor?: QueueVendor
@@ -1003,11 +1094,18 @@ export interface NotificationServiceConfig {
   subscriberCount?: number
 }
 
-export interface EmailServiceConfig {
-  vendor?: EmailServiceVendor
-  dailyLimit?: number
-  templatesCount?: number
+
+export interface ServerConfig {
+  vendor?: ServerVendor
+  osVersion?: string
+  cpu?: string
 }
+
+export interface WebServerConfig {
+  vendor?: WebServerVendor
+  port?: number
+}
+
 
 export interface SMSGatewayConfig {
   vendor?: SMSGatewayVendor
@@ -1065,6 +1163,110 @@ export interface BusinessProcessConfig {
   childNodes?: string[]
   isManuallyResized?: boolean
 }
+
+
+export type ServerVendor = 'linux' | 'windows' | 'bare-metal' | 'vmware' | 'ec2' | 'gce' | 'azure-vm'
+export type WebServerVendor = 'nginx' | 'apache' | 'iis' | 'caddy' | 'tomcat'
+export type ContainerVendor = 'docker' | 'podman' | 'lxc' | 'containerd' // Fixed typo
+
+// New Vendor Types
+export type InternetGatewayVendor = 'aws-igw' | 'azure-gateway' | 'google-cloud-gateway' | 'cisco' | 'juniper'
+export type NATGatewayVendor = 'aws-nat' | 'azure-nat' | 'google-cloud-nat' | 'pfsense'
+export type IoTGatewayVendor = 'aws-iot-greengrass' | 'azure-iot-edge' | 'kafka-connect' | 'hivemq'
+export type EdgeComputingVendor = 'cloudflare-workers' | 'lambda-edge' | 'vercel-edge' | 'fly-io'
+export type BlockStorageVendor = 'ebs' | 'azure-disk' | 'gcp-pd' | 'ceph'
+export type FileStorageVendor = 'efs' | 'azure-files' | 'gcp-filestore' | 'glusterfs'
+export type ArchiveStorageVendor = 'glacier' | 'azure-archive' | 'gcp-archive'
+export type LLMModelVendor = 'gpt-4' | 'claude-3' | 'llama-3' | 'gemini' | 'mistral'
+export type AIAgentVendor = 'langchain' | 'autogen' | 'crewai' | 'superagi'
+export type MLTrainingVendor = 'sagemaker' | 'vertex-ai' | 'azure-ml' | 'databricks'
+export type MLInferenceVendor = 'sagemaker-endpoints' | 'vertex-prediction' | 'kserve' | 'vllm'
+export type MLDataPipelineVendor = 'airflow' | 'prefect' | 'dagster' | 'kubeflow'
+export type ClientVendor = 'web-client' | 'mobile-client' | 'desktop-client' | 'iot-device' | 'external-user' | 'internal-user'
+
+// New Vendors Step 192
+export type MDMVendor = 'informatica-mdm' | 'tibco-ebx' | 'semarchy' | 'ataccama'
+export type ServiceDiscoveryVendor = 'consul' | 'etcd' | 'zookeeper' | 'eureka' | 'coredns'
+export type VPCVendor = 'aws-vpc' | 'azure-vnet' | 'gcp-vpc' | 'oci-vcn'
+export type SubnetVendor = 'public-subnet' | 'private-subnet' | 'isolated-subnet'
+export type RoutingTableVendor = 'aws-route-table' | 'azure-route-table' | 'gcp-routes'
+export type WAFVendor = 'aws-waf' | 'azure-waf' | 'cloudflare-waf' | 'imperva' | 'f5-big-ip'
+export type DDoSProtectionVendor = 'aws-shield' | 'azure-ddos' | 'cloudflare-ddos' | 'akamai-prolexic'
+export type HSMVendor = 'aws-cloudhsm' | 'azure-dedicated-hsm' | 'google-cloud-hsm' | 'thales'
+export type KMSVendor = 'aws-kms' | 'azure-key-vault' | 'google-kms' | 'hashicorp-vault'
+export type TransitGatewayVendor = 'aws-transit-gateway' | 'azure-virtual-wan' | 'google-ncc'
+export type DirectConnectVendor = 'aws-direct-connect' | 'azure-expressroute' | 'google-interconnect'
+export type ContainerRegistryVendor = 'ecr' | 'acr' | 'gcr' | 'docker-hub' | 'harbor'
+
+
+
+export interface ServerConfig {
+  vendor?: ServerVendor
+  osVersion?: string
+  cpu?: string
+}
+
+export interface WebServerConfig {
+  vendor?: WebServerVendor
+  port?: number
+}
+
+// Restored Configs
+export interface MonitoringConfig {
+  vendor?: MonitoringVendor
+  metricsRetentionDays?: number
+}
+
+export interface LoggingConfig {
+  vendor?: LoggingVendor
+  logRetentionDays?: number
+}
+
+export interface EmailServiceConfig {
+  vendor?: EmailServiceVendor
+  dailyLimit?: number
+  templatesCount?: number
+}
+
+export interface SMSGatewayConfig {
+  vendor?: SMSGatewayVendor
+  throughput?: number
+}
+
+export interface DNSServiceConfig {
+  vendor?: DNSServiceVendor
+  zoneCount?: number
+}
+
+// New Configs
+export interface InternetGatewayConfig { vendor?: InternetGatewayVendor }
+export interface NATGatewayConfig { vendor?: NATGatewayVendor }
+export interface IoTGatewayConfig { vendor?: IoTGatewayVendor }
+export interface EdgeComputingConfig { vendor?: EdgeComputingVendor }
+export interface BlockStorageConfig { vendor?: BlockStorageVendor }
+export interface FileStorageConfig { vendor?: FileStorageVendor }
+export interface ArchiveStorageConfig { vendor?: ArchiveStorageVendor }
+export interface LLMModelConfig { vendor?: LLMModelVendor }
+export interface AIAgentConfig { vendor?: AIAgentVendor }
+export interface MLTrainingConfig { vendor?: MLTrainingVendor }
+export interface MLInferenceConfig { vendor?: MLInferenceVendor }
+export interface MLDataPipelineConfig { vendor?: MLDataPipelineVendor }
+
+// New Configs Step 192
+export interface MDMConfig { vendor?: MDMVendor }
+export interface ServiceDiscoveryConfig { vendor?: ServiceDiscoveryVendor }
+export interface VPCConfig { vendor?: VPCVendor }
+export interface SubnetConfig { vendor?: SubnetVendor }
+export interface RoutingTableConfig { vendor?: RoutingTableVendor }
+export interface WAFConfig { vendor?: WAFVendor }
+export interface DDoSProtectionConfig { vendor?: DDoSProtectionVendor }
+export interface HSMConfig { vendor?: HSMVendor }
+export interface KMSConfig { vendor?: KMSVendor }
+export interface TransitGatewayConfig { vendor?: TransitGatewayVendor }
+export interface DirectConnectConfig { vendor?: DirectConnectVendor }
+export interface ContainerRegistryConfig { vendor?: ContainerRegistryVendor }
+export interface ClientConfig { vendor?: ClientVendor }
+
 
 export interface ComponentData {
   type: ComponentType
@@ -1130,6 +1332,39 @@ export interface ComponentData {
   reverseEtlConfig?: ReverseETLConfig
   featureStoreConfig?: FeatureStoreConfig
   businessProcessConfig?: BusinessProcessConfig
+  workflowEngineConfig?: WorkflowEngineConfig
+  schedulerConfig?: SchedulerConfig
+  socSiemConfig?: SOCSIEMConfig
+  monitoringConfig?: MonitoringConfig
+  loggingConfig?: LoggingConfig
+  serverConfig?: ServerConfig
+  webServerConfig?: WebServerConfig
+  internetGatewayConfig?: InternetGatewayConfig
+  natGatewayConfig?: NATGatewayConfig
+  iotGatewayConfig?: IoTGatewayConfig
+  edgeComputingConfig?: EdgeComputingConfig
+  blockStorageConfig?: BlockStorageConfig
+  fileStorageConfig?: FileStorageConfig
+  archiveStorageConfig?: ArchiveStorageConfig
+  llmModelConfig?: LLMModelConfig
+  aiAgentConfig?: AIAgentConfig
+  mlTrainingConfig?: MLTrainingConfig
+  mlInferenceConfig?: MLInferenceConfig
+  mlDataPipelineConfig?: MLDataPipelineConfig
+  mdmConfig?: MDMConfig
+  serviceDiscoveryConfig?: ServiceDiscoveryConfig // Not to be confused with ServiceMesh
+  vpcConfig?: VPCConfig
+  subnetConfig?: SubnetConfig
+  routingTableConfig?: RoutingTableConfig
+  wafConfig?: WAFConfig
+  ddosProtectionConfig?: DDoSProtectionConfig
+  hsmConfig?: HSMConfig
+  kmsConfig?: KMSConfig
+  transitGatewayConfig?: TransitGatewayConfig
+  directConnectConfig?: DirectConnectConfig
+  containerRegistryConfig?: ContainerRegistryConfig
+  clientConfig?: ClientConfig
+  // End of configs
 }
 
 export interface DatabaseReplicationConfig {
