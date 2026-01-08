@@ -1,3 +1,4 @@
+// Node types are defined around line 5380
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import ReactFlow, {
   Node,
@@ -4126,7 +4127,8 @@ function App() {
         const validChildNodes = childNodes.filter(id => id !== containerId);
 
         return nds.map((node) => {
-          if (node.id === containerId) {
+          // Handle ContainerNode specific config
+          if (node.type === 'container') {
             return {
               ...node,
               width,
@@ -4139,6 +4141,17 @@ function App() {
                 },
               },
             }
+          }
+
+          // Handle generic expandable nodes (CustomNode)
+          return {
+            ...node,
+            width,
+            height,
+            data: {
+              ...node.data,
+              childNodes: validChildNodes,
+            },
           }
 
           if (validChildNodes.includes(node.id)) {
@@ -4176,14 +4189,26 @@ function App() {
       setNodes((nds) =>
         nds.map(node => {
           if (node.id === containerId) {
+            // Handle ContainerNode specific config
+            if (node.type === 'container') {
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  containerConfig: {
+                    ...(node.data as ComponentData).containerConfig,
+                    isManuallyResized
+                  }
+                }
+              }
+            }
+
+            // Handle generic expandable nodes (CustomNode)
             return {
               ...node,
               data: {
                 ...node.data,
-                containerConfig: {
-                  ...(node.data as ComponentData).containerConfig,
-                  isManuallyResized
-                }
+                isManuallyResized
               }
             }
           }
@@ -4301,6 +4326,25 @@ function App() {
       )
     }
 
+    const handleNodeDataUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent<{ nodeId: string; data: Partial<ComponentData> }>
+      const { nodeId, data: updates } = customEvent.detail
+      setNodes((nds) =>
+        nds.map((node) => {
+          if (node.id === nodeId) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                ...updates,
+              },
+            }
+          }
+          return node
+        })
+      )
+    }
+
     window.addEventListener('nodeLabelUpdate', handleNodeLabelUpdate as EventListener)
     window.addEventListener('systemSizeUpdate', handleSystemSizeUpdate as EventListener)
     window.addEventListener('systemNodesUpdate', handleSystemNodesUpdate as EventListener)
@@ -4309,6 +4353,7 @@ function App() {
     window.addEventListener('businessProcessSizeUpdate', handleBusinessProcessSizeUpdate as EventListener)
     window.addEventListener('businessProcessManualResize', handleBusinessProcessManualResize as EventListener)
     window.addEventListener('groupSizeUpdate', handleGroupSizeUpdate as EventListener)
+    window.addEventListener('nodeDataUpdate', handleNodeDataUpdate as EventListener)
 
     const handleComponentInfoClick = (event: Event) => {
       const customEvent = event as CustomEvent<{ componentType: ComponentType }>

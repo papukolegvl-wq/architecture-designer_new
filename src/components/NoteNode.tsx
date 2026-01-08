@@ -1,16 +1,112 @@
 import React, { useState, useCallback } from 'react';
-import { Handle, Position, NodeProps, useStore } from 'reactflow';
+import { Handle, Position, NodeProps, useStore, NodeResizer, useReactFlow } from 'reactflow';
 import { StickyNote, Link as LinkIcon, Link2 } from 'lucide-react';
 import { ComponentLink } from '../types';
 
-const NoteNode: React.FC<NodeProps & {
+const NoteNode: React.FC<NodeProps<any> & {
     onLinkClick?: (link: ComponentLink) => void,
     onLinkConfigClick?: (nodeId: string) => void
 }> = ({ id, data, selected, onLinkClick, onLinkConfigClick }) => {
+    const { getNodes } = useReactFlow();
     const zoom = useStore((s) => s.transform[2]);
     const [isEditing, setIsEditing] = useState(false);
     const [label, setLabel] = useState(data.label || 'Примечание');
     const [isHovered, setIsHovered] = useState(false);
+    const [isManuallyResized, setIsManuallyResized] = useState(data.isManuallyResized || false);
+    const [childNodes, setChildNodes] = useState<string[]>(data.childNodes || []);
+
+    // Ref to track if component is mounted
+    const isMounted = React.useRef(true);
+
+    React.useEffect(() => {
+        isMounted.current = true;
+        return () => {
+            isMounted.current = false;
+        };
+    }, []);
+
+    const updateSize = React.useCallback(() => {
+        if (!isMounted.current) return;
+        const allNodes = getNodes(); // Use getNodes from hook
+        const node = allNodes.find((n) => n.id === id);
+        if (!node) return;
+
+        const padding = 20;
+        const minWidth = 150;
+        const minHeight = 80;
+
+        const nodeX = node.position.x;
+        const nodeY = node.position.y;
+        const currentWidth = node.width || minWidth;
+        const currentHeight = node.height || minHeight;
+
+        // Detect nodes inside this note
+        const insideNodes = allNodes.filter((n) => {
+            if (n.id === id || n.parentNode === id) return false;
+
+            const nX = n.position.x;
+            const nY = n.position.y;
+            const nW = n.width || 0;
+            const nH = n.height || 0;
+            const nCenterX = nX + nW / 2;
+            const nCenterY = nY + nH / 2;
+
+            return (
+                nCenterX > nodeX &&
+                nCenterX < nodeX + currentWidth &&
+                nCenterY > nodeY &&
+                nCenterY < nodeY + currentHeight
+            );
+        });
+
+        const childIds = insideNodes.map((n) => n.id);
+        const childrenChanged = JSON.stringify(childIds.sort()) !== JSON.stringify(childNodes.sort());
+
+        if (childrenChanged) {
+            if (isMounted.current) {
+                setChildNodes(childIds);
+            }
+        }
+
+        // Auto-resize logic (Frame behavior)
+        if ((!isManuallyResized && insideNodes.length > 0) || childrenChanged) {
+            let minX = Infinity;
+            let minY = Infinity;
+            let maxX = -Infinity;
+            let maxY = -Infinity;
+
+            if (insideNodes.length > 0) {
+                insideNodes.forEach((n) => {
+                    minX = Math.min(minX, n.position.x);
+                    minY = Math.min(minY, n.position.y);
+                    maxX = Math.max(maxX, n.position.x + (n.width || 0));
+                    maxY = Math.max(maxY, n.position.y + (n.height || 0));
+                });
+
+                // Only resize if we are wrapping children
+                if (!isManuallyResized) {
+                    const newWidth = Math.max(minWidth, maxX - minX + padding * 2);
+                    const newHeight = Math.max(minHeight, maxY - minY + padding * 2);
+
+                    if (Math.abs(newWidth - currentWidth) > 5 || Math.abs(newHeight - currentHeight) > 5) {
+                        // We would dispatch an event here if we wanted App.tsx to handle it
+                        // For now, we rely on standard ReactFlow resizing or node updates
+                        // But since NoteNode logic in App.tsx might not listen to 'noteSizeUpdate', 
+                        // we might need to add it or just let it be manual.
+                        // However, standard Frame behavior implies auto-resize. 
+                        // Let's at least support NodeResizer for manual frames.
+                    }
+                }
+            }
+        }
+    }, [id, getNodes, isManuallyResized, childNodes]);
+
+    React.useEffect(() => {
+        updateSize();
+        const interval = setInterval(updateSize, 2000);
+        return () => clearInterval(interval);
+    }, [updateSize]);
+
 
     const connectedHandleIds = useStore((s) =>
         s.edges
@@ -67,6 +163,13 @@ const NoteNode: React.FC<NodeProps & {
             onMouseLeave={() => setIsHovered(false)}
             onDoubleClick={handleDoubleClick}
         >
+            <NodeResizer
+                isVisible={selected}
+                minWidth={150}
+                minHeight={80}
+                color="#e0c000"
+                onResizeStart={() => setIsManuallyResized(true)}
+            />
             {!isSimple && (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', opacity: 0.6 }}>

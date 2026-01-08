@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Handle, Position, NodeProps, useStore } from 'reactflow'
+import { Handle, Position, NodeProps, useStore, useReactFlow, NodeResizer } from 'reactflow'
 import { ComponentData, ComponentType, ComponentLink } from '../types'
 import {
   Server,
@@ -51,6 +51,8 @@ import {
   Repeat,
   LayoutDashboard,
   Calendar,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react'
 
 const componentIcons: Record<string, React.ReactNode> = {
@@ -229,6 +231,121 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
   const [isHovered, setIsHovered] = useState(false)
   const [label, setLabel] = useState(data.label)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Expandable Frame Logic
+  const { getNodes } = useReactFlow()
+  const [isExpanded, setIsExpanded] = useState(data.isExpanded || false)
+  const isMounted = useRef(true)
+  const [childNodes, setChildNodes] = useState<string[]>(data.childNodes || [])
+  const [isManuallyResized, setIsManuallyResized] = useState(data.isManuallyResized || false)
+
+  useEffect(() => {
+    isMounted.current = true
+    return () => { isMounted.current = false }
+  }, [])
+
+  useEffect(() => {
+    if (data.isExpanded !== undefined) setIsExpanded(data.isExpanded)
+  }, [data.isExpanded])
+
+  const updateSize = React.useCallback(() => {
+    if (!isExpanded || !isMounted.current) return
+    const allNodes = getNodes()
+    const thisNode = allNodes.find(n => n.id === id)
+    if (!thisNode) return
+
+    const padding = 30
+    const minWidth = 300
+    const minHeight = 200
+    const containerX = thisNode.position.x
+    const containerY = thisNode.position.y
+    const currentWidth = thisNode.width || minWidth
+    const currentHeight = thisNode.height || minHeight
+
+    let insideNodes = allNodes.filter(node => {
+      if (node.id === id || node.parentNode === id || node.type === 'system') return false
+      const nodeX = node.position.x
+      const nodeY = node.position.y
+      const nodeWidth = node.width || 200
+      const nodeHeight = node.height || 120
+      const nodeCenterX = nodeX + nodeWidth / 2
+      const nodeCenterY = nodeY + nodeHeight / 2
+      return (
+        nodeCenterX >= containerX &&
+        nodeCenterY >= containerY &&
+        nodeCenterX <= containerX + currentWidth &&
+        nodeCenterY <= containerY + currentHeight
+      )
+    })
+
+    const childIds = insideNodes.map(n => n.id)
+    const childrenChanged = JSON.stringify(childIds.sort()) !== JSON.stringify(childNodes.sort())
+
+    if (childrenChanged && isMounted.current) {
+      setChildNodes(childIds)
+    }
+
+    if (childrenChanged || (!isManuallyResized && insideNodes.length > 0)) {
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+      insideNodes.forEach(node => {
+        const nodeX = node.position.x
+        const nodeY = node.position.y
+        const nodeWidth = node.width || 200
+        const nodeHeight = node.height || 120
+        minX = Math.min(minX, nodeX)
+        minY = Math.min(minY, nodeY)
+        maxX = Math.max(maxX, nodeX + nodeWidth)
+        maxY = Math.max(maxY, nodeY + nodeHeight)
+      })
+
+      let newWidth = thisNode.width || minWidth
+      let newHeight = thisNode.height || minHeight
+
+      if (!isManuallyResized && insideNodes.length > 0) {
+        newWidth = Math.max(minWidth, maxX - minX + padding * 2)
+        newHeight = Math.max(minHeight, maxY - minY + padding * 2)
+      }
+
+      if (thisNode.width !== newWidth || thisNode.height !== newHeight || childrenChanged) {
+        const event = new CustomEvent('containerSizeUpdate', {
+          detail: {
+            containerId: id,
+            childNodes: childIds,
+            width: newWidth,
+            height: newHeight,
+            position: { x: containerX, y: containerY },
+          },
+        })
+        window.dispatchEvent(event)
+      }
+    }
+  }, [id, getNodes, isManuallyResized, childNodes, isExpanded])
+
+  useEffect(() => {
+    if (isExpanded && isMounted.current) {
+      setTimeout(updateSize, 0)
+      const interval = setInterval(updateSize, 2000)
+      return () => clearInterval(interval)
+    }
+  }, [updateSize, isExpanded])
+
+  useEffect(() => {
+    if (!isExpanded) return
+    const handleNodesChange = () => { if (isMounted.current) updateSize() }
+    window.addEventListener('nodesChange', handleNodesChange)
+    return () => window.removeEventListener('nodesChange', handleNodesChange)
+  }, [updateSize, isExpanded])
+
+  const toggleExpand = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const newExpanded = !isExpanded
+    setIsExpanded(newExpanded)
+    const event = new CustomEvent('nodeDataUpdate', {
+      detail: { nodeId: id, data: { ...data, isExpanded: newExpanded } }
+    })
+    window.dispatchEvent(event)
+  }
+
   /* Optimization: Subscribe to specific zoom thresholds to avoid re-rendering on every zoom frame */
   const isSimple = useStore((s) => s.transform[2] < 0.4)
   const isMedium = useStore((s) => s.transform[2] < 0.7)
@@ -814,27 +931,88 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
   return (
     <div
       style={{
-        padding: isSimple ? '8px' : '16px 20px',
+        padding: isExpanded ? '20px' : (isSimple ? '8px' : '16px 20px'),
         borderRadius: '12px',
-        background: isSimple ? color : backgroundColor,
-        border: `${borderWidth} ${borderStyle} ${selected ? color : isSimple ? 'transparent' : borderColor}`,
+        background: isSimple && !isExpanded ? color : (isExpanded ? color + '10' : backgroundColor),
+        border: `${borderWidth} ${borderStyle} ${selected ? color : isSimple && !isExpanded ? 'transparent' : borderColor}`,
         color: '#f8f9fa',
-        width: isSimple ? '60px' : '240px',
+        width: isExpanded ? '100%' : (isSimple ? '60px' : '240px'),
+        height: isExpanded ? '100%' : 'auto',
         minHeight: isSimple ? '60px' : '110px',
-        boxShadow: boxShadow,
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        boxShadow: isExpanded ? 'none' : boxShadow,
+        transition: isManuallyResized ? 'none' : 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
+        alignItems: isExpanded ? 'flex-start' : 'center',
         justifyContent: isSimple ? 'center' : 'flex-start',
-        borderLeft: isSimple ? `none` : `${borderWidth} solid ${color}`,
+        borderLeft: isSimple && !isExpanded ? `none` : `${borderWidth} solid ${color}`,
         overflow: 'visible',
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onDoubleClick={handleDoubleClick}
     >
+      <NodeResizer
+        color={borderColor}
+        isVisible={selected}
+        minWidth={300}
+        minHeight={200}
+        onResizeStart={() => {
+          setIsManuallyResized(true)
+          // Auto-expand when user starts resizing
+          if (!isExpanded) {
+            setIsExpanded(true)
+            const expandEvent = new CustomEvent('nodeDataUpdate', {
+              detail: { nodeId: id, data: { ...data, isExpanded: true } }
+            })
+            window.dispatchEvent(expandEvent)
+          }
+          const event = new CustomEvent('containerManualResize', {
+            detail: { containerId: id, isManuallyResized: true }
+          })
+          window.dispatchEvent(event)
+        }}
+      />
+
+      <button
+        onClick={toggleExpand}
+        style={{
+          position: 'absolute',
+          top: -12,
+          left: -12,
+          width: 24,
+          height: 24,
+          borderRadius: '50%',
+          backgroundColor: '#1e1e1e',
+          border: `2px solid ${borderColor}`,
+          color: borderColor,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          zIndex: 50,
+          opacity: isHovered || selected || isExpanded ? 1 : 0,
+          pointerEvents: isHovered || selected || isExpanded ? 'auto' : 'none',
+          transition: 'all 0.2s'
+        }}
+        title={isExpanded ? "Свернуть" : "Развернуть как рамку"}
+      >
+        {isExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+      </button>
+
+      {/* Child count indicator for expanded view */}
+      {isExpanded && childNodes.length > 0 && (
+        <div style={{
+          position: 'absolute',
+          bottom: '8px',
+          right: '8px',
+          fontSize: '10px',
+          color: '#888'
+        }}>
+          Внутри: {childNodes.length}
+        </div>
+      )}
       {!isSimple && (
         <div
           style={{

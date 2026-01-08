@@ -1375,7 +1375,11 @@ export interface ComponentData {
   directConnectConfig?: DirectConnectConfig
   containerRegistryConfig?: ContainerRegistryConfig
   clientConfig?: ClientConfig
-  // End of configs
+
+  // Generic expandable frame properties
+  isExpanded?: boolean
+  childNodes?: string[]
+  isManuallyResized?: boolean
 }
 
 export interface DatabaseReplicationConfig {
