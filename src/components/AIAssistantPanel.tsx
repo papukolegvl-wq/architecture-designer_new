@@ -137,6 +137,43 @@ export default function AIAssistantPanel({
     }
   })
 
+  // State for expandable tactics
+  const [expandedTactics, setExpandedTactics] = useState<Set<number>>(new Set())
+
+  const toggleTactic = (index: number) => {
+    setExpandedTactics(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(index)) {
+        newSet.delete(index)
+      } else {
+        newSet.add(index)
+      }
+      return newSet
+    })
+  }
+
+  // Атрибуты качества для выбора
+  const qualityAttributesOptions = [
+    { id: 'performance', label: 'Производительность (Performance)', icon: '⚡' },
+    { id: 'scalability', label: 'Масштабируемость (Scalability)', icon: '📈' },
+    { id: 'availability', label: 'Доступность (Availability)', icon: '🔄' },
+    { id: 'security', label: 'Безопасность (Security)', icon: '🔒' },
+    { id: 'reliability', label: 'Надежность (Reliability)', icon: '🛡️' },
+    { id: 'maintainability', label: 'Поддерживаемость (Maintainability)', icon: '🔧' },
+    { id: 'cost', label: 'Стоимость (Cost Efficiency)', icon: '💰' },
+    { id: 'observability', label: 'Наблюдаемость (Observability)', icon: '👁️' }
+  ]
+
+  const toggleAttribute = (attrId: string) => {
+    setSelectedAttributes(prev => {
+      const newAttrs = prev.includes(attrId)
+        ? prev.filter(id => id !== attrId)
+        : [...prev, attrId]
+      localStorage.setItem('assistant-selected-attributes', JSON.stringify(newAttrs))
+      return newAttrs
+    })
+  }
+
 
   // Состояние для перемещения и сворачивания
   const [position, setPosition] = useState({ x: 50, y: 50 }) // в процентах или пикселях
@@ -715,8 +752,9 @@ export default function AIAssistantPanel({
 
   const handleStartLearning = async (diff?: 'beginner' | 'intermediate' | 'advanced' | 'god') => {
     const targetDiff = diff || 'beginner'
+    setLoadingCase(true)
     try {
-      const newCase = await generateArchitectureCase(targetDiff)
+      const newCase = await generateArchitectureCase(targetDiff, selectedAttributes)
       setCurrentCase(newCase)
       setMode('learning')
       setInputValue('')
@@ -779,6 +817,14 @@ ${(currentCase.qualityAttributes || []).map(attr => `- ${attr}`).join('\n')}
 
 ${currentCase.expectedComponents && currentCase.expectedComponents.length > 0 ? `РЕКОМЕНДУЕМЫЕ КОМПОНЕНТЫ:
 ${currentCase.expectedComponents.join(', ')}` : ''}
+
+${currentCase.recommendedTactics && currentCase.recommendedTactics.length > 0 ? `
+РЕКОМЕНДУЕМЫЕ АРХИТЕКТУРНЫЕ ТАКТИКИ:
+${currentCase.recommendedTactics.map(tactic =>
+      `  • ${tactic.qualityAttribute}: ${tactic.tactic}
+    ${tactic.description}
+    Компоненты: ${tactic.components?.join(', ') || 'не указаны'}`
+    ).join('\n\n')}` : ''}
 
 --------------------------------------------------
 Сгенерировано в Architecture Designer AI Assistant
@@ -1548,6 +1594,76 @@ ${currentCase.expectedComponents.join(', ')}` : ''}
                               <p style={{ color: '#aaa', fontSize: '14px', marginBottom: '24px', maxWidth: '400px', margin: '0 auto 24px' }}>
                                 Выберите уровень сложности и получите бизнес-кейс. Спроектируйте архитектуру и узнайте оценку эксперта.
                               </p>
+
+                              {/* Quality Attributes Selection */}
+                              <div style={{ marginBottom: '20px', textAlign: 'left', maxWidth: '500px', margin: '0 auto 20px' }}>
+                                <div style={{ color: '#ccc', fontSize: '13px', marginBottom: '12px', fontWeight: '600' }}>
+                                  Выберите атрибуты качества для фокуса (опционально):
+                                </div>
+                                <div style={{
+                                  display: 'grid',
+                                  gridTemplateColumns: 'repeat(2, 1fr)',
+                                  gap: '8px',
+                                  backgroundColor: '#2d2d2d',
+                                  padding: '12px',
+                                  borderRadius: '8px',
+                                  border: '1px solid #444'
+                                }}>
+                                  {qualityAttributesOptions.map((attr) => (
+                                    <label
+                                      key={attr.id}
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        padding: '8px',
+                                        backgroundColor: selectedAttributes.includes(attr.id) ? '#4dabf720' : 'transparent',
+                                        border: `1px solid ${selectedAttributes.includes(attr.id) ? '#4dabf7' : '#555'}`,
+                                        borderRadius: '6px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        fontSize: '12px',
+                                        color: selectedAttributes.includes(attr.id) ? '#4dabf7' : '#aaa'
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        if (!selectedAttributes.includes(attr.id)) {
+                                          e.currentTarget.style.backgroundColor = '#3d3d3d'
+                                          e.currentTarget.style.borderColor = '#666'
+                                        }
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        if (!selectedAttributes.includes(attr.id)) {
+                                          e.currentTarget.style.backgroundColor = 'transparent'
+                                          e.currentTarget.style.borderColor = '#555'
+                                        }
+                                      }}
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={selectedAttributes.includes(attr.id)}
+                                        onChange={() => toggleAttribute(attr.id)}
+                                        style={{
+                                          width: '16px',
+                                          height: '16px',
+                                          cursor: 'pointer',
+                                          accentColor: '#4dabf7'
+                                        }}
+                                      />
+                                      <span style={{ fontSize: '14px' }}>{attr.icon}</span>
+                                      <span style={{ flex: 1, fontSize: '11px', lineHeight: '1.3' }}>{attr.label}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                                {selectedAttributes.length > 0 && (
+                                  <div style={{ marginTop: '8px', fontSize: '11px', color: '#51cf66', textAlign: 'center' }}>
+                                    ✓ Выбрано: {selectedAttributes.length} атрибут{selectedAttributes.length === 1 ? '' : selectedAttributes.length < 5 ? 'а' : 'ов'}
+                                  </div>
+                                )}
+                              </div>
+
+                              <div style={{ color: '#ccc', fontSize: '13px', marginBottom: '12px', fontWeight: '600' }}>
+                                Выберите уровень сложности:
+                              </div>
                               <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
                                 {(['beginner', 'intermediate', 'advanced', 'god'] as const).map((diff) => (
                                   <button
@@ -1725,6 +1841,198 @@ ${currentCase.expectedComponents.join(', ')}` : ''}
                                   </div>
                                 )}
                               </div>
+
+                              {/* Recommended Tactics Section */}
+                              {currentCase.recommendedTactics && currentCase.recommendedTactics.length > 0 && (
+                                <div style={{ marginTop: '20px', borderTop: '1px solid #333', paddingTop: '15px' }}>
+                                  <h4 style={{
+                                    color: '#ae3ec9',
+                                    fontSize: '13px',
+                                    marginBottom: '12px',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.5px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
+                                  }}>
+                                    <span>🎯</span>
+                                    Рекомендуемые архитектурные тактики:
+                                  </h4>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    {currentCase.recommendedTactics.map((tactic: any, i: number) => {
+                                      const isExpanded = expandedTactics.has(i)
+
+                                      return (
+                                        <div
+                                          key={i}
+                                          style={{
+                                            padding: '12px',
+                                            backgroundColor: '#2d2d2d',
+                                            borderRadius: '8px',
+                                            border: '1px solid #ae3ec930',
+                                            transition: 'all 0.2s'
+                                          }}
+                                        >
+                                          <div
+                                            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', cursor: 'pointer' }}
+                                            onClick={() => toggleTactic(i)}
+                                          >
+                                            <div style={{ flex: 1 }}>
+                                              <div style={{ marginBottom: '8px' }}>
+                                                <span style={{
+                                                  fontSize: '11px',
+                                                  color: '#888',
+                                                  textTransform: 'uppercase',
+                                                  letterSpacing: '0.5px'
+                                                }}>
+                                                  {tactic.qualityAttribute}
+                                                </span>
+                                              </div>
+                                              <div style={{
+                                                color: '#fff',
+                                                fontSize: '13px',
+                                                fontWeight: '600',
+                                                marginBottom: '6px'
+                                              }}>
+                                                {tactic.tactic}
+                                              </div>
+                                              <div style={{
+                                                color: '#aaa',
+                                                fontSize: '12px',
+                                                lineHeight: '1.5',
+                                                marginBottom: '8px'
+                                              }}>
+                                                {tactic.description}
+                                              </div>
+                                              {tactic.components && tactic.components.length > 0 && (
+                                                <div style={{
+                                                  display: 'flex',
+                                                  flexWrap: 'wrap',
+                                                  gap: '6px',
+                                                  marginTop: '8px'
+                                                }}>
+                                                  <span style={{ fontSize: '11px', color: '#666' }}>Компоненты:</span>
+                                                  {tactic.components.map((comp: string, idx: number) => (
+                                                    <span
+                                                      key={idx}
+                                                      style={{
+                                                        padding: '2px 8px',
+                                                        backgroundColor: '#ae3ec915',
+                                                        color: '#ae3ec9',
+                                                        borderRadius: '4px',
+                                                        fontSize: '10px',
+                                                        border: '1px solid #ae3ec930',
+                                                        fontFamily: 'monospace'
+                                                      }}
+                                                    >
+                                                      {comp}
+                                                    </span>
+                                                  ))}
+                                                </div>
+                                              )}
+                                            </div>
+                                            <div style={{
+                                              marginLeft: '12px',
+                                              fontSize: '16px',
+                                              color: '#ae3ec9',
+                                              transition: 'transform 0.2s',
+                                              transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                                              userSelect: 'none'
+                                            }}>
+                                              ▼
+                                            </div>
+                                          </div>
+
+                                          {/* Expandable Implementation Steps */}
+                                          {isExpanded && tactic.implementationSteps && tactic.implementationSteps.length > 0 && (
+                                            <div
+                                              style={{
+                                                marginTop: '16px',
+                                                paddingTop: '16px',
+                                                borderTop: '1px solid #444'
+                                              }}
+                                              onClick={(e) => e.stopPropagation()}
+                                            >
+                                              <div style={{
+                                                fontSize: '12px',
+                                                fontWeight: '600',
+                                                color: '#51cf66',
+                                                marginBottom: '12px',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.5px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px'
+                                              }}>
+                                                <span>📋</span> Шаги реализации:
+                                              </div>
+
+                                              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                                {tactic.implementationSteps.map((step: any, stepIdx: number) => (
+                                                  <div
+                                                    key={stepIdx}
+                                                    style={{
+                                                      paddingLeft: '16px',
+                                                      borderLeft: '2px solid #51cf66'
+                                                    }}
+                                                  >
+                                                    <div style={{
+                                                      fontSize: '11px',
+                                                      fontWeight: '600',
+                                                      color: '#51cf66',
+                                                      marginBottom: '4px'
+                                                    }}>
+                                                      Шаг {step.step}: {step.action}
+                                                    </div>
+                                                    <div style={{
+                                                      fontSize: '12px',
+                                                      color: '#ccc',
+                                                      marginBottom: '8px'
+                                                    }}>
+                                                      {step.details}
+                                                    </div>
+
+                                                    {step.connections && step.connections.length > 0 && (
+                                                      <div style={{ marginTop: '8px' }}>
+                                                        {step.connections.map((conn: any, connIdx: number) => (
+                                                          <div
+                                                            key={connIdx}
+                                                            style={{
+                                                              fontSize: '11px',
+                                                              color: '#aaa',
+                                                              backgroundColor: '#1e1e1e',
+                                                              padding: '6px 10px',
+                                                              borderRadius: '4px',
+                                                              marginBottom: '4px',
+                                                              fontFamily: 'monospace'
+                                                            }}
+                                                          >
+                                                            <span style={{ color: '#4dabf7', fontWeight: '600' }}>{conn.from}</span>
+                                                            {' → '}
+                                                            <span style={{ color: '#4dabf7', fontWeight: '600' }}>{conn.to}</span>
+                                                            <div style={{
+                                                              fontSize: '10px',
+                                                              color: '#888',
+                                                              marginTop: '2px',
+                                                              fontFamily: 'inherit'
+                                                            }}>
+                                                              Тип: {conn.type} • {conn.purpose}
+                                                            </div>
+                                                          </div>
+                                                        ))}
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )
+                                    })}
+                                  </div>
+                                </div>
+                              )}
                             </div>
 
 

@@ -710,7 +710,8 @@ function sanitizeStringArray(arr: any[]): string[] {
 
 // Генерация бизнес-кейса для обучения
 export async function generateArchitectureCase(
-  difficulty: 'beginner' | 'intermediate' | 'advanced' | 'god'
+  difficulty: 'beginner' | 'intermediate' | 'advanced' | 'god',
+  focusAttributes?: string[]
 ): Promise<ArchitectureCase> {
   if (!genAI) {
     throw new Error('Gemini не инициализирован. Укажите API ключ.')
@@ -730,7 +731,23 @@ export async function generateArchitectureCase(
     'CyberSecurity (система обнаружения угроз на лету)',
     'MarineTech (подводные исследовательские станции)',
     'AI/ML (инфраструктура для обучения Huge LLMs)',
-    'GreenTech (управление возобновляемыми источниками энергии)'
+    'GreenTech (управление возобновляемыми источниками энергии)',
+    // Новые домены для разнообразия
+    'Quantum Computing (облачные квантовые вычисления)',
+    'Climate Tech (мониторинг климата в реальном времени)',
+    'Autonomous Vehicles (управление флотом беспилотников)',
+    'Biotech (анализ генома и персонализированная медицина)',
+    'Space Exploration (управление космическими миссиями)',
+    'Smart Agriculture (точное земледелие с IoT)',
+    'Energy Grid (умная энергосеть с возобновляемыми источниками)',
+    'Supply Chain (глобальная логистика с блокчейн-трекингом)',
+    'Legal Tech (автоматизация юридических процессов с AI)',
+    'InsurTech (страхование на основе телематики и IoT)',
+    'PropTech (умные здания и управление недвижимостью)',
+    'Travel Tech (динамическое ценообразование и персонализация путешествий)',
+    'FoodTech (доставка еды с предиктивной аналитикой)',
+    'Fashion Tech (виртуальные примерочные и персонализация)',
+    'Music Tech (стриминг с AI-рекомендациями и royalty-трекингом)'
   ]
 
   const twists = [
@@ -743,16 +760,63 @@ export async function generateArchitectureCase(
     'Интеграция с крайне нестабильными внешними API',
     'Жесткие бюджетные ограничения на облачные ресурсы',
     'Требование к мгновенному откату (Atomic Rollbacks)',
-    'Работа в распределенных Edge-локациях'
+    'Работа в распределенных Edge-локациях',
+    // Новые твисты для разнообразия
+    'Требование к работе в условиях прерывистого интернета (Intermittent Connectivity)',
+    'Мультитенантность с изоляцией данных на уровне hardware (Hardware Isolation)',
+    'Compliance с GDPR, HIPAA и SOC 2 одновременно',
+    'Необходимость поддержки legacy-систем на COBOL',
+    'Экстремально низкая задержка (p99 < 10ms) для критичных операций',
+    'Работа в гибридном облаке (AWS + Azure + On-Premise)',
+    'Требование к энергоэффективности (Green Computing)',
+    'Поддержка миллиардов IoT-устройств с батарейным питанием',
+    'Необходимость работы в условиях цензуры и блокировок',
+    'Требование к полной анонимности пользователей (Zero-Knowledge Architecture)',
+    'Интеграция с квантово-устойчивым шифрованием',
+    'Поддержка мультиязычности с RTL-языками и иероглифами',
+    'Работа в условиях DDoS-атак (постоянная защита)',
+    'Требование к аудируемости каждой транзакции (Immutable Audit Log)',
+    'Необходимость поддержки offline-first с eventual consistency'
   ]
 
   const randomDomain = domains[Math.floor(Math.random() * domains.length)]
   const randomTwist = twists[Math.floor(Math.random() * twists.length)]
 
+  const attributesFocus = focusAttributes && focusAttributes.length > 0
+    ? `
+
+ОСОБЫЙ ФОКУС НА АТРИБУТАХ КАЧЕСТВА:
+Кейс должен ОБЯЗАТЕЛЬНО включать требования и сценарии, проверяющие следующие атрибуты качества: ${focusAttributes.join(', ')}.
+
+ПРИМЕРЫ ТРЕБОВАНИЙ ДЛЯ АТРИБУТОВ:
+- Производительность (Performance): укажи конкретные SLA (p99 latency < 100ms, throughput > 10K RPS)
+- Масштабируемость (Scalability): опиши сценарии роста нагрузки (от 1K до 1M RPS, горизонтальное масштабирование)
+- Безопасность (Security): добавь требования к аутентификации, шифрованию, compliance (GDPR, SOC2)
+- Доступность (Availability): укажи требования к uptime (99.99%), disaster recovery, multi-region
+- Надежность (Reliability): опиши требования к fault tolerance, circuit breakers, graceful degradation
+- Поддерживаемость (Maintainability): добавь требования к observability, logging, monitoring, CI/CD
+- Стоимость (Cost Efficiency): укажи бюджетные ограничения, требования к оптимизации ресурсов
+- Наблюдаемость (Observability): опиши требования к метрикам, трейсингу, алертингу
+`
+    : ''
+
+  const creativityBoost = `
+КРИТИЧЕСКИ ВАЖНО: КАЖДЫЙ КЕЙС ДОЛЖЕН БЫТЬ УНИКАЛЬНЫМ.
+- НЕ повторяй типовые сценарии (интернет-магазин, соцсеть).
+- Придумай КОНКРЕТНУЮ компанию с уникальным названием и предысторией.
+- Добавь неожиданные технические ограничения или бизнес-контекст.
+- Используй реальные кейсы из индустрии как вдохновение, но НЕ копируй их.
+- Добавь элемент неожиданности или противоречивые требования (trade-offs).
+
+ПРИМЕРЫ УНИКАЛЬНЫХ КЕЙСОВ:
+- "Система управления автономным флотом подводных дронов для океанографических исследований"
+- "Платформа для синхронизации данных между марсианскими колониями и Землей с задержкой 20 минут"
+- "Биржа торговли углеродными кредитами с блокчейн-аудитом в реальном времени"
+`
+
   const prompt = `Ты — Архитектурный Гений и Бескомпромиссный Principal Architect. Твоя задача: создать УНИКАЛЬНЫЙ и НЕСТАНДАРТНЫЙ архитектурный челлендж.
-
-КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО создавать типовые задачи вроде "интернет-магазин" или "социальная сеть", если только они не имеют экстремального технического подвоха.
-
+${creativityBoost}
+${attributesFocus}
 ПАРАМЕТРЫ ДЛЯ ЭТОГО КЕЙСА (используй их как фундамент):
 - Основной домен: ${randomDomain}
 - Технический "твист"/сложность: ${randomTwist}
@@ -763,11 +827,96 @@ export async function generateArchitectureCase(
 2. **Бизнес-требования (Business Requirements)**: Конкретные требования бизнеса.
 3. **Функциональные требования (Functional Requirements)**: Что делает система.
 4. **Нефункциональные требования (Non-Functional Requirements)**: Нагрузка, задержки, безопасность.
+5. **Рекомендуемые архитектурные тактики (Recommended Tactics)**: Конкретные механизмы для достижения атрибутов качества.
 
 ОСОБЫЕ ИНСТРУКЦИИ ДЛЯ КРЕАТИВА:
 - Придумай конкретную компанию с названием и уникальной предысторией.
 - Сделай требования противоречивыми (Trade-offs), чтобы не было "единственно правильного хода".
 - Опиши технический контекст так, чтобы он требовал использования специфических компонентов (например, кэша, очередей или специализированных БД).
+
+АРХИТЕКТУРНЫЕ ТАКТИКИ (ОБЯЗАТЕЛЬНО):
+Для КАЖДОГО атрибута качества предложи 2-3 конкретные архитектурные тактики из списка ниже:
+
+**Производительность (Performance):**
+- Кэширование (Cache Aside, Write-Through): использование Redis/Memcached для часто запрашиваемых данных
+- CDN для статического контента: CloudFront, Cloudflare для уменьшения latency
+- Асинхронная обработка: Message Queues (Kafka, RabbitMQ) для тяжелых операций
+- Database Read Replicas: распределение read-нагрузки
+- Connection Pooling: переиспользование соединений к БД
+- Compression: Gzip/Brotli для HTTP responses
+- Database Indexing: оптимизация запросов через индексы
+- Lazy Loading: загрузка данных по требованию
+
+**Масштабируемость (Scalability):**
+- Horizontal Scaling: Load Balancer + Auto-scaling группы серверов
+- Database Sharding: партиционирование БД по ключу (user_id, region)
+- Stateless Services: хранение состояния в Redis/БД, а не в памяти сервера
+- Microservices: декомпозиция монолита на независимые сервисы
+- Event-Driven Architecture: асинхронная коммуникация через Event Bus
+- CQRS (Command Query Responsibility Segregation): разделение read/write моделей
+- Service Mesh: управление коммуникацией между микросервисами
+- Partitioning: разделение данных по географическим регионам
+
+**Доступность (Availability):**
+- Multi-Region Deployment: Active-Active или Active-Passive в разных регионах
+- Health Checks: Liveness/Readiness probes для автоматического восстановления
+- Circuit Breaker: предотвращение каскадных сбоев при падении зависимостей
+- Graceful Degradation: fallback на упрощенную функциональность при сбоях
+- Redundancy: резервирование критичных компонентов (Active-Active)
+- Load Balancing: распределение трафика между здоровыми инстансами
+- Auto-Recovery: автоматический перезапуск failed сервисов
+- Failover: автоматическое переключение на резервную систему
+
+**Безопасность (Security):**
+- Zero Trust Architecture: аутентификация на каждом уровне, никакого implicit trust
+- API Gateway с JWT: централизованная аутентификация/авторизация
+- Secrets Management: HashiCorp Vault для хранения ключей и паролей
+- Encryption at Rest и in Transit: TLS для передачи, AES для хранения
+- WAF + DDoS Protection: защита на уровне сети (CloudFlare, AWS Shield)
+- RBAC/IAM: Role-Based Access Control с минимальными привилегиями
+- Security Groups/Network Policies: изоляция на уровне сети
+- SAST/DAST: статический и динамический анализ кода на уязвимости
+- Certificate Management: автоматическое обновление TLS сертификатов
+
+**Надежность (Reliability):**
+- Retry с Exponential Backoff: повторные попытки с увеличивающейся задержкой
+- Dead Letter Queue: обработка failed messages отдельно
+- Idempotency Keys: безопасные повторные запросы без дублирования
+- Distributed Tracing: отслеживание запросов через систему (Jaeger, Zipkin)
+- Chaos Engineering: тестирование отказоустойчивости (Chaos Monkey)
+- Bulkhead Pattern: изоляция ресурсов для предотвращения полного отказа
+- Timeout и Deadline: ограничение времени ожидания ответа
+- Saga Pattern: управление распределенными транзакциями
+
+**Поддерживаемость (Maintainability):**
+- Observability Stack: Metrics (Prometheus), Logs (ELK/Loki), Traces (Jaeger)
+- Infrastructure as Code: Terraform, CloudFormation для воспроизводимости
+- CI/CD Pipeline: автоматизация тестирования и деплоя (GitLab CI, GitHub Actions)
+- Feature Flags: постепенный rollout новых функций (LaunchDarkly)
+- Blue-Green Deployment: безопасные деплои с мгновенным откатом
+- Canary Releases: постепенное внедрение изменений для части пользователей
+- Automated Testing: Unit, Integration, E2E тесты
+- Documentation as Code: автоматическая генерация API docs (Swagger)
+
+**Стоимость (Cost Efficiency):**
+- Spot/Reserved Instances: экономия до 70% на compute ресурсах
+- Auto-scaling: динамическое управление ресурсами по нагрузке
+- Serverless: оплата за использование (AWS Lambda, Cloud Functions)
+- Data Lifecycle Policies: автоматическое архивирование старых данных (S3 Glacier)
+- Right-sizing: оптимизация размеров инстансов под реальную нагрузку
+- Resource Tagging: отслеживание затрат по проектам/командам
+- CDN Caching: снижение egress трафика из origin
+- Compression: уменьшение объема передаваемых данных
+
+**Наблюдаемость (Observability):**
+- Centralized Logging: ELK Stack (Elasticsearch, Logstash, Kibana) или Loki
+- Distributed Tracing: Jaeger, Zipkin, AWS X-Ray для трассировки запросов
+- Metrics Collection: Prometheus + Grafana для метрик и дашбордов
+- Alerting: PagerDuty, Opsgenie для критичных событий
+- APM (Application Performance Monitoring): Datadog, New Relic, Dynatrace
+- SLO/SLA Monitoring: отслеживание Service Level Objectives
+- Synthetic Monitoring: проактивная проверка доступности (Pingdom)
+- Log Aggregation: централизованный сбор логов со всех сервисов
 
 Верни ответ ТОЛЬКО в формате JSON:
   {
@@ -780,7 +929,82 @@ export async function generateArchitectureCase(
     "functionalRequirements": ["функционал 1", "функционал 2"],
     "nonFunctionalRequirements": ["требование 1", "требование 2"],
     "qualityAttributes": ["атрибут 1", "атрибут 2"],
-    "expectedComponents": ["тип_компонента1", "тип_компонента2"]
+    "expectedComponents": ["тип_компонента1", "тип_компонента2"],
+    "recommendedTactics": [
+      {
+        "qualityAttribute": "Производительность",
+        "tactic": "Кэширование часто запрашиваемых данных",
+        "description": "Использовать Redis для кэширования результатов запросов к БД с TTL 5 минут для снижения нагрузки на database",
+        "components": ["cache", "load-balancer"],
+        "implementationSteps": [
+          {
+            "step": 1,
+            "action": "Добавить компонент кэша",
+            "details": "Добавьте Redis Cache между API Gateway и Database",
+            "connections": []
+          },
+          {
+            "step": 2,
+            "action": "Настроить связь API → Cache",
+            "details": "Создайте связь от API Gateway к Redis Cache для проверки кэша перед обращением к БД",
+            "connections": [
+              {
+                "from": "API Gateway",
+                "to": "Redis Cache",
+                "type": "cache-connection",
+                "purpose": "Проверка кэша перед запросом к БД"
+              }
+            ]
+          },
+          {
+            "step": 3,
+            "action": "Настроить связь Cache → Database",
+            "details": "Создайте связь от Redis Cache к Database для случаев cache miss",
+            "connections": [
+              {
+                "from": "Redis Cache",
+                "to": "Database",
+                "type": "database-connection",
+                "purpose": "Получение данных при отсутствии в кэше"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "qualityAttribute": "Безопасность",
+        "tactic": "Zero Trust Gateway",
+        "description": "Все запросы проходят через API Gateway с JWT-аутентификацией и проверкой прав доступа",
+        "components": ["api-gateway", "identity-provider"],
+        "implementationSteps": [
+          {
+            "step": 1,
+            "action": "Добавить API Gateway",
+            "details": "Разместите API Gateway как единую точку входа для всех запросов",
+            "connections": []
+          },
+          {
+            "step": 2,
+            "action": "Настроить Identity Provider",
+            "details": "Добавьте компонент Identity Provider для аутентификации",
+            "connections": []
+          },
+          {
+            "step": 3,
+            "action": "Связать Gateway с Identity Provider",
+            "details": "API Gateway должен проверять токены через Identity Provider",
+            "connections": [
+              {
+                "from": "API Gateway",
+                "to": "Identity Provider",
+                "type": "auth-connection",
+                "purpose": "Проверка JWT токенов и прав доступа"
+              }
+            ]
+          }
+        ]
+      }
+    ]
   }
 
 Напиши на русском языке. Верни только JSON.`
@@ -802,7 +1026,30 @@ export async function generateArchitectureCase(
       functionalRequirements: sanitizeStringArray(parsed.functionalRequirements),
       nonFunctionalRequirements: sanitizeStringArray(parsed.nonFunctionalRequirements),
       qualityAttributes: sanitizeStringArray(parsed.qualityAttributes),
-      expectedComponents: sanitizeStringArray(parsed.expectedComponents)
+      expectedComponents: sanitizeStringArray(parsed.expectedComponents),
+      recommendedTactics: Array.isArray(parsed.recommendedTactics)
+        ? parsed.recommendedTactics.map((tactic: any) => ({
+          qualityAttribute: tactic.qualityAttribute || '',
+          tactic: tactic.tactic || '',
+          description: tactic.description || '',
+          components: Array.isArray(tactic.components) ? tactic.components : [],
+          implementationSteps: Array.isArray(tactic.implementationSteps)
+            ? tactic.implementationSteps.map((step: any) => ({
+              step: step.step || 0,
+              action: step.action || '',
+              details: step.details || '',
+              connections: Array.isArray(step.connections)
+                ? step.connections.map((conn: any) => ({
+                  from: conn.from || '',
+                  to: conn.to || '',
+                  type: conn.type || '',
+                  purpose: conn.purpose || ''
+                }))
+                : []
+            }))
+            : []
+        }))
+        : []
     } as ArchitectureCase
   } catch (error) {
     console.error('Ошибка при генерации кейса:', error)

@@ -474,4 +474,46 @@ export const clientVendors: VendorOption[] = [
     { value: 'internal-user', label: 'Internal User', description: 'Employee or administrator' },
 ]
 
+export const workerVendors: VendorOption[] = [
+    { value: 'celery', label: 'Celery', description: 'Distributed task queue for Python' },
+    { value: 'sidekiq', label: 'Sidekiq', description: 'Background processing for Ruby' },
+    { value: 'bull', label: 'Bull', description: 'Redis-based queue for Node.js' },
+    { value: 'resque', label: 'Resque', description: 'Redis-backed Ruby library for background jobs' },
+    { value: 'hangfire', label: 'Hangfire', description: 'Background job processing for .NET' },
+    { value: 'aws-sqs-worker', label: 'SQS Worker', description: 'AWS SQS consumer' },
+]
+
+export const backgroundTaskVendors: VendorOption[] = [
+    { value: 'async-task', label: 'Async Task', description: 'Asynchronous background task' },
+    { value: 'delayed-job', label: 'Delayed Job', description: 'Database-backed asynchronous priority queue' },
+    { value: 'cron-job', label: 'Cron Job', description: 'Scheduled background task' },
+    { value: 'lambda-async', label: 'Lambda Async', description: 'AWS Lambda asynchronous invocation' },
+]
+
+export const featureFlagsVendors: VendorOption[] = [
+    { value: 'launchdarkly', label: 'LaunchDarkly', description: 'Feature management platform' },
+    { value: 'unleash', label: 'Unleash', description: 'Open source feature toggle system' },
+    { value: 'split', label: 'Split', description: 'Feature delivery platform' },
+    { value: 'flagsmith', label: 'Flagsmith', description: 'Open source feature flag service' },
+    { value: 'growthbook', label: 'GrowthBook', description: 'Open source feature flagging and A/B testing' },
+    { value: 'configcat', label: 'ConfigCat', description: 'Feature flag service' },
+]
+
+export const healthCheckVendors: VendorOption[] = [
+    { value: 'kubernetes-probe', label: 'Kubernetes Probes', description: 'Liveness, readiness, startup probes' },
+    { value: 'spring-actuator', label: 'Spring Boot Actuator', description: 'Production-ready features' },
+    { value: 'express-healthcheck', label: 'Express Healthcheck', description: 'Node.js health endpoint' },
+    { value: 'aws-health', label: 'AWS Health', description: 'Service health dashboard' },
+    { value: 'custom-endpoint', label: 'Custom Health Endpoint', description: '/health or /healthz endpoint' },
+]
+
+export const configStoreVendors: VendorOption[] = [
+    { value: 'consul', label: 'Consul', description: 'Service mesh and configuration' },
+    { value: 'etcd', label: 'etcd', description: 'Distributed key-value store' },
+    { value: 'zookeeper', label: 'Apache ZooKeeper', description: 'Centralized configuration service' },
+    { value: 'aws-appconfig', label: 'AWS AppConfig', description: 'Application configuration service' },
+    { value: 'azure-app-config', label: 'Azure App Configuration', description: 'Centralized configuration management' },
+    { value: 'spring-cloud-config', label: 'Spring Cloud Config', description: 'Externalized configuration' },
+    { value: 'dotenv', label: 'Environment Variables', description: '.env files and environment config' },
+]
 

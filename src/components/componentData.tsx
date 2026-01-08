@@ -1,7 +1,7 @@
 import React from 'react'
 import { ComponentType } from '../types'
 import {
-    Server, Database, MessageSquare, Globe, HardDrive, Cloud, Zap, Shield, Loader, Box, Warehouse, Lock, Network, Layers, GitBranch, User, ExternalLink, Building2, Settings, Archive, Code, Search, Activity, FileText, BarChart3, Clock, Key, FileCode, Cpu, Wifi, Mail, MessageCircle, Link as LinkIcon, Package, Brain, Bot, Workflow, Sparkles, ShieldAlert, ShieldCheck, Eye, Book, ArrowLeftRight, History, Waves, Repeat, LayoutDashboard, CreditCard, Calendar, Share2, ArrowRightLeft, Fingerprint, Video, Briefcase, Wallet, FileSearch, Binary, Globe2, Map as MapIcon
+    Server, Database, MessageSquare, Globe, HardDrive, Cloud, Zap, Shield, Loader, Box, Warehouse, Lock, Network, Layers, GitBranch, User, ExternalLink, Building2, Settings, Archive, Code, Search, Activity, FileText, BarChart3, Clock, Key, FileCode, Cpu, Wifi, Mail, MessageCircle, Link as LinkIcon, Package, Brain, Bot, Workflow, Sparkles, ShieldAlert, ShieldCheck, Eye, Book, ArrowLeftRight, History, Waves, Repeat, LayoutDashboard, CreditCard, Calendar, Share2, ArrowRightLeft, Fingerprint, Video, Briefcase, Wallet, FileSearch, Binary, Globe2, Map as MapIcon, Users, Flag, HeartPulse, Settings2
 } from 'lucide-react'
 
 export type ComponentCategory = 'all' | 'infrastructure' | 'data' | 'security' | 'development' | 'monitoring' | 'integration' | 'communication' | 'text' | 'ai' | 'data-engineering' | 'business' | 'aws' | 'azure' | 'gcp' | 'oracle'
@@ -91,6 +91,11 @@ export const components: Component[] = [
     { id: 'gen-scheduler', type: 'scheduler', label: 'Планировщик', icon: <Calendar size={24} />, color: '#ffd43b', category: 'development' },
     { id: 'gen-workflow', type: 'workflow-engine', label: 'Workflow Engine', icon: <Workflow size={24} />, color: '#845ef7', category: 'development' },
     { id: 'gen-fsm', type: 'state-machine', label: 'State Machine', icon: <Repeat size={24} />, color: '#4dabf7', category: 'development' },
+    { id: 'gen-worker', type: 'worker', label: 'Worker', icon: <Users size={24} />, color: '#51cf66', category: 'development' },
+    { id: 'gen-bg-task', type: 'background-task', label: 'Background Task', icon: <Clock size={24} />, color: '#845ef7', category: 'development' },
+    { id: 'gen-feature-flags', type: 'feature-flags', label: 'Feature Flags', icon: <Flag size={24} />, color: '#ffd43b', category: 'development' },
+    { id: 'gen-health-check', type: 'health-check', label: 'Health Check', icon: <HeartPulse size={24} />, color: '#51cf66', category: 'development' },
+    { id: 'gen-config-store', type: 'config-store', label: 'Config Store', icon: <Settings2 size={24} />, color: '#4dabf7', category: 'development' },
 
     // --- Интеграция (Generic) ---
     { id: 'gen-api-gw', type: 'api-gateway', label: 'API Gateway', icon: <Network size={24} />, color: '#ff6b6b', category: 'integration' },

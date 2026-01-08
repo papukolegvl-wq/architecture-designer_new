@@ -11,6 +11,23 @@ export interface ArchitectureCase {
   nonFunctionalRequirements?: string[]
   qualityAttributes: string[]
   expectedComponents?: string[]
+  recommendedTactics?: {
+    qualityAttribute: string
+    tactic: string
+    description: string
+    components?: string[]
+    implementationSteps?: {
+      step: number
+      action: string
+      details: string
+      connections?: {
+        from: string
+        to: string
+        type: string
+        purpose: string
+      }[]
+    }[]
+  }[]
 }
 
 export interface RoadmapStep {
@@ -146,6 +163,12 @@ export type ComponentType =
   | 'media-streaming'
   | 'volume'
   | 'cpu'
+  | 'worker'
+  | 'background-task'
+  | 'feature-flags'
+  | 'health-check'
+  | 'config-store'
+
 
 export type ConnectionType = 'rest' | 'grpc' | 'async' | 'get-information' | 'send-information' | 'database-connection' | 'database-replication' | 'cache-connection' | 'dependency' | 'composition' | 'aggregation' | 'method-call' | 'inheritance' | 'bidirectional' | 'async-bidirectional'
 
