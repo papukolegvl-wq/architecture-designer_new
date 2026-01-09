@@ -77,7 +77,7 @@ import BackupServiceConfigPanel from './components/BackupServiceConfigPanel'
 import QueueConfigPanel from './components/QueueConfigPanel'
 import ProxyConfigPanel from './components/ProxyConfigPanel'
 import VPNGatewayConfigPanel from './components/VPNGatewayConfigPanel'
-import { Lock, Unlock } from 'lucide-react'
+import { Lock, Unlock, Play, Square } from 'lucide-react'
 import ConnectionMarkers from './components/ConnectionMarkers'
 import { AIGeneratedArchitecture } from './utils/geminiService'
 import { ComponentType, ConnectionType, DatabaseType, NoSQLType, ReplicationApproach, ReplicationTool, CacheType, ServiceLanguage, FrontendFramework, DataWarehouseVendor, DatabaseVendor, MessageBrokerVendor, MessageDeliveryType, CDNVendor, LambdaVendor, ObjectStorageVendor, AuthServiceVendor, FirewallVendor, LoadBalancerVendor, ApiGatewayVendor, ESBVendor, DatabaseTable, ObjectStorageDirection, ComponentLink, EdgePathType, BackupServiceVendor, QueueVendor, ProxyVendor, VPNGatewayVendor, Workspace } from './types'
@@ -87,6 +87,8 @@ import { ensureEdgesNotAutoDeleted, saveWorkspacesToLocalStorage } from './utils
 import { saveToFile, loadFromFile, getPersistedHandle } from './utils/fileUtils'
 import { saveToDrawIOFile } from './utils/drawioExport'
 import html2canvas from 'html2canvas'
+import { useScreenRecorder } from './hooks/useScreenRecorder'
+import { RegionSelector } from './components/RegionSelector'
 
 const edgeTypes = {
   animated: AnimatedEdge,
@@ -158,6 +160,9 @@ const GENERIC_COMPONENTS: Record<string, { configKey: string, vendors: VendorOpt
 function App() {
   const { workspaces, setWorkspaces, activeWorkspaceId, setActiveWorkspaceId, saveWorkspaceState } = usePersistence()
   const activeWorkspace = workspaces.find(w => w.id === activeWorkspaceId)
+  const { startRecording, stopRecording, isRecording } = useScreenRecorder()
+  const [isSelectingRegion, setIsSelectingRegion] = useState(false)
+
 
   const [nodes, setNodes, onNodesChange] = useNodesState(activeWorkspace?.nodes || [])
   const [edges, setEdges, onEdgesChange] = useEdgesState(activeWorkspace?.edges || [])
@@ -817,6 +822,8 @@ function App() {
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null)
   const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null)
   const systemNodesRestoredRef = useRef(false)
+
+
 
   // Обновляем ref при изменении reactFlowInstance
   useEffect(() => {
@@ -4873,8 +4880,48 @@ function App() {
         onExportPNG={handleExportPNG}
         onExportMarkdown={handleExportMarkdown}
         onSaveLayout={handleSaveLayout}
-
+        onExportAnimation={() => startRecording()}
+        onExportRegion={() => setIsSelectingRegion(true)}
       />
+
+      {isSelectingRegion && (
+        <RegionSelector
+          onConfirm={(rect) => {
+            setIsSelectingRegion(false)
+            startRecording(rect)
+          }}
+          onCancel={() => setIsSelectingRegion(false)}
+        />
+      )}
+
+      {isRecording && (
+        <div
+          onClick={stopRecording}
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 3000,
+            backgroundColor: '#ff4d4f',
+            color: 'white',
+            padding: '12px 24px',
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            cursor: 'pointer',
+            fontWeight: 600,
+            border: '2px solid rgba(255,255,255,0.2)'
+          }}
+        >
+          <Square size={20} fill="currentColor" />
+          Остановить запись
+        </div>
+      )}
+
+
       <div
         ref={reactFlowWrapper}
         style={{
@@ -5448,7 +5495,11 @@ function App() {
             onClose={() => setComparisonType(null)}
           />
         )}
+
+
+
       </div>
+
     </div>
   )
 }
@@ -5574,7 +5625,14 @@ function getComponentLabel(type: ComponentType): string {
     'schema-registry': 'Реестр схем',
     'master-data-management': 'MDM',
     'media-transcoder': 'Медиа-транскодер',
-    'media-streaming': 'Стриминг медиа'
+    'media-streaming': 'Стриминг медиа',
+    'volume': 'Том (Volume)',
+    'cpu': 'CPU',
+    'worker': 'Воркер',
+    'background-task': 'Фоновая задача',
+    'feature-flags': 'Feature Flags',
+    'health-check': 'Health Check',
+    'config-store': 'Config Store',
   }
   return labels[type] || type
 }

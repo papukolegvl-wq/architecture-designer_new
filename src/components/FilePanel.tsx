@@ -9,9 +9,11 @@ interface FilePanelProps {
   onExportPNG?: () => void
   onExportMarkdown?: () => void
   onSaveLayout?: () => void
+  onExportAnimation?: () => void
+  onExportRegion?: () => void
 }
 
-export default function FilePanel({ onSave, onLoad, onExportDrawIO, onExportPNG, onExportMarkdown, onSaveLayout }: FilePanelProps) {
+export default function FilePanel({ onSave, onLoad, onExportDrawIO, onExportPNG, onExportMarkdown, onSaveLayout, onExportAnimation, onExportRegion }: FilePanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -222,6 +224,44 @@ export default function FilePanel({ onSave, onLoad, onExportDrawIO, onExportPNG,
           >
             ✨ AI Ассистент
           </button>
+
+          {onExportAnimation && (
+            <button
+              onClick={() => {
+                onExportAnimation()
+                setIsOpen(false)
+              }}
+              style={menuItemStyle}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#cc5de8'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent'
+              }}
+              title="Записать видео всего экрана или вкладки"
+            >
+              🎥 Записать весь экран
+            </button>
+          )}
+
+          {onExportRegion && (
+            <button
+              onClick={() => {
+                onExportRegion()
+                setIsOpen(false)
+              }}
+              style={menuItemStyle}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#f06595'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent'
+              }}
+              title="Выделить область для записи видео"
+            >
+              🔲 Записать область
+            </button>
+          )}
 
           {onSaveLayout && (
             <button

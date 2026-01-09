@@ -1,8 +1,20 @@
 import { EdgeProps, getStraightPath, getSmoothStepPath, EdgeLabelRenderer, useReactFlow, Position, useStore } from 'reactflow'
-import { useState, useEffect, useRef, memo, useMemo } from 'react'
+import { useState, useEffect, useRef, memo, useMemo, useContext, createContext } from 'react'
 import React from 'react'
-import { EdgePathType } from '../types'
+import { EdgePathType, AnimationSettings } from '../types'
 
+// Animation context for global animation settings
+export const AnimationContext = createContext<{
+  isAnimating: boolean
+  animationSpeed: number
+  animationDirection: 'forward' | 'bidirectional'
+  particleDensity: number
+}>({
+  isAnimating: false,
+  animationSpeed: 1,
+  animationDirection: 'forward',
+  particleDensity: 3,
+})
 function AnimatedEdge({
   id,
   sourceX,
@@ -19,6 +31,9 @@ function AnimatedEdge({
 }: EdgeProps) {
   // Получаем узлы для определения их типов
   const { setEdges, getViewport, screenToFlowPosition } = useReactFlow()
+
+  // Get animation settings from context
+  const animationSettings = useContext(AnimationContext)
 
   // Optimization: Subscribe to specific zoom thresholds to avoid re-rendering on every zoom frame
   const isInteractive = useStore((s) => s.transform[2] > 0.4)
@@ -890,6 +905,34 @@ function AnimatedEdge({
           markerEnd={isBidirectional ? `url(#${markerEndId})` : `url(#${markerEndId})`}
           markerStart={isBidirectional ? `url(#${markerStartId})` : undefined}
         />
+
+        {/* Animated particles for data flow visualization */}
+        {animationSettings.isAnimating && showAnimation && Array.from({ length: animationSettings.particleDensity }).map((_, i) => {
+          const animationDuration = 2000 / animationSettings.animationSpeed // базовая длительность в мс
+          const delay = (i * (animationDuration / animationSettings.particleDensity)) * -1 // отрицательная задержка для распределения
+
+          return (
+            <circle
+              key={`particle-${i}`}
+              r="4"
+              fill={edgeColor}
+              opacity="0.8"
+              style={{
+                offsetPath: `path('${finalPath}')`,
+                offsetDistance: '0%',
+                animation: `flowAnimation-${id}-${i} ${animationDuration}ms linear infinite`,
+              }}
+            >
+              <animateMotion
+                dur={`${animationDuration}ms`}
+                repeatCount="indefinite"
+                begin={`${delay}ms`}
+                path={finalPath}
+              />
+            </circle>
+          )
+        })}
+
         {/* Подсказка при наведении на линию */}
         <title>{selected ? 'Кликните на линию для добавления вершины изгиба. Перетащите вершины для изменения траектории.' : 'Кликните на линию для выделения и редактирования вершин изгиба.'}</title>
 

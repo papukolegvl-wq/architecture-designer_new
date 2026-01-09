@@ -1464,3 +1464,17 @@ export interface Workspace {
   viewport?: { x: number; y: number; zoom: number }
   isLocked?: boolean
 }
+
+// Animation-related types
+export interface AnimationSettings {
+  speed: number // 0.5 - 3.0
+  direction: 'forward' | 'bidirectional'
+  particleDensity: number // 1 - 10
+  loopMode: boolean
+}
+
+export interface RecordingState {
+  isRecording: boolean
+  startTime: number | null
+  duration: number
+}
