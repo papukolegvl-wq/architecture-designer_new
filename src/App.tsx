@@ -155,6 +155,7 @@ const GENERIC_COMPONENTS: Record<string, { configKey: string, vendors: VendorOpt
   'container-registry': { configKey: 'containerRegistryConfig', vendors: Vendors.containerRegistryVendors, title: 'Container Registry' },
   'batch-processor': { configKey: 'batchProcessorConfig', vendors: Vendors.batchProcessorVendors, title: 'Пакетный обработчик' },
   'client': { configKey: 'clientConfig', vendors: Vendors.clientVendors, title: 'Клиент' },
+  'vcs': { configKey: 'vcsConfig', vendors: Vendors.vcsVendors, title: 'Система контроля версий' },
 }
 
 function App() {
@@ -5633,6 +5634,7 @@ function getComponentLabel(type: ComponentType): string {
     'feature-flags': 'Feature Flags',
     'health-check': 'Health Check',
     'config-store': 'Config Store',
+    'vcs': 'Система контроля версий',
   }
   return labels[type] || type
 }

@@ -168,6 +168,7 @@ export type ComponentType =
   | 'feature-flags'
   | 'health-check'
   | 'config-store'
+  | 'vcs'
 
 
 export type ConnectionType = 'rest' | 'grpc' | 'async' | 'get-information' | 'send-information' | 'database-connection' | 'database-replication' | 'cache-connection' | 'dependency' | 'composition' | 'aggregation' | 'method-call' | 'inheritance' | 'bidirectional' | 'async-bidirectional'
@@ -798,6 +799,19 @@ export type DNSServiceVendor =
   | 'dyn'
 
 export type BackupServiceVendor =
+  | 'aws-backup'
+  | 'azure-backup'
+  | 'google-backup'
+  | 'veeam'
+  | 'rubrik'
+
+export type VCSVendor =
+  | 'github'
+  | 'gitlab'
+  | 'bitbucket'
+  | 'azure-devops'
+  | 'aws-codecommit'
+  | 'gitea'
   | 'aws-backup'
   | 'azure-backup'
   | 'google-cloud-backup'

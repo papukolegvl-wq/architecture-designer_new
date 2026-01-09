@@ -517,3 +517,12 @@ export const configStoreVendors: VendorOption[] = [
     { value: 'dotenv', label: 'Environment Variables', description: '.env files and environment config' },
 ]
 
+export const vcsVendors: VendorOption[] = [
+    { value: 'github', label: 'GitHub', description: 'Cloud repository hosting' },
+    { value: 'gitlab', label: 'GitLab', description: 'DevOps lifecycle tool' },
+    { value: 'bitbucket', label: 'Bitbucket', description: 'Git repository management' },
+    { value: 'azure-devops', label: 'Azure Repos', description: 'Private Git repositories' },
+    { value: 'aws-codecommit', label: 'AWS CodeCommit', description: 'Source control service' },
+    { value: 'gitea', label: 'Gitea', description: 'Self-hosted Git service' },
+]
+

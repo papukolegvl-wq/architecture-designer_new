@@ -4,7 +4,7 @@ import {
     Server, Database, MessageSquare, Globe, HardDrive, Cloud, Zap, Shield, Loader, Box, Warehouse, Lock, Network, Layers, GitBranch, User, ExternalLink, Building2, Settings, Archive, Code, Search, Activity, FileText, BarChart3, Clock, Key, FileCode, Cpu, Wifi, Mail, MessageCircle, Link as LinkIcon, Package, Brain, Bot, Workflow, Sparkles, ShieldAlert, ShieldCheck, Eye, Book, ArrowLeftRight, History, Waves, Repeat, LayoutDashboard, CreditCard, Calendar, Share2, ArrowRightLeft, Fingerprint, Video, Briefcase, Wallet, FileSearch, Binary, Globe2, Map as MapIcon, Users, Flag, HeartPulse, Settings2
 } from 'lucide-react'
 
-export type ComponentCategory = 'all' | 'infrastructure' | 'data' | 'security' | 'development' | 'monitoring' | 'integration' | 'communication' | 'text' | 'ai' | 'data-engineering' | 'business' | 'aws' | 'azure' | 'gcp' | 'oracle'
+export type ComponentCategory = 'all' | 'infrastructure' | 'data' | 'security' | 'development' | 'monitoring' | 'integration' | 'communication' | 'text' | 'ai' | 'data-engineering' | 'business' | 'aws' | 'azure' | 'gcp' | 'oracle' | 'devops'
 
 export interface Component {
     id: string
@@ -15,6 +15,7 @@ export interface Component {
     category: ComponentCategory
     vendor?: string
     defaultLabel?: string
+    description?: string
 }
 
 export const components: Component[] = [
@@ -28,6 +29,16 @@ export const components: Component[] = [
     { id: 'gen-cdn', type: 'cdn', label: 'CDN', icon: <Cloud size={24} />, color: '#51cf66', category: 'infrastructure' },
     { id: 'gen-service-mesh', type: 'service-mesh', label: 'Сервисная сеть', icon: <Network size={24} />, color: '#9c88ff', category: 'infrastructure' },
     { id: 'gen-config-mgmt', type: 'configuration-management', label: 'Конфигурация', icon: <Settings size={24} />, color: '#ffa94d', category: 'infrastructure' },
+    {
+        id: 'gen-vcs',
+        type: 'vcs',
+        label: 'Система контроля версий',
+        description: 'GitHub, GitLab, Bitbucket',
+        icon: <GitBranch size={24} />,
+        color: '#F06595',
+        category: 'devops',
+        vendor: 'GitHub',
+    },
     { id: 'gen-ci-cd', type: 'ci-cd-pipeline', label: 'CI/CD пайплайн', icon: <GitBranch size={24} />, color: '#20c997', category: 'infrastructure' },
     { id: 'gen-backup', type: 'backup-service', label: 'Резервное копирование', icon: <HardDrive size={24} />, color: '#666', category: 'infrastructure' },
     { id: 'gen-proxy', type: 'proxy', label: 'Прокси', icon: <Server size={24} />, color: '#666', category: 'infrastructure' },
@@ -273,4 +284,5 @@ export const categoryLabels: Record<ComponentCategory, string> = {
     azure: 'Azure',
     gcp: 'Google Cloud',
     oracle: 'Oracle Cloud',
+    devops: 'DevOps',
 }
