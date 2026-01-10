@@ -30,7 +30,16 @@ function BusinessProcessNode({
     const connectedHandleIds = useStore((s) =>
         s.edges
             .filter((e) => e.source === id || e.target === id)
-            .map((e) => (e.source === id ? e.sourceHandle : e.targetHandle))
+            .map((e) => (e.source === id ? e.sourceHandle : e.targetHandle)),
+        (a, b) => {
+            // Shallow compare arrays
+            if (a === b) return true
+            if (a.length !== b.length) return false
+            for (let i = 0; i < a.length; i++) {
+                if (a[i] !== b[i]) return false
+            }
+            return true
+        }
     )
     const isConnecting = useStore((s) => !!s.connectionStartHandle);
     const isSimple = zoom < 0.4

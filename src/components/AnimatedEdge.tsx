@@ -1226,4 +1226,5 @@ function AnimatedEdge({
 }
 
 // Memoize the component to prevent unnecessary re-renders
-export default AnimatedEdge
+// Memoize the component to prevent unnecessary re-renders
+export default memo(AnimatedEdge)
