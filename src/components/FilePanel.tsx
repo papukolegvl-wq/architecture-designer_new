@@ -7,13 +7,12 @@ interface FilePanelProps {
   onLoad: (file: File) => void
   onExportDrawIO: () => void
   onExportPNG?: () => void
-  onExportMarkdown?: () => void
   onSaveLayout?: () => void
-  onExportAnimation?: () => void
   onExportRegion?: () => void
+
 }
 
-export default function FilePanel({ onSave, onLoad, onExportDrawIO, onExportPNG, onExportMarkdown, onSaveLayout, onExportAnimation, onExportRegion }: FilePanelProps) {
+export default function FilePanel({ onSave, onLoad, onExportDrawIO, onExportPNG, onSaveLayout, onExportRegion }: FilePanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -152,6 +151,8 @@ export default function FilePanel({ onSave, onLoad, onExportDrawIO, onExportPNG,
             📂 Загрузить
           </button>
 
+
+
           <button
             onClick={() => {
               onExportDrawIO()
@@ -188,25 +189,6 @@ export default function FilePanel({ onSave, onLoad, onExportDrawIO, onExportPNG,
             </button>
           )}
 
-          {onExportMarkdown && (
-            <button
-              onClick={() => {
-                onExportMarkdown()
-                setIsOpen(false)
-              }}
-              style={menuItemStyle}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#ffa94d'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent'
-              }}
-              title="Экспорт описания архитектуры в Markdown"
-            >
-              📝 Экспорт в Markdown
-            </button>
-          )}
-
           <button
             onClick={() => {
               const event = new CustomEvent('showAIAssistant')
@@ -224,25 +206,6 @@ export default function FilePanel({ onSave, onLoad, onExportDrawIO, onExportPNG,
           >
             ✨ AI Ассистент
           </button>
-
-          {onExportAnimation && (
-            <button
-              onClick={() => {
-                onExportAnimation()
-                setIsOpen(false)
-              }}
-              style={menuItemStyle}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#cc5de8'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent'
-              }}
-              title="Записать видео всего экрана или вкладки"
-            >
-              🎥 Записать весь экран
-            </button>
-          )}
 
           {onExportRegion && (
             <button

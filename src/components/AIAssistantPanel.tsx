@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { X, Sparkles, Loader2, Send, FileText, HelpCircle, Copy, Minimize2, Maximize2, RefreshCcw, MessageSquare, GraduationCap, CheckCircle2, AlertCircle, Save, FolderOpen, History, TrendingUp } from 'lucide-react'
+import { X, Sparkles, Loader2, Send, FileText, HelpCircle, Copy, Minimize2, Maximize2, RefreshCcw, MessageSquare, GraduationCap, CheckCircle2, AlertCircle, Save, FolderOpen, History, TrendingUp, ChevronDown, Zap, ArrowRightLeft } from 'lucide-react'
 import {
   initializeGemini,
   isGeminiInitialized,
@@ -1866,41 +1866,62 @@ ${currentCase.recommendedTactics.map(tactic =>
                                         <div
                                           key={i}
                                           style={{
-                                            padding: '12px',
-                                            backgroundColor: '#2d2d2d',
-                                            borderRadius: '8px',
-                                            border: '1px solid #ae3ec930',
-                                            transition: 'all 0.2s'
+                                            padding: '16px',
+                                            backgroundColor: isExpanded ? '#ae3ec908' : '#2d2d2d',
+                                            borderRadius: '12px',
+                                            border: isExpanded ? '1px solid #ae3ec980' : '1px solid #ae3ec920',
+                                            boxShadow: isExpanded ? '0 8px 32px rgba(174, 62, 201, 0.15)' : 'none',
+                                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                            position: 'relative',
+                                            overflow: 'hidden'
                                           }}
                                         >
+                                          {isExpanded && (
+                                            <div style={{
+                                              position: 'absolute',
+                                              top: 0,
+                                              right: 0,
+                                              width: '100px',
+                                              height: '100px',
+                                              background: 'radial-gradient(circle at top right, #ae3ec910, transparent 70%)',
+                                              pointerEvents: 'none'
+                                            }} />
+                                          )}
+
                                           <div
-                                            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', cursor: 'pointer' }}
+                                            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', cursor: 'pointer', zIndex: 1 }}
                                             onClick={() => toggleTactic(i)}
                                           >
                                             <div style={{ flex: 1 }}>
-                                              <div style={{ marginBottom: '8px' }}>
+                                              <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                 <span style={{
-                                                  fontSize: '11px',
-                                                  color: '#888',
+                                                  fontSize: '10px',
+                                                  color: '#ae3ec9',
+                                                  backgroundColor: '#ae3ec915',
+                                                  padding: '2px 8px',
+                                                  borderRadius: '100px',
                                                   textTransform: 'uppercase',
-                                                  letterSpacing: '0.5px'
+                                                  letterSpacing: '0.8px',
+                                                  fontWeight: '700',
+                                                  border: '1px solid #ae3ec930'
                                                 }}>
                                                   {tactic.qualityAttribute}
                                                 </span>
                                               </div>
                                               <div style={{
                                                 color: '#fff',
-                                                fontSize: '13px',
-                                                fontWeight: '600',
-                                                marginBottom: '6px'
+                                                fontSize: '15px',
+                                                fontWeight: '700',
+                                                marginBottom: '8px',
+                                                letterSpacing: '-0.2px'
                                               }}>
                                                 {tactic.tactic}
                                               </div>
                                               <div style={{
-                                                color: '#aaa',
-                                                fontSize: '12px',
-                                                lineHeight: '1.5',
-                                                marginBottom: '8px'
+                                                color: '#bbb',
+                                                fontSize: '13px',
+                                                lineHeight: '1.6',
+                                                marginBottom: '12px'
                                               }}>
                                                 {tactic.description}
                                               </div>
@@ -1909,20 +1930,21 @@ ${currentCase.recommendedTactics.map(tactic =>
                                                   display: 'flex',
                                                   flexWrap: 'wrap',
                                                   gap: '6px',
-                                                  marginTop: '8px'
+                                                  marginTop: '12px'
                                                 }}>
-                                                  <span style={{ fontSize: '11px', color: '#666' }}>Компоненты:</span>
+                                                  <span style={{ fontSize: '11px', color: '#888', alignSelf: 'center', marginRight: '4px' }}>Компоненты:</span>
                                                   {tactic.components.map((comp: string, idx: number) => (
                                                     <span
                                                       key={idx}
                                                       style={{
-                                                        padding: '2px 8px',
-                                                        backgroundColor: '#ae3ec915',
-                                                        color: '#ae3ec9',
-                                                        borderRadius: '4px',
-                                                        fontSize: '10px',
-                                                        border: '1px solid #ae3ec930',
-                                                        fontFamily: 'monospace'
+                                                        padding: '3px 10px',
+                                                        backgroundColor: '#1e1e1e',
+                                                        color: '#eee',
+                                                        borderRadius: '6px',
+                                                        fontSize: '11px',
+                                                        border: '1px solid #444',
+                                                        fontFamily: 'monospace',
+                                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
                                                       }}
                                                     >
                                                       {comp}
@@ -1933,13 +1955,18 @@ ${currentCase.recommendedTactics.map(tactic =>
                                             </div>
                                             <div style={{
                                               marginLeft: '12px',
-                                              fontSize: '16px',
+                                              padding: '4px',
+                                              borderRadius: '50%',
+                                              backgroundColor: isExpanded ? '#ae3ec920' : 'transparent',
                                               color: '#ae3ec9',
-                                              transition: 'transform 0.2s',
+                                              transition: 'all 0.3s',
                                               transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                                              userSelect: 'none'
+                                              userSelect: 'none',
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center'
                                             }}>
-                                              ▼
+                                              <ChevronDown size={20} />
                                             </div>
                                           </div>
 
@@ -1947,81 +1974,139 @@ ${currentCase.recommendedTactics.map(tactic =>
                                           {isExpanded && tactic.implementationSteps && tactic.implementationSteps.length > 0 && (
                                             <div
                                               style={{
-                                                marginTop: '16px',
-                                                paddingTop: '16px',
-                                                borderTop: '1px solid #444'
+                                                marginTop: '20px',
+                                                paddingTop: '20px',
+                                                borderTop: '1px solid #ae3ec920',
+                                                animation: 'fadeIn 0.3s ease-out'
                                               }}
                                               onClick={(e) => e.stopPropagation()}
                                             >
                                               <div style={{
                                                 fontSize: '12px',
-                                                fontWeight: '600',
+                                                fontWeight: '800',
                                                 color: '#51cf66',
-                                                marginBottom: '12px',
+                                                marginBottom: '16px',
                                                 textTransform: 'uppercase',
-                                                letterSpacing: '0.5px',
+                                                letterSpacing: '1px',
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                gap: '6px'
+                                                gap: '8px'
                                               }}>
-                                                <span>📋</span> Шаги реализации:
+                                                <div style={{
+                                                  width: '24px',
+                                                  height: '24px',
+                                                  borderRadius: '6px',
+                                                  backgroundColor: '#51cf6615',
+                                                  display: 'flex',
+                                                  alignItems: 'center',
+                                                  justifyContent: 'center'
+                                                }}>
+                                                  <Zap size={14} />
+                                                </div>
+                                                План реализации
                                               </div>
 
-                                              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                                 {tactic.implementationSteps.map((step: any, stepIdx: number) => (
                                                   <div
                                                     key={stepIdx}
                                                     style={{
-                                                      paddingLeft: '16px',
-                                                      borderLeft: '2px solid #51cf66'
+                                                      padding: '12px',
+                                                      backgroundColor: '#1a1a1a',
+                                                      borderRadius: '10px',
+                                                      border: '1px solid #333',
+                                                      transition: 'all 0.2s',
+                                                      display: 'flex',
+                                                      gap: '12px'
                                                     }}
                                                   >
-                                                    <div style={{
-                                                      fontSize: '11px',
-                                                      fontWeight: '600',
-                                                      color: '#51cf66',
-                                                      marginBottom: '4px'
-                                                    }}>
-                                                      Шаг {step.step}: {step.action}
-                                                    </div>
-                                                    <div style={{
-                                                      fontSize: '12px',
-                                                      color: '#ccc',
-                                                      marginBottom: '8px'
-                                                    }}>
-                                                      {step.details}
+                                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                                      <div style={{
+                                                        width: '24px',
+                                                        height: '24px',
+                                                        borderRadius: '50%',
+                                                        backgroundColor: '#51cf6620',
+                                                        color: '#51cf66',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        fontSize: '12px',
+                                                        fontWeight: 'bold',
+                                                        border: '1px solid #51cf6640'
+                                                      }}>
+                                                        {step.step}
+                                                      </div>
+                                                      <div style={{ flex: 1, width: '2px', backgroundColor: '#333', marginTop: '4px', marginBottom: '4px' }} />
                                                     </div>
 
-                                                    {step.connections && step.connections.length > 0 && (
-                                                      <div style={{ marginTop: '8px' }}>
-                                                        {step.connections.map((conn: any, connIdx: number) => (
-                                                          <div
-                                                            key={connIdx}
-                                                            style={{
-                                                              fontSize: '11px',
-                                                              color: '#aaa',
-                                                              backgroundColor: '#1e1e1e',
-                                                              padding: '6px 10px',
-                                                              borderRadius: '4px',
-                                                              marginBottom: '4px',
-                                                              fontFamily: 'monospace'
-                                                            }}
-                                                          >
-                                                            <span style={{ color: '#4dabf7', fontWeight: '600' }}>{conn.from}</span>
-                                                            {' → '}
-                                                            <span style={{ color: '#4dabf7', fontWeight: '600' }}>{conn.to}</span>
-                                                            <div style={{
-                                                              fontSize: '10px',
-                                                              color: '#888',
-                                                              marginTop: '2px',
-                                                              fontFamily: 'inherit'
-                                                            }}>
-                                                              Тип: {conn.type} • {conn.purpose}
-                                                            </div>
-                                                          </div>
-                                                        ))}
+                                                    <div style={{ flex: 1 }}>
+                                                      <div style={{
+                                                        fontSize: '13px',
+                                                        fontWeight: '700',
+                                                        color: '#fff',
+                                                        marginBottom: '4px'
+                                                      }}>
+                                                        {step.action}
                                                       </div>
-                                                    )}
+                                                      <div style={{
+                                                        fontSize: '12px',
+                                                        color: '#aaa',
+                                                        lineHeight: '1.5',
+                                                        marginBottom: '10px'
+                                                      }}>
+                                                        {step.details}
+                                                      </div>
+
+                                                      {step.connections && step.connections.length > 0 && (
+                                                        <div style={{
+                                                          display: 'flex',
+                                                          flexDirection: 'column',
+                                                          gap: '6px',
+                                                          backgroundColor: '#00000040',
+                                                          padding: '10px',
+                                                          borderRadius: '8px',
+                                                          border: '1px solid #444'
+                                                        }}>
+                                                          {step.connections.map((conn: any, connIdx: number) => (
+                                                            <div
+                                                              key={connIdx}
+                                                              style={{
+                                                                fontSize: '11px',
+                                                                color: '#ccc',
+                                                                fontFamily: 'monospace',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '6px',
+                                                                flexWrap: 'wrap'
+                                                              }}
+                                                            >
+                                                              <span style={{ color: '#4dabf7', backgroundColor: '#4dabf715', padding: '1px 4px', borderRadius: '3px' }}>{conn.from}</span>
+                                                              <ArrowRightLeft size={10} style={{ opacity: 0.5 }} />
+                                                              <span style={{ color: '#4dabf7', backgroundColor: '#4dabf715', padding: '1px 4px', borderRadius: '3px' }}>{conn.to}</span>
+                                                              <span style={{ color: '#888', fontSize: '10px', marginLeft: 'auto' }}>
+                                                                [{conn.type}] • {conn.purpose}
+                                                              </span>
+                                                            </div>
+                                                          ))}
+                                                        </div>
+                                                      )}
+                                                    </div>
+
+                                                    <div style={{ alignSelf: 'start', marginTop: '2px' }}>
+                                                      <input
+                                                        type="checkbox"
+                                                        style={{
+                                                          width: '18px',
+                                                          height: '18px',
+                                                          accentColor: '#51cf66',
+                                                          cursor: 'pointer'
+                                                        }}
+                                                        onClick={(e) => {
+                                                          // For now just local visual toggle if we want, or handle via case state
+                                                          // (target class/element is enough for simple interactivity)
+                                                        }}
+                                                      />
+                                                    </div>
                                                   </div>
                                                 ))}
                                               </div>

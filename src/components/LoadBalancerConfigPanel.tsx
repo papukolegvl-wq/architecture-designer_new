@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Node } from 'reactflow'
 import { ComponentData, LoadBalancerVendor } from '../types'
+import ColorPicker from './ColorPicker'
 
 interface LoadBalancerConfigPanelProps {
   node: Node
-  onUpdate: (nodeId: string, config: { vendor: LoadBalancerVendor }) => void
+  onUpdate: (nodeId: string, config: { vendor: LoadBalancerVendor; color?: string }) => void
   onClose: () => void
 }
 
@@ -26,6 +27,7 @@ export default function LoadBalancerConfigPanel({
   const [vendor, setVendor] = useState<LoadBalancerVendor | undefined>(
     data.loadBalancerConfig?.vendor
   )
+  const [color, setColor] = useState<string | undefined>(data.color)
 
   useEffect(() => {
     if (!vendor && vendors.length > 0) {
@@ -35,7 +37,7 @@ export default function LoadBalancerConfigPanel({
 
   const handleSave = () => {
     if (vendor) {
-      onUpdate(node.id, { vendor })
+      onUpdate(node.id, { vendor, color: color || data.color })
     }
     onClose()
   }
@@ -135,6 +137,8 @@ export default function LoadBalancerConfigPanel({
           ))}
         </div>
       </div>
+
+      <ColorPicker currentColor={color} onColorSelect={setColor} />
 
       <div style={{ display: 'flex', gap: '10px' }}>
         <button

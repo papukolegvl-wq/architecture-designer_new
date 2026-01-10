@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { Node } from 'reactflow'
 import { ComponentData, ControllerEndpoint } from '../types'
 import { X, Plus, Trash2 } from 'lucide-react'
+import ColorPicker from './ColorPicker'
 
 interface ControllerConfigPanelProps {
   node: Node
-  onUpdate: (nodeId: string, config: { endpoints: ControllerEndpoint[] }) => void
+  onUpdate: (nodeId: string, config: { endpoints: ControllerEndpoint[]; color?: string }) => void
   onClose: () => void
 }
 
@@ -18,6 +19,7 @@ export default function ControllerConfigPanel({
   const [endpoints, setEndpoints] = useState<ControllerEndpoint[]>(
     data.controllerConfig?.endpoints || []
   )
+  const [color, setColor] = useState<string | undefined>(data.color)
 
   const handleAddEndpoint = () => {
     setEndpoints([
@@ -50,7 +52,10 @@ export default function ControllerConfigPanel({
   const handleSave = () => {
     // Фильтруем endpoints с заполненным path
     const validEndpoints = endpoints.filter((e) => e.path.trim() !== '')
-    onUpdate(node.id, { endpoints: validEndpoints })
+    onUpdate(node.id, {
+      endpoints: validEndpoints,
+      color: color || data.color
+    })
     onClose()
   }
 
@@ -323,6 +328,8 @@ export default function ControllerConfigPanel({
           </div>
         )}
       </div>
+
+      <ColorPicker currentColor={color} onColorSelect={setColor} />
 
       <div
         style={{

@@ -155,7 +155,7 @@ function BusinessProcessNode({
         }
     }
 
-    const processColor = '#ae3ec9'
+    const processColor = data.color || '#ae3ec9'
     const borderColor = selected ? '#4dabf7' : processColor
 
     return (

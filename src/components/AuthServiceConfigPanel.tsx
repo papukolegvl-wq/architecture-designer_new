@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Node } from 'reactflow'
 import { ComponentData, AuthServiceVendor } from '../types'
+import ColorPicker from './ColorPicker'
 
 interface AuthServiceConfigPanelProps {
   node: Node
-  onUpdate: (nodeId: string, config: { vendor: AuthServiceVendor }) => void
+  onUpdate: (nodeId: string, config: { vendor: AuthServiceVendor; color?: string }) => void
   onClose: () => void
 }
 
@@ -28,6 +29,7 @@ export default function AuthServiceConfigPanel({
   const [vendor, setVendor] = useState<AuthServiceVendor | undefined>(
     data.authServiceConfig?.vendor
   )
+  const [color, setColor] = useState<string | undefined>(data.color)
 
   useEffect(() => {
     if (!vendor && vendors.length > 0) {
@@ -37,7 +39,7 @@ export default function AuthServiceConfigPanel({
 
   const handleSave = () => {
     if (vendor) {
-      onUpdate(node.id, { vendor })
+      onUpdate(node.id, { vendor, color: color || data.color })
     }
     onClose()
   }
@@ -137,6 +139,8 @@ export default function AuthServiceConfigPanel({
           ))}
         </div>
       </div>
+
+      <ColorPicker currentColor={color} onColorSelect={setColor} />
 
       <div style={{ display: 'flex', gap: '10px' }}>
         <button

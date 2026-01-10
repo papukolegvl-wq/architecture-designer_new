@@ -907,7 +907,7 @@ function AnimatedEdge({
         />
 
         {/* Animated particles for data flow visualization */}
-        {animationSettings.isAnimating && showAnimation && Array.from({ length: animationSettings.particleDensity }).map((_, i) => {
+        {animationSettings.isAnimating && showAnimation && data?.connectionType !== 'relationship' && Array.from({ length: animationSettings.particleDensity }).map((_, i) => {
           const animationDuration = 2000 / animationSettings.animationSpeed // базовая длительность в мс
           const delay = (i * (animationDuration / animationSettings.particleDensity)) * -1 // отрицательная задержка для распределения
 
@@ -1077,7 +1077,7 @@ function AnimatedEdge({
           </>
         )}
         {/* Анимированная точка, показывающая поток данных (только при достаточном зуме) */}
-        {showAnimation && (
+        {showAnimation && data?.connectionType !== 'relationship' && (
           <>
             <path
               d="M -10,-5 L 0,0 L -10,5 Z"

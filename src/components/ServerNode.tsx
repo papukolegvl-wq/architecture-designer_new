@@ -187,7 +187,7 @@ function ServerNode({
         }
     }
 
-    const serverColor = '#339af0' // Синий цвет для серверов (из componentColors)
+    const serverColor = data.color || '#339af0' // Синий цвет для серверов по умолчанию
     const borderColor = selected ? '#4dabf7' : serverColor
 
     return (

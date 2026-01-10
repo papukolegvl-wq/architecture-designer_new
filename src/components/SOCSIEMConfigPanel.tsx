@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Node } from 'reactflow'
 import { ComponentData, SOCSIEMVendor } from '../types'
+import ColorPicker from './ColorPicker'
 
 interface SOCSIEMConfigPanelProps {
     node: Node
@@ -8,6 +9,7 @@ interface SOCSIEMConfigPanelProps {
         vendor: SOCSIEMVendor
         logRetentionDays?: number
         features?: string[]
+        color?: string
     }) => void
     onClose: () => void
 }
@@ -37,6 +39,7 @@ export default function SOCSIEMConfigPanel({
     const [logRetentionDays, setLogRetentionDays] = useState<number>(
         data.socSiemConfig?.logRetentionDays || 90
     )
+    const [color, setColor] = useState<string | undefined>(data.color)
 
     useEffect(() => {
         if (!vendor && vendors.length > 0) {
@@ -48,7 +51,8 @@ export default function SOCSIEMConfigPanel({
         if (vendor) {
             onUpdate(node.id, {
                 vendor,
-                logRetentionDays
+                logRetentionDays,
+                color: color || data.color
             })
         }
         onClose()
@@ -178,6 +182,8 @@ export default function SOCSIEMConfigPanel({
                     }}
                 />
             </div>
+
+            <ColorPicker currentColor={color} onColorSelect={setColor} />
 
             <div style={{ display: 'flex', gap: '10px' }}>
                 <button

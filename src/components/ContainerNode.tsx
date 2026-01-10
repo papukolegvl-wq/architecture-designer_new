@@ -188,7 +188,7 @@ function ContainerNode({
     }
   }
 
-  const containerColor = '#51cf66' // Зеленый цвет для контейнеров
+  const containerColor = data.color || '#51cf66' // Зеленый цвет для контейнеров по умолчанию
   const borderColor = selected ? '#4dabf7' : containerColor
 
   return (

@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { Node } from 'reactflow'
 import { ComponentData, RepositoryData } from '../types'
 import { X, Plus, Trash2 } from 'lucide-react'
+import ColorPicker from './ColorPicker'
 
 interface RepositoryConfigPanelProps {
   node: Node
-  onUpdate: (nodeId: string, config: { data: RepositoryData[] }) => void
+  onUpdate: (nodeId: string, config: { data: RepositoryData[]; color?: string }) => void
   onClose: () => void
 }
 
@@ -18,6 +19,7 @@ export default function RepositoryConfigPanel({
   const [repositoryData, setRepositoryData] = useState<RepositoryData[]>(
     data.repositoryConfig?.data || []
   )
+  const [color, setColor] = useState<string | undefined>(data.color)
 
   const handleAddData = () => {
     setRepositoryData([
@@ -62,7 +64,10 @@ export default function RepositoryConfigPanel({
   const handleSave = () => {
     // Фильтруем данные с заполненной таблицей
     const validData = repositoryData.filter((d) => d.table?.trim() !== '')
-    onUpdate(node.id, { data: validData })
+    onUpdate(node.id, {
+      data: validData,
+      color: color || data.color
+    })
     onClose()
   }
 
@@ -270,11 +275,10 @@ export default function RepositoryConfigPanel({
                                   ? operationColors[operation]
                                   : '#2d2d2d',
                                 color: isSelected ? '#fff' : '#888',
-                                border: `1px solid ${
-                                  isSelected
+                                border: `1px solid ${isSelected
                                     ? operationColors[operation]
                                     : '#555'
-                                }`,
+                                  }`,
                                 borderRadius: '4px',
                                 cursor: 'pointer',
                                 fontSize: '12px',
@@ -326,6 +330,8 @@ export default function RepositoryConfigPanel({
           </div>
         )}
       </div>
+
+      <ColorPicker currentColor={color} onColorSelect={setColor} />
 
       <div
         style={{

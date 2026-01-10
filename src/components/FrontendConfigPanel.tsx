@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Node } from 'reactflow'
 import { ComponentData, FrontendFramework } from '../types'
+import ColorPicker from './ColorPicker'
 
 interface FrontendConfigPanelProps {
   node: Node
-  onUpdate: (nodeId: string, config: { framework: FrontendFramework }) => void
+  onUpdate: (nodeId: string, config: { framework: FrontendFramework; color?: string }) => void
   onClose: () => void
 }
 
@@ -27,10 +28,11 @@ export default function FrontendConfigPanel({
   const [framework, setFramework] = useState<FrontendFramework | undefined>(
     data.frontendConfig?.framework
   )
+  const [color, setColor] = useState<string | undefined>(data.color)
 
   const handleSave = () => {
     if (framework) {
-      onUpdate(node.id, { framework })
+      onUpdate(node.id, { framework, color: color || data.color })
     }
     onClose()
   }
@@ -128,6 +130,8 @@ export default function FrontendConfigPanel({
           ))}
         </div>
       </div>
+
+      <ColorPicker currentColor={color} onColorSelect={setColor} />
 
       <div style={{ display: 'flex', gap: '10px' }}>
         <button

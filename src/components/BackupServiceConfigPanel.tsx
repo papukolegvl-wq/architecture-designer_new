@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react'
 import { Node } from 'reactflow'
 import { ComponentData, BackupServiceVendor } from '../types'
+import ColorPicker from './ColorPicker'
 
 interface BackupServiceConfigPanelProps {
   node: Node
-  onUpdate: (nodeId: string, config: { 
+  onUpdate: (nodeId: string, config: {
     vendor: BackupServiceVendor
     backupFrequency?: 'daily' | 'weekly' | 'monthly' | 'continuous'
     retentionPeriod?: string
     backupType?: 'full' | 'incremental' | 'differential'
+    color?: string
   }) => void
   onClose: () => void
 }
@@ -54,6 +56,7 @@ export default function BackupServiceConfigPanel({
   const [backupType, setBackupType] = useState<'full' | 'incremental' | 'differential' | undefined>(
     data.backupServiceConfig?.backupType
   )
+  const [color, setColor] = useState<string | undefined>(data.color)
 
   useEffect(() => {
     if (!vendor && vendors.length > 0) {
@@ -63,11 +66,12 @@ export default function BackupServiceConfigPanel({
 
   const handleSave = () => {
     if (vendor) {
-      onUpdate(node.id, { 
+      onUpdate(node.id, {
         vendor,
         backupFrequency,
         retentionPeriod,
         backupType,
+        color: color || data.color
       })
     }
     onClose()
@@ -265,6 +269,8 @@ export default function BackupServiceConfigPanel({
           }}
         />
       </div>
+
+      <ColorPicker currentColor={color} onColorSelect={setColor} />
 
       <div style={{ display: 'flex', gap: '10px' }}>
         <button

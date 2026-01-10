@@ -53,6 +53,10 @@ import {
   Calendar,
   Maximize2,
   Minimize2,
+  Briefcase,
+  Share2,
+  Users,
+  Image as ImageIcon,
 } from 'lucide-react'
 
 const componentIcons: Record<string, React.ReactNode> = {
@@ -134,6 +138,15 @@ const componentIcons: Record<string, React.ReactNode> = {
   scheduler: <Calendar size={32} />,
   volume: <HardDrive size={32} />,
   cpu: <Cpu size={32} />,
+  vcs: <GitBranch size={32} />,
+  customer: <User size={32} />,
+  developer: <Briefcase size={32} />,
+  analyst: <BarChart3 size={32} />,
+  devops: <Settings size={32} />,
+  architect: <Share2 size={32} />,
+  'product-manager': <Briefcase size={32} />,
+  team: <Users size={32} />,
+  image: <ImageIcon size={32} />,
 }
 
 const componentColors: Record<string, string> = {
@@ -214,6 +227,15 @@ const componentColors: Record<string, string> = {
   scheduler: '#ffd43b',
   volume: '#666',
   cpu: '#ffa94d',
+  vcs: '#F06595',
+  customer: '#ff8787',
+  developer: '#ae3ec9',
+  analyst: '#ffd43b',
+  devops: '#f03e3e',
+  architect: '#be4bdb',
+  'product-manager': '#20c997',
+  team: '#4dabf7',
+  image: '#fab005',
 }
 
 interface CustomNodeProps extends NodeProps<ComponentData> {
@@ -224,9 +246,205 @@ interface CustomNodeProps extends NodeProps<ComponentData> {
   onStatusChange?: (nodeId: string, status: 'new' | 'existing') => void
 }
 
+export const getActorShape = (type: string, color: string, size: number = 64) => {
+  const bodyBaseStyle = { fill: 'none', stroke: color, strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+  const fillStyle = { fill: `${color}20`, stroke: color, strokeWidth: 2 };
+
+  switch (type) {
+    case 'developer':
+      return (
+        <svg width={size} height={size} viewBox="0 0 100 100" style={{ margin: '0 auto' }}>
+          {/* Detailed Developer Figure */}
+          <circle cx="50" cy="15" r="10" fill={color} />
+          <path d="M25,35 Q50,25 75,35 L85,75 Q85,85 75,85 L25,85 Q15,85 15,75 Z" style={fillStyle} />
+          {/* Laptop symbol on torso */}
+          <rect x="35" y="45" width="30" height="20" rx="2" style={{ fill: 'none', stroke: color, strokeWidth: 1.5 }} />
+          <line x1="40" y1="52" x2="60" y2="52" stroke={color} strokeWidth="1" />
+          <line x1="40" y1="58" x2="55" y2="58" stroke={color} strokeWidth="1" />
+          <path d="M30,85 L70,85 L75,95 L25,95 Z" fill={color} />
+        </svg>
+      );
+    case 'analyst':
+      return (
+        <svg width={size} height={size} viewBox="0 0 100 100" style={{ margin: '0 auto' }}>
+          {/* Detailed Analyst Figure */}
+          <circle cx="50" cy="15" r="10" fill={color} />
+          <path d="M25,35 Q50,25 75,35 L85,75 Q85,85 75,85 L25,85 Q15,85 15,75 Z" style={fillStyle} />
+          {/* Chart symbol on torso */}
+          <line x1="35" y1="70" x2="65" y2="70" stroke={color} strokeWidth="2" />
+          <rect x="38" y="55" width="6" height="15" fill={color} />
+          <rect x="47" y="45" width="6" height="25" fill={color} />
+          <rect x="56" y="50" width="6" height="20" fill={color} />
+          {/* Magnifying glass or pointing stick */}
+          <line x1="75" y1="40" x2="90" y2="25" stroke={color} strokeWidth="3" strokeLinecap="round" />
+        </svg>
+      );
+    case 'devops':
+      return (
+        <svg width={size} height={size} viewBox="0 0 100 100" style={{ margin: '0 auto' }}>
+          {/* Detailed DevOps Figure */}
+          <circle cx="50" cy="15" r="10" fill={color} />
+          <path d="M25,35 Q50,25 75,35 L85,75 Q85,85 75,85 L25,85 Q15,85 15,75 Z" style={fillStyle} />
+          {/* Gear/Infinity symbol on torso */}
+          <circle cx="42" cy="60" r="8" style={{ fill: 'none', stroke: color, strokeWidth: 2 }} />
+          <circle cx="58" cy="60" r="8" style={{ fill: 'none', stroke: color, strokeWidth: 2 }} />
+          <path d="M30,25 Q15,35 15,50 L25,50" style={bodyBaseStyle} />
+          <path d="M70,25 Q85,35 85,50 L75,50" style={bodyBaseStyle} />
+          {/* Wrench symbol */}
+          <path d="M65,40 L85,20 M80,15 L90,25" stroke={color} strokeWidth="3" strokeLinecap="round" />
+        </svg>
+      );
+    case 'architect':
+      return (
+        <svg width={size} height={size} viewBox="0 0 100 100" style={{ margin: '0 auto' }}>
+          <circle cx="50" cy="15" r="10" fill={color} />
+          <path d="M20,35 Q50,25 80,35 L90,75 Q90,85 80,85 L20,85 Q10,85 10,75 Z" style={fillStyle} />
+          {/* Blueprint/Structure lines */}
+          <rect x="35" y="45" width="30" height="30" style={{ fill: 'none', stroke: color, strokeWidth: 1.5 }} />
+          <line x1="35" y1="45" x2="65" y2="75" stroke={color} strokeWidth="1" />
+          <line x1="65" y1="45" x2="35" y2="75" stroke={color} strokeWidth="1" />
+          <circle cx="50" cy="60" r="4" fill={color} />
+        </svg>
+      );
+    case 'security-engineer':
+      return (
+        <svg width={size} height={size} viewBox="0 0 100 100" style={{ margin: '0 auto' }}>
+          <circle cx="50" cy="15" r="10" fill={color} />
+          <path d="M25,35 Q50,25 75,35 L85,75 Q85,85 75,85 L25,85 Q15,85 15,75 Z" style={fillStyle} />
+          {/* Shield/Shield-check on torso */}
+          <path d="M42,48 Q50,45 58,48 L58,60 Q50,68 42,60 Z" style={{ fill: 'none', stroke: color, strokeWidth: 1.5 }} />
+          <path d="M46,55 L49,58 L54,52" stroke={color} strokeWidth="1.5" fill="none" />
+          <path d="M30,85 L70,85 L80,95 L20,95 Z" fill={color} opacity="0.6" />
+        </svg>
+      );
+    case 'qa-engineer':
+      return (
+        <svg width={size} height={size} viewBox="0 0 100 100" style={{ margin: '0 auto' }}>
+          <circle cx="50" cy="15" r="10" fill={color} />
+          <path d="M25,35 Q50,25 75,35 L85,75 Q85,85 75,85 L25,85 Q15,85 15,75 Z" style={fillStyle} />
+          {/* Bug icon or Magnifying glass */}
+          <circle cx="50" cy="55" r="8" style={{ fill: 'none', stroke: color, strokeWidth: 1.5 }} />
+          <line x1="56" y1="61" x2="65" y2="70" stroke={color} strokeWidth="2" strokeLinecap="round" />
+          <path d="M46,55 L49,58 L54,52" stroke={color} strokeWidth="1.5" fill="none" />
+        </svg>
+      );
+    case 'dba':
+      return (
+        <svg width={size} height={size} viewBox="0 0 100 100" style={{ margin: '0 auto' }}>
+          <circle cx="50" cy="15" r="10" fill={color} />
+          <path d="M25,35 Q50,25 75,35 L85,75 Q85,85 75,85 L25,85 Q15,85 15,75 Z" style={fillStyle} />
+          {/* Database symbol on torso */}
+          <ellipse cx="50" cy="50" rx="12" ry="4" style={{ fill: 'none', stroke: color, strokeWidth: 1.5 }} />
+          <path d="M38,50 L38,65 Q50,70 62,65 L62,50" style={{ fill: 'none', stroke: color, strokeWidth: 1.5 }} />
+          <ellipse cx="50" cy="58" rx="12" ry="4" style={{ fill: 'none', stroke: color, strokeWidth: 1 }} opacity="0.5" />
+        </svg>
+      );
+    case 'designer':
+      return (
+        <svg width={size} height={size} viewBox="0 0 100 100" style={{ margin: '0 auto' }}>
+          <circle cx="50" cy="15" r="10" fill={color} />
+          <path d="M25,35 Q50,25 75,35 L85,75 Q85,85 75,85 L25,85 Q15,85 15,75 Z" style={fillStyle} />
+          {/* Palette or Bezier curve */}
+          <path d="M35,65 Q50,45 65,65" stroke={color} strokeWidth="2" fill="none" strokeDasharray="3,2" />
+          <circle cx="35" cy="65" r="3" fill={color} />
+          <circle cx="65" cy="65" r="3" fill={color} />
+          <circle cx="50" cy="45" r="3" fill={color} />
+          <path d="M45,75 L55,75" stroke={color} strokeWidth="3" strokeLinecap="round" />
+        </svg>
+      );
+    case 'sre-engineer':
+      return (
+        <svg width={size} height={size} viewBox="0 0 100 100" style={{ margin: '0 auto' }}>
+          <circle cx="50" cy="15" r="10" fill={color} />
+          <path d="M25,35 Q50,25 75,35 L85,75 Q85,85 75,85 L25,85 Q15,85 15,75 Z" style={fillStyle} />
+          {/* Heart rate / Pulse line */}
+          <path d="M35,65 L43,65 L48,45 L52,75 L57,65 L65,65" stroke={color} strokeWidth="2" fill="none" />
+          {/* Small gear icon */}
+          <circle cx="80" cy="40" r="5" style={{ fill: 'none', stroke: color, strokeWidth: 1.5 }} />
+        </svg>
+      );
+    case 'data-scientist':
+      return (
+        <svg width={size} height={size} viewBox="0 0 100 100" style={{ margin: '0 auto' }}>
+          <circle cx="50" cy="15" r="10" fill={color} />
+          <path d="M25,35 Q50,25 75,35 L85,75 Q85,85 75,85 L25,85 Q15,85 15,75 Z" style={fillStyle} />
+          {/* Atom or Network node symbol */}
+          <circle cx="50" cy="55" r="4" fill={color} />
+          <circle cx="38" cy="65" r="3" fill={color} />
+          <circle cx="62" cy="65" r="3" fill={color} />
+          <circle cx="50" cy="75" r="3" fill={color} />
+          <line x1="50" y1="55" x2="38" y2="65" stroke={color} strokeWidth="1" />
+          <line x1="50" y1="55" x2="62" y2="65" stroke={color} strokeWidth="1" />
+          <line x1="50" y1="55" x2="50" y2="75" stroke={color} strokeWidth="1" />
+        </svg>
+      );
+    case 'support':
+      return (
+        <svg width={size} height={size} viewBox="0 0 100 100" style={{ margin: '0 auto' }}>
+          <circle cx="50" cy="15" r="10" fill={color} />
+          <path d="M25,35 Q50,25 75,35 L85,75 Q85,85 75,85 L25,85 Q15,85 15,75 Z" style={fillStyle} />
+          {/* Headset symbol */}
+          <path d="M35,15 Q35,5 50,5 Q65,5 65,15" stroke={color} strokeWidth="2" fill="none" />
+          <rect x="30" y="15" width="6" height="10" rx="2" fill={color} />
+          <rect x="64" y="15" width="6" height="10" rx="2" fill={color} />
+          {/* Chat bubble on torso */}
+          <rect x="40" y="50" width="20" height="12" rx="3" style={{ fill: 'none', stroke: color, strokeWidth: 1.5 }} />
+          <path d="M45,62 L45,67 L50,62" fill={color} />
+        </svg>
+      );
+    case 'compliance-officer':
+      return (
+        <svg width={size} height={size} viewBox="0 0 100 100" style={{ margin: '0 auto' }}>
+          <circle cx="50" cy="15" r="10" fill={color} />
+          <path d="M25,35 Q50,25 75,35 L85,75 Q85,85 75,85 L25,85 Q15,85 15,75 Z" style={fillStyle} />
+          {/* Scales or Document symbol */}
+          <line x1="35" y1="50" x2="65" y2="50" stroke={color} strokeWidth="2" />
+          <path d="M35,50 L30,65 Q35,70 40,65 Z" style={{ fill: 'none', stroke: color, strokeWidth: 1 }} />
+          <path d="M65,50 L60,65 Q65,70 70,65 Z" style={{ fill: 'none', stroke: color, strokeWidth: 1 }} />
+          <line x1="50" y1="45" x2="50" y2="75" stroke={color} strokeWidth="2" />
+        </svg>
+      );
+    case 'product-manager':
+      return (
+        <svg width={size} height={size} viewBox="0 0 100 100" style={{ margin: '0 auto' }}>
+          <circle cx="50" cy="15" r="10" fill={color} />
+          <path d="M25,35 Q50,25 75,35 L85,75 Q85,85 75,85 L25,85 Q15,85 15,75 Z" style={fillStyle} />
+          {/* Checkbox/List symbol */}
+          <rect x="35" y="45" width="30" height="30" rx="3" style={{ fill: 'none', stroke: color, strokeWidth: 1.5 }} />
+          <path d="M42,60 L48,65 L58,55" stroke={color} strokeWidth="2" fill="none" />
+          <line x1="40" y1="75" x2="60" y2="75" stroke={color} strokeWidth="1" />
+        </svg>
+      );
+    case 'customer':
+      return (
+        <svg width={size} height={size} viewBox="0 0 100 100" style={{ margin: '0 auto' }}>
+          <circle cx="50" cy="15" r="10" fill={color} />
+          <path d="M20,35 Q50,30 80,35 L85,80 Q85,90 70,90 L30,90 Q15,90 15,80 Z" style={fillStyle} />
+          {/* Wallet/Money symbol */}
+          <circle cx="50" cy="60" r="12" style={{ fill: 'none', stroke: color, strokeWidth: 2 }} />
+          <text x="50" y="65" fill={color} fontSize="14" fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>$</text>
+        </svg>
+      );
+    case 'team':
+      return (
+        <svg width={size} height={size} viewBox="0 0 100 100" style={{ margin: '0 auto' }}>
+          {/* Multiple figures */}
+          <circle cx="35" cy="20" r="8" fill={color} />
+          <path d="M20,40 Q35,35 50,40 L55,75 Q55,82 45,82 L25,82 Q15,82 15,75 Z" style={fillStyle} />
+
+          <circle cx="65" cy="25" r="8" fill={color} />
+          <path d="M50,45 Q65,40 80,45 L85,80 Q85,87 75,87 L55,87 Q45,87 45,80 Z" style={{ ...fillStyle, fill: `${color}40` }} />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
+
+
 function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfigClick, onStatusChange }: CustomNodeProps) {
   const icon = componentIcons[data.type] || <Server size={32} />
-  const color = componentColors[data.type] || '#4dabf7'
+  const color = data.color || componentColors[data.type] || '#4dabf7'
   const [isEditing, setIsEditing] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
   const [label, setLabel] = useState(data.label)
@@ -585,6 +803,8 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
         return vendorLabels[data.authServiceConfig.vendor] || 'Auth'
       }
       return 'Auth Service'
+    } else if (data.type === 'image') {
+      return 'Изображение'
     } else if (data.type === 'firewall') {
       if (data.firewallConfig?.vendor) {
         const vendorLabels: Record<string, string> = {
@@ -1235,43 +1455,55 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
           }}
         >
           {/* Icon container with gradient background */}
-          <div
-            style={{
-              width: isMedium ? '40px' : '64px',
-              height: isMedium ? '40px' : '64px',
-              borderRadius: '16px',
-              background: `linear-gradient(135deg, ${color}20 0%, ${color}10 100%)`,
-              border: `1px solid ${color}30`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: color,
-              boxShadow: `0 8px 16px rgba(0,0,0,0.2)`,
-              position: 'relative',
-            }}
-          >
-            {React.isValidElement(icon)
-              ? React.cloneElement(icon as React.ReactElement, { size: isMedium ? 24 : 32 })
-              : icon}
-
-            {/* Status dot */}
-            {data.status === 'new' && (
+          {(() => {
+            const actorShape = getActorShape(data.type, color, isMedium ? 40 : 64);
+            if (actorShape) {
+              return (
+                <div style={{ marginBottom: '8px', transition: 'all 0.3s' }}>
+                  {actorShape}
+                </div>
+              );
+            }
+            return (
               <div
                 style={{
-                  position: 'absolute',
-                  top: '-4px',
-                  right: '-4px',
-                  width: '12px',
-                  height: '12px',
-                  borderRadius: '50%',
-                  backgroundColor: '#ffd43b',
-                  border: '2px solid #1e1e1e',
-                  boxShadow: '0 0 5px #ffd43b',
+                  width: isMedium ? '40px' : '64px',
+                  height: isMedium ? '40px' : '64px',
+                  borderRadius: '16px',
+                  background: `linear-gradient(135deg, ${color}20 0%, ${color}10 100%)`,
+                  border: `1px solid ${color}30`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: color,
+                  boxShadow: `0 8px 16px rgba(0,0,0,0.2)`,
+                  position: 'relative',
                 }}
-                title="Новый компонент"
-              />
-            )}
-          </div>
+              >
+                {React.isValidElement(icon)
+                  ? React.cloneElement(icon as React.ReactElement, { size: isMedium ? 24 : 32 })
+                  : icon}
+
+                {/* Status dot */}
+                {data.status === 'new' && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '-4px',
+                      right: '-4px',
+                      width: '12px',
+                      height: '12px',
+                      borderRadius: '50%',
+                      backgroundColor: '#ffd43b',
+                      border: '2px solid #1e1e1e',
+                      boxShadow: '0 0 5px #ffd43b',
+                    }}
+                    title="Новый компонент"
+                  />
+                )}
+              </div>
+            );
+          })()}
 
           {/* Label */}
           <div style={{ textAlign: 'center', width: '100%' }}>

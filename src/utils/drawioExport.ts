@@ -251,21 +251,106 @@ export function exportToDrawIO(nodes: Node[], edges: Edge[]): string {
     </tr>
   </table>
 </div>`
-    } else if (data.type === 'client') {
-      // Специальный формат для client - фигура человека: круг (голова) и округлый прямоугольник (тело)
-      const nodeLabel = typeof node.data.label === 'string' ? node.data.label : 'Клиент'
-      // Не добавляем текстовый префикс статуса - только цветовое обозначение
+    } else if (data.type === 'client' || data.type === 'customer' || data.type === 'developer' || data.type === 'analyst' || data.type === 'devops' || data.type === 'architect' || data.type === 'product-manager') {
+      // Специальный формат для client и других акторов (одиночных)
+      const defaultLabel = data.type === 'client' ? 'Клиент' :
+        data.type === 'customer' ? 'Заказчик' :
+          data.type === 'developer' ? 'Разработчик' :
+            data.type === 'analyst' ? 'Аналитик' :
+              data.type === 'devops' ? 'DevOps' :
+                data.type === 'architect' ? 'Архитектор' : 'PM';
+
+      const nodeLabel = typeof node.data.label === 'string' ? node.data.label : defaultLabel
       const escapedLabel = escapeXml(String(nodeLabel))
 
-      const clientBgColor = isNew ? '#FF9999' : '#4dabf7'
+      const clientBgColor = isNew ? '#FF9999' :
+        data.type === 'client' ? '#4dabf7' :
+          data.type === 'customer' ? '#ff8787' :
+            data.type === 'developer' ? '#ae3ec9' :
+              data.type === 'analyst' ? '#ffd43b' :
+                data.type === 'devops' ? '#f03e3e' :
+                  data.type === 'architect' ? '#be4bdb' :
+                    data.type === 'product-manager' ? '#20c997' :
+                      '#4dabf7';
 
-      // Создаем HTML для фигуры человека: круг сверху (голова) и округлый прямоугольник снизу (тело)
-      // Голова поднята выше, тело с сильно закругленными углами
+      // Определяем иконку профессии (SVG)
+      let professionBadge = '';
+      const badgeStyle = "position:absolute;top:-80px;right:25%;width:32px;height:32px;background-color:#ffffff;border:2px solid #2E5C8A;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:3;box-shadow: 1px 1px 3px rgba(0,0,0,0.2);";
+
+      if (data.type === 'developer') {
+        // Код (</>)
+        professionBadge = `<div style="${badgeStyle}">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2E5C8A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+        </div>`;
+      } else if (data.type === 'analyst') {
+        // График
+        professionBadge = `<div style="${badgeStyle}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2E5C8A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+        </div>`;
+      } else if (data.type === 'devops') {
+        // Шестеренка
+        professionBadge = `<div style="${badgeStyle}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2E5C8A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        </div>`;
+      } else if (data.type === 'architect') {
+        // Схема / Иерархия
+        professionBadge = `<div style="${badgeStyle}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2E5C8A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+        </div>`;
+      } else if (data.type === 'product-manager') {
+        // Чеклист / План
+        professionBadge = `<div style="${badgeStyle}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2E5C8A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+        </div>`;
+      } else if (data.type === 'customer') {
+        // Знак доллара
+        professionBadge = `<div style="${badgeStyle}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2E5C8A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+        </div>`;
+      }
+
       label = `<div style="width:100%;height:100%;position:relative;margin:0;padding:0;overflow:visible;">
-  <!-- Голова (круг) - поднята еще выше, по центру, увеличенный размер -->
   <div style="position:absolute;top:-115px;left:50%;margin-left:-35px;width:70px;height:70px;background-color:${clientBgColor};border:2px solid #2E5C8A;border-radius:50%;z-index:2;"></div>
-  <!-- Тело (прямоугольник с закругленными углами) - начинается под головой -->
+  ${professionBadge}
   <div style="position:absolute;top:15px;left:0;right:0;bottom:0;background-color:${clientBgColor};border:2px solid #2E5C8A;border-top-left-radius:15px !important;border-top-right-radius:15px !important;border-bottom-left-radius:15px !important;border-bottom-right-radius:15px !important;">
+    <table cellpadding="0" cellspacing="0" border="0" style="width:100%;height:100%;border-collapse:collapse;margin:0;padding:0;">
+      <tr>
+        <td style="vertical-align:middle;text-align:center;color:${textColor};font-weight:bold;font-size:14px;font-family:Arial,sans-serif;padding:8px;margin:0;">
+          ${escapedLabel}
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>`
+    } else if (data.type === 'team') {
+      // Специальный формат для Team - несколько человечков (3 фигуры)
+      const nodeLabel = typeof node.data.label === 'string' ? node.data.label : 'Команда'
+      const escapedLabel = escapeXml(String(nodeLabel))
+      const teamColor = isNew ? '#FF9999' : '#4dabf7';
+
+      // Создаем 3 перекрывающиеся фигуры
+      // Задняя левая
+      const figure1 = `<div style="position:absolute;top:-95px;left:50%;margin-left:-65px;z-index:1;transform:scale(0.85);">
+        <div style="width:70px;height:70px;background-color:${teamColor};border:2px solid #2E5C8A;border-radius:50%;margin:0 auto;margin-bottom:-15px;"></div>
+        <div style="width:80px;height:60px;background-color:${teamColor};border:2px solid #2E5C8A;border-radius:15px;"></div>
+      </div>`;
+
+      // Задняя правая
+      const figure2 = `<div style="position:absolute;top:-95px;left:50%;margin-left:15px;z-index:1;transform:scale(0.85);">
+        <div style="width:70px;height:70px;background-color:${teamColor};border:2px solid #2E5C8A;border-radius:50%;margin:0 auto;margin-bottom:-15px;"></div>
+        <div style="width:80px;height:60px;background-color:${teamColor};border:2px solid #2E5C8A;border-radius:15px;"></div>
+      </div>`;
+
+      // Передняя центральная (основная)
+      const figure3 = `<div style="position:absolute;top:-85px;left:50%;margin-left:-35px;z-index:3;">
+        <div style="width:70px;height:70px;background-color:${teamColor};border:2px solid #2E5C8A;border-radius:50%;margin:0 auto;margin-bottom:-15px;"></div>
+      </div>`;
+
+      label = `<div style="width:100%;height:100%;position:relative;margin:0;padding:0;overflow:visible;">
+  ${figure1}
+  ${figure2}
+  ${figure3}
+  <div style="position:absolute;top:15px;left:0;right:0;bottom:0;background-color:${teamColor};border:2px solid #2E5C8A;border-top-left-radius:15px !important;border-top-right-radius:15px !important;border-bottom-left-radius:15px !important;border-bottom-right-radius:15px !important;z-index:3;">
     <table cellpadding="0" cellspacing="0" border="0" style="width:100%;height:100%;border-collapse:collapse;margin:0;padding:0;">
       <tr>
         <td style="vertical-align:middle;text-align:center;color:${textColor};font-weight:bold;font-size:14px;font-family:Arial,sans-serif;padding:8px;margin:0;">
@@ -328,10 +413,10 @@ export function exportToDrawIO(nodes: Node[], edges: Edge[]): string {
       }
     }
 
-    // Для frontend, service и client используем HTML напрямую (он уже в правильном формате)
+    // Для frontend, service и client (и других акторов) используем HTML напрямую (он уже в правильном формате)
     // Для остальных компонентов экранируем как XML
     let escapedLabel: string
-    if (data.type === 'frontend' || data.type === 'service' || data.type === 'client') {
+    if (data.type === 'frontend' || data.type === 'service' || data.type === 'client' || data.type === 'customer' || data.type === 'developer' || data.type === 'analyst' || data.type === 'devops' || data.type === 'architect' || data.type === 'product-manager' || data.type === 'team') {
       // HTML для frontend, service и client уже готов, экранируем только специальные XML символы
       escapedLabel = label
         .replace(/&/g, '&amp;')

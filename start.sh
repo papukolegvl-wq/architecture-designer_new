@@ -7,13 +7,13 @@ echo "🚀 Запуск Architecture Designer..."
 echo "📁 Директория: $(pwd)"
 
 # Проверяем, не запущен ли уже сервер
-if netstat -tln 2>/dev/null | grep -q ":5173" || ss -tln 2>/dev/null | grep -q ":5173"; then
-    echo "⚠️  Сервер уже запущен на порту 5173"
+if netstat -tln 2>/dev/null | grep -q ":5500" || ss -tln 2>/dev/null | grep -q ":5500"; then
+    echo "⚠️  Сервер уже запущен на порту 5500"
     echo "🌐 Открываю браузер..."
     if command -v xdg-open > /dev/null; then
-        xdg-open http://localhost:5173 2>/dev/null &
+        xdg-open http://localhost:5500 2>/dev/null &
     elif command -v gnome-open > /dev/null; then
-        gnome-open http://localhost:5173 2>/dev/null &
+        gnome-open http://localhost:5500 2>/dev/null &
     fi
     echo "✅ Приложение должно открыться в браузере"
     echo "💡 Если нужно перезапустить сервер, закройте текущий процесс и запустите снова"
@@ -34,18 +34,18 @@ echo "⏳ Ожидание запуска сервера..."
 npm run dev &
 DEV_PID=$!
 
-# Ждем, пока сервер запустится (проверяем порт 5173)
+# Ждем, пока сервер запустится (проверяем порт 5500)
 MAX_WAIT=30
 WAIT_COUNT=0
 while [ $WAIT_COUNT -lt $MAX_WAIT ]; do
-    if netstat -tln 2>/dev/null | grep -q ":5173" || ss -tln 2>/dev/null | grep -q ":5173"; then
-        echo "✅ Сервер запущен на http://localhost:5173"
+    if netstat -tln 2>/dev/null | grep -q ":5500" || ss -tln 2>/dev/null | grep -q ":5500"; then
+        echo "✅ Сервер запущен на http://localhost:5500"
         sleep 1
         # Пытаемся открыть браузер
         if command -v xdg-open > /dev/null; then
-            xdg-open http://localhost:5173 2>/dev/null &
+            xdg-open http://localhost:5500 2>/dev/null &
         elif command -v gnome-open > /dev/null; then
-            gnome-open http://localhost:5173 2>/dev/null &
+            gnome-open http://localhost:5500 2>/dev/null &
         fi
         break
     fi

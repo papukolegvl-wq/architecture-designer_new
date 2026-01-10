@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Node } from 'reactflow'
 import { ComponentData, BatchProcessorVendor } from '../types'
+import ColorPicker from './ColorPicker'
 
 interface BatchProcessorConfigPanelProps {
     node: Node
@@ -8,6 +9,7 @@ interface BatchProcessorConfigPanelProps {
         vendor: BatchProcessorVendor
         jobCount?: number
         schedule?: string
+        color?: string
     }) => void
     onClose: () => void
 }
@@ -43,6 +45,7 @@ export default function BatchProcessorConfigPanel({
     const [schedule, setSchedule] = useState<string | undefined>(
         data.batchProcessorConfig?.schedule
     )
+    const [color, setColor] = useState<string | undefined>(data.color)
 
     useEffect(() => {
         if (!vendor && vendors.length > 0) {
@@ -56,6 +59,7 @@ export default function BatchProcessorConfigPanel({
                 vendor,
                 jobCount,
                 schedule,
+                color: color || data.color
             })
         }
         onClose()
@@ -214,6 +218,8 @@ export default function BatchProcessorConfigPanel({
                     }}
                 />
             </div>
+
+            <ColorPicker currentColor={color} onColorSelect={setColor} />
 
             <div style={{ display: 'flex', gap: '10px' }}>
                 <button

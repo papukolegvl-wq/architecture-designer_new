@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Node } from 'reactflow'
 import { ComponentData, MessageBrokerVendor, MessageDeliveryType } from '../types'
+import ColorPicker from './ColorPicker'
 
 interface MessageBrokerConfigPanelProps {
   node: Node
-  onUpdate: (nodeId: string, config: { vendor: MessageBrokerVendor; deliveryType: MessageDeliveryType }) => void
+  onUpdate: (nodeId: string, config: { vendor: MessageBrokerVendor; deliveryType: MessageDeliveryType; color?: string }) => void
   onClose: () => void
   onOpenMessagesPanel?: (nodeId: string, addExample?: boolean) => void
 }
@@ -39,6 +40,7 @@ export default function MessageBrokerConfigPanel({
   const [deliveryType, setDeliveryType] = useState<MessageDeliveryType>(
     data.messageBrokerConfig?.deliveryType || 'pub-sub'
   )
+  const [color, setColor] = useState<string | undefined>(data.color)
 
   useEffect(() => {
     // Автоматически выбираем первый vendor если не выбран
@@ -49,7 +51,7 @@ export default function MessageBrokerConfigPanel({
 
   const handleSave = () => {
     if (vendor) {
-      onUpdate(node.id, { vendor, deliveryType })
+      onUpdate(node.id, { vendor, deliveryType, color: color || data.color })
     }
     onClose()
   }
@@ -197,6 +199,8 @@ export default function MessageBrokerConfigPanel({
           ))}
         </div>
       </div>
+
+      <ColorPicker currentColor={color} onColorSelect={setColor} />
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         <div style={{ display: 'flex', gap: '10px' }}>

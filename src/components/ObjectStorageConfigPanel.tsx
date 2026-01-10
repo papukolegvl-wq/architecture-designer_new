@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Node } from 'reactflow'
 import { ComponentData, ObjectStorageVendor } from '../types'
+import ColorPicker from './ColorPicker'
 
 interface ObjectStorageConfigPanelProps {
   node: Node
-  onUpdate: (nodeId: string, config: { vendor: ObjectStorageVendor }) => void
+  onUpdate: (nodeId: string, config: { vendor: ObjectStorageVendor; color?: string }) => void
   onClose: () => void
 }
 
@@ -24,6 +25,7 @@ export default function ObjectStorageConfigPanel({
   const [vendor, setVendor] = useState<ObjectStorageVendor | undefined>(
     data.objectStorageConfig?.vendor
   )
+  const [color, setColor] = useState<string | undefined>(data.color)
 
   useEffect(() => {
     if (!vendor && vendors.length > 0) {
@@ -33,7 +35,7 @@ export default function ObjectStorageConfigPanel({
 
   const handleSave = () => {
     if (vendor) {
-      onUpdate(node.id, { vendor })
+      onUpdate(node.id, { vendor, color: color || data.color })
     }
     onClose()
   }
@@ -133,6 +135,8 @@ export default function ObjectStorageConfigPanel({
           ))}
         </div>
       </div>
+
+      <ColorPicker currentColor={color} onColorSelect={setColor} />
 
       <div style={{ display: 'flex', gap: '10px' }}>
         <button

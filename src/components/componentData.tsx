@@ -1,10 +1,11 @@
 import React from 'react'
 import { ComponentType } from '../types'
+import { getActorShape } from './CustomNode'
 import {
     Server, Database, MessageSquare, Globe, HardDrive, Cloud, Zap, Shield, Loader, Box, Warehouse, Lock, Network, Layers, GitBranch, User, ExternalLink, Building2, Settings, Archive, Code, Search, Activity, FileText, BarChart3, Clock, Key, FileCode, Cpu, Wifi, Mail, MessageCircle, Link as LinkIcon, Package, Brain, Bot, Workflow, Sparkles, ShieldAlert, ShieldCheck, Eye, Book, ArrowLeftRight, History, Waves, Repeat, LayoutDashboard, CreditCard, Calendar, Share2, ArrowRightLeft, Fingerprint, Video, Briefcase, Wallet, FileSearch, Binary, Globe2, Map as MapIcon, Users, Flag, HeartPulse, Settings2
 } from 'lucide-react'
 
-export type ComponentCategory = 'all' | 'infrastructure' | 'data' | 'security' | 'development' | 'monitoring' | 'integration' | 'communication' | 'text' | 'ai' | 'data-engineering' | 'business' | 'aws' | 'azure' | 'gcp' | 'oracle' | 'devops'
+export type ComponentCategory = 'all' | 'infrastructure' | 'data' | 'security' | 'development' | 'monitoring' | 'integration' | 'communication' | 'text' | 'ai' | 'data-engineering' | 'business' | 'aws' | 'azure' | 'gcp' | 'oracle' | 'devops' | 'actors'
 
 export interface Component {
     id: string
@@ -265,6 +266,23 @@ export const components: Component[] = [
     { id: 'gen-governance', type: 'data-governance', label: 'Data Governance', icon: <Shield size={24} />, color: '#51cf66', category: 'data-engineering' },
     { id: 'gen-schema-reg', type: 'schema-registry', label: 'Schema Registry', icon: <FileCode size={24} />, color: '#ffd43b', category: 'data-engineering' },
     { id: 'gen-mdm', type: 'master-data-management', label: 'MDM', icon: <Database size={24} />, color: '#339af0', category: 'data-engineering' },
+
+    // --- Actors / Team ---
+    { id: 'actor-customer', type: 'customer', label: 'Заказчик', icon: getActorShape('customer', '#ff8787', 24), color: '#ff8787', category: 'actors' },
+    { id: 'actor-developer', type: 'developer', label: 'Разработчик', icon: getActorShape('developer', '#ae3ec9', 24), color: '#ae3ec9', category: 'actors' },
+    { id: 'actor-analyst', type: 'analyst', label: 'Аналитик', icon: getActorShape('analyst', '#ffd43b', 24), color: '#ffd43b', category: 'actors' },
+    { id: 'actor-devops', type: 'devops', label: 'DevOps', icon: getActorShape('devops', '#f03e3e', 24), color: '#f03e3e', category: 'actors' },
+    { id: 'actor-architect', type: 'architect', label: 'Архитектор', icon: getActorShape('architect', '#be4bdb', 24), color: '#be4bdb', category: 'actors' },
+    { id: 'actor-pm', type: 'product-manager', label: 'Product Manager', icon: getActorShape('product-manager', '#20c997', 24), color: '#20c997', category: 'actors' },
+    { id: 'actor-team', type: 'team', label: 'Команда', icon: getActorShape('team', '#4dabf7', 24), color: '#4dabf7', category: 'actors' },
+    { id: 'actor-security', type: 'security-engineer', label: 'Security Engineer', icon: getActorShape('security-engineer', '#f03e3e', 24), color: '#f03e3e', category: 'actors' },
+    { id: 'actor-qa', type: 'qa-engineer', label: 'QA Engineer', icon: getActorShape('qa-engineer', '#37b24d', 24), color: '#37b24d', category: 'actors' },
+    { id: 'actor-dba', type: 'dba', label: 'DBA', icon: getActorShape('dba', '#1c7ed6', 24), color: '#1c7ed6', category: 'actors' },
+    { id: 'actor-designer', type: 'designer', label: 'UX/UI Designer', icon: getActorShape('designer', '#f06595', 24), color: '#f06595', category: 'actors' },
+    { id: 'actor-sre', type: 'sre-engineer', label: 'SRE Engineer', icon: getActorShape('sre-engineer', '#495057', 24), color: '#495057', category: 'actors' },
+    { id: 'actor-data', type: 'data-scientist', label: 'Data Scientist', icon: getActorShape('data-scientist', '#7950f2', 24), color: '#7950f2', category: 'actors' },
+    { id: 'actor-support', type: 'support', label: 'Support', icon: getActorShape('support', '#15aabf', 24), color: '#15aabf', category: 'actors' },
+    { id: 'actor-compliance', type: 'compliance-officer', label: 'Compliance', icon: getActorShape('compliance-officer', '#fd7e14', 24), color: '#fd7e14', category: 'actors' },
 ]
 
 export const categoryLabels: Record<ComponentCategory, string> = {
@@ -285,4 +303,5 @@ export const categoryLabels: Record<ComponentCategory, string> = {
     gcp: 'Google Cloud',
     oracle: 'Oracle Cloud',
     devops: 'DevOps',
+    actors: 'Акторы и Роли',
 }

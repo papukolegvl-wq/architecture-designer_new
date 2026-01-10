@@ -25,6 +25,7 @@ const connectionTypes: Array<{ value: ConnectionType; label: string; description
   { value: 'aggregation', label: 'Агрегация', description: 'Агрегация (слабая связь)' },
   { value: 'method-call', label: 'Вызов метода', description: 'Вызов метода класса' },
   { value: 'inheritance', label: 'Наследование', description: 'Наследование класса' },
+  { value: 'relationship', label: 'Имеет отношение', description: 'Общая связь/отношение между компонентами' },
 ]
 
 const architecturalTypes: Array<{ value: ConnectionType; label: string; description: string }> = [
@@ -33,6 +34,7 @@ const architecturalTypes: Array<{ value: ConnectionType; label: string; descript
   { value: 'aggregation', label: 'Агрегация', description: 'Агрегация (слабая связь)' },
   { value: 'method-call', label: 'Вызов метода', description: 'Вызов метода класса' },
   { value: 'inheritance', label: 'Наследование', description: 'Наследование класса' },
+  { value: 'relationship', label: 'Имеет отношение', description: 'Общая связь/отношение между компонентами' },
 ]
 
 export default function ConnectionTypeSelector({
@@ -62,6 +64,7 @@ export default function ConnectionTypeSelector({
         return [
           { value: 'method-call' as ConnectionType, label: 'Вызов метода', description: 'Контроллер вызывает методы класса' },
           { value: 'dependency' as ConnectionType, label: 'Зависимость', description: 'Контроллер зависит от класса' },
+          { value: 'relationship' as ConnectionType, label: 'Имеет отношение', description: 'Связь между компонентами' },
         ]
       }
       // Для class-repository показываем dependency, composition, aggregation
@@ -70,6 +73,7 @@ export default function ConnectionTypeSelector({
           { value: 'dependency' as ConnectionType, label: 'Зависимость', description: 'Класс зависит от репозитория' },
           { value: 'composition' as ConnectionType, label: 'Композиция', description: 'Класс содержит репозиторий (часть-целое)' },
           { value: 'aggregation' as ConnectionType, label: 'Агрегация', description: 'Класс использует репозиторий (слабая связь)' },
+          { value: 'relationship' as ConnectionType, label: 'Имеет отношение', description: 'Связь между компонентами' },
         ]
       }
       // Для class-class показываем inheritance, dependency, composition
@@ -78,13 +82,7 @@ export default function ConnectionTypeSelector({
           { value: 'inheritance' as ConnectionType, label: 'Наследование', description: 'Наследование класса' },
           { value: 'dependency' as ConnectionType, label: 'Зависимость', description: 'Зависимость между классами' },
           { value: 'composition' as ConnectionType, label: 'Композиция', description: 'Композиция (часть-целое)' },
-        ]
-      }
-      // Для controller-repository показываем dependency
-      if ((sourceData.type === 'controller' && targetData.type === 'repository') ||
-        (sourceData.type === 'repository' && targetData.type === 'controller')) {
-        return [
-          { value: 'dependency' as ConnectionType, label: 'Зависимость', description: 'Зависимость между компонентами' },
+          { value: 'relationship' as ConnectionType, label: 'Имеет отношение', description: 'Связь между компонентами' },
         ]
       }
       // Для остальных архитектурных соединений показываем все архитектурные типы
@@ -94,9 +92,15 @@ export default function ConnectionTypeSelector({
         description: type.description,
       }))
     }
-    // Для остальных соединений показываем стандартные типы (включая bidirectional и async-bidirectional)
+
+    // Для остальных соединений показываем все типы
+    // Исключаем только очень специфические архитектурные если они не подходят,
+    // но в данном приложении мы разрешаем всё.
+    // Однако, для чистоты UI отфильтруем типы, которые обычно не используются вне кода.
+
+    // ДОБАВЛЯЕМ 'relationship' во все списки
     const filtered = connectionTypes.filter(type =>
-      !['dependency', 'composition', 'aggregation', 'method-call', 'inheritance'].includes(type.value)
+      !['dependency', 'composition', 'aggregation', 'method-call', 'inheritance'].includes(type.value) || type.value === 'relationship'
     )
 
     // Если оба - таблицы, добавляем специальные типы для БД
@@ -107,7 +111,8 @@ export default function ConnectionTypeSelector({
       ]
     }
 
-    console.log('📋 Доступные типы соединений:', filtered.map(t => t.value))
+    // Если один из них Team (команда), убедимся что Relationship доступен (он и так в filtered теперь)
+
     return filtered
   }, [isArchitecturalConnection, sourceData.type, targetData.type])
 
@@ -123,8 +128,6 @@ export default function ConnectionTypeSelector({
       onSelect(selectedType, (sourceData.type === 'table' && targetData.type === 'table') ? relationshipType : undefined)
     }
   }
-
-  // Диалог ошибки больше не показывается - все соединения разрешены
 
   return (
     <div
@@ -153,7 +156,7 @@ export default function ConnectionTypeSelector({
           <strong style={{ color: '#fff' }}>К:</strong> {targetData.label}
         </div>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px', maxHeight: '400px', overflowY: 'auto', paddingRight: '5px' }}>
         {availableTypes.map((type) => (
           <label
             key={type.value}
@@ -162,10 +165,10 @@ export default function ConnectionTypeSelector({
               alignItems: 'center',
               gap: '12px',
               cursor: 'pointer',
-              padding: '12px',
+              padding: '10px',
               borderRadius: '8px',
-              backgroundColor: selectedType === type.value ? '#3d3d3d' : 'transparent',
-              border: `2px solid ${selectedType === type.value ? '#4dabf7' : '#555'}`,
+              backgroundColor: selectedType === type.value ? 'rgba(77, 171, 247, 0.1)' : 'transparent',
+              border: `1px solid ${selectedType === type.value ? '#4dabf7' : '#444'}`,
               transition: 'all 0.2s',
             }}
             onClick={() => setSelectedType(type.value)}
@@ -179,10 +182,10 @@ export default function ConnectionTypeSelector({
               style={{ cursor: 'pointer' }}
             />
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '15px', fontWeight: '600', color: '#fff', marginBottom: '2px' }}>
+              <div style={{ fontSize: '14px', fontWeight: '600', color: '#fff', marginBottom: '2px' }}>
                 {type.label}
               </div>
-              <div style={{ fontSize: '12px', color: '#aaa' }}>{type.description}</div>
+              <div style={{ fontSize: '11px', color: '#888' }}>{type.description}</div>
             </div>
           </label>
         ))}
@@ -220,20 +223,22 @@ export default function ConnectionTypeSelector({
           style={{
             flex: 1,
             padding: '12px',
-            backgroundColor: '#555',
-            color: 'white',
-            border: 'none',
+            backgroundColor: 'transparent',
+            color: '#aaa',
+            border: '1px solid #555',
             borderRadius: '6px',
             cursor: 'pointer',
             fontSize: '14px',
             fontWeight: '500',
-            transition: 'background-color 0.2s',
+            transition: 'all 0.2s',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#666'
+            e.currentTarget.style.borderColor = '#888'
+            e.currentTarget.style.color = '#fff'
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#555'
+            e.currentTarget.style.borderColor = '#555'
+            e.currentTarget.style.color = '#aaa'
           }}
         >
           Отмена
@@ -244,7 +249,7 @@ export default function ConnectionTypeSelector({
           style={{
             flex: 1,
             padding: '12px',
-            backgroundColor: selectedType ? '#4dabf7' : '#555',
+            backgroundColor: selectedType ? '#4dabf7' : '#333',
             color: 'white',
             border: 'none',
             borderRadius: '6px',
@@ -252,17 +257,6 @@ export default function ConnectionTypeSelector({
             fontSize: '14px',
             fontWeight: '500',
             transition: 'background-color 0.2s',
-            opacity: selectedType ? 1 : 0.5,
-          }}
-          onMouseEnter={(e) => {
-            if (selectedType) {
-              e.currentTarget.style.backgroundColor = '#339af0'
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (selectedType) {
-              e.currentTarget.style.backgroundColor = '#4dabf7'
-            }
           }}
         >
           Создать
@@ -271,4 +265,3 @@ export default function ConnectionTypeSelector({
     </div>
   )
 }
-

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Node } from 'reactflow'
 import { ComponentData } from '../types'
+import ColorPicker from './ColorPicker'
 
 export interface VendorOption {
     value: string
@@ -29,9 +30,7 @@ export default function GenericComponentConfigPanel({
     const config = data[configKey] as any || {}
 
     const [vendor, setVendor] = useState<string | undefined>(config.vendor)
-
-    // Generic state for other common fields could go here, 
-    // but we focus on Vendor as per request.
+    const [color, setColor] = useState<string | undefined>(data.color)
 
     useEffect(() => {
         if (!vendor && vendorList.length > 0) {
@@ -40,12 +39,14 @@ export default function GenericComponentConfigPanel({
     }, [vendor, vendorList])
 
     const handleSave = () => {
-        if (vendor) {
-            onUpdate(node.id, {
-                ...config,
-                vendor,
-            })
-        }
+        const updates: any = { ...config }
+        if (vendor) updates.vendor = vendor
+
+        onUpdate(node.id, {
+            ...data,
+            [configKey]: updates,
+            color: color || data.color
+        })
         onClose()
     }
 
@@ -146,6 +147,8 @@ export default function GenericComponentConfigPanel({
                     ))}
                 </div>
             </div>
+
+            <ColorPicker currentColor={color} onColorSelect={setColor} />
 
             <div style={{ display: 'flex', gap: '10px' }}>
                 <button

@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react'
 import { Node } from 'reactflow'
 import { ComponentData, ProxyVendor } from '../types'
+import ColorPicker from './ColorPicker'
 
 interface ProxyConfigPanelProps {
   node: Node
-  onUpdate: (nodeId: string, config: { 
+  onUpdate: (nodeId: string, config: {
     vendor: ProxyVendor
     proxyType?: 'forward' | 'reverse' | 'transparent'
     rulesCount?: number
+    color?: string
   }) => void
   onClose: () => void
 }
@@ -41,6 +43,7 @@ export default function ProxyConfigPanel({
   const [rulesCount, setRulesCount] = useState<number | undefined>(
     data.proxyConfig?.rulesCount
   )
+  const [color, setColor] = useState<string | undefined>(data.color)
 
   useEffect(() => {
     if (!vendor && vendors.length > 0) {
@@ -50,10 +53,11 @@ export default function ProxyConfigPanel({
 
   const handleSave = () => {
     if (vendor) {
-      onUpdate(node.id, { 
+      onUpdate(node.id, {
         vendor,
         proxyType,
         rulesCount,
+        color: color || data.color
       })
     }
     onClose()
@@ -231,6 +235,8 @@ export default function ProxyConfigPanel({
           }}
         />
       </div>
+
+      <ColorPicker currentColor={color} onColorSelect={setColor} />
 
       <div style={{ display: 'flex', gap: '10px' }}>
         <button

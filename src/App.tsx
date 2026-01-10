@@ -15,6 +15,8 @@ import ReactFlow, {
   ReactFlowInstance,
   ConnectionMode,
   SelectionMode,
+  NodeChange,
+  EdgeChange,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 import ComponentPalette from './components/ComponentPalette'
@@ -26,6 +28,7 @@ import ContainerNode from './components/ContainerNode'
 import ServerNode from './components/ServerNode'
 import GroupNode from './components/GroupNode'
 import NoteNode from './components/NoteNode'
+import ImageNode from './components/ImageNode'
 import AnimatedEdge from './components/AnimatedEdge'
 import StatisticsPanel from './components/StatisticsPanel'
 import VectorDatabaseConfigPanel from './components/VectorDatabaseConfigPanel'
@@ -89,6 +92,7 @@ import { saveToDrawIOFile } from './utils/drawioExport'
 import html2canvas from 'html2canvas'
 import { useScreenRecorder } from './hooks/useScreenRecorder'
 import { RegionSelector } from './components/RegionSelector'
+
 
 const edgeTypes = {
   animated: AnimatedEdge,
@@ -155,6 +159,13 @@ const GENERIC_COMPONENTS: Record<string, { configKey: string, vendors: VendorOpt
   'container-registry': { configKey: 'containerRegistryConfig', vendors: Vendors.containerRegistryVendors, title: 'Container Registry' },
   'batch-processor': { configKey: 'batchProcessorConfig', vendors: Vendors.batchProcessorVendors, title: 'Пакетный обработчик' },
   'client': { configKey: 'clientConfig', vendors: Vendors.clientVendors, title: 'Клиент' },
+  'customer': { configKey: 'clientConfig', vendors: Vendors.clientVendors, title: 'Заказчик' },
+  'developer': { configKey: 'clientConfig', vendors: Vendors.clientVendors, title: 'Разработчик' },
+  'analyst': { configKey: 'clientConfig', vendors: Vendors.clientVendors, title: 'Аналитик' },
+  'devops': { configKey: 'clientConfig', vendors: Vendors.clientVendors, title: 'DevOps' },
+  'architect': { configKey: 'clientConfig', vendors: Vendors.clientVendors, title: 'Архитектор' },
+  'product-manager': { configKey: 'clientConfig', vendors: Vendors.clientVendors, title: 'Product Manager' },
+  'team': { configKey: 'clientConfig', vendors: Vendors.clientVendors, title: 'Команда' },
   'vcs': { configKey: 'vcsConfig', vendors: Vendors.vcsVendors, title: 'Система контроля версий' },
 }
 
@@ -163,6 +174,7 @@ function App() {
   const activeWorkspace = workspaces.find(w => w.id === activeWorkspaceId)
   const { startRecording, stopRecording, isRecording } = useScreenRecorder()
   const [isSelectingRegion, setIsSelectingRegion] = useState(false)
+
 
 
   const [nodes, setNodes, onNodesChange] = useNodesState(activeWorkspace?.nodes || [])
@@ -222,12 +234,12 @@ function App() {
     })
   }, []) // Выполняем только один раз при монтировании
 
-  const handleEdgesChange = useCallback((changes: any) => {
+  const handleEdgesChange = useCallback((changes: EdgeChange[]) => {
     if (activeWorkspace?.isLocked) return
     onEdgesChange(changes)
   }, [onEdgesChange, activeWorkspace?.isLocked])
 
-  const handleNodesChange = useCallback((changes: any) => {
+  const handleNodesChange = useCallback((changes: NodeChange[]) => {
     if (activeWorkspace?.isLocked) return
     onNodesChange(changes)
   }, [onNodesChange, activeWorkspace?.isLocked])
@@ -931,52 +943,6 @@ function App() {
     }
   }, [nodes])
 
-  // Обработчик горячих клавиш для Undo/Redo и управления
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Игнорируем, если фокус в поле ввода (но пропускаем для Escape если нужно)
-      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
-        return
-      }
-
-      const isCtrl = event.ctrlKey || event.metaKey
-      const isShift = event.shiftKey
-      const key = event.key.toLowerCase()
-      const code = event.code
-
-      // Ctrl + Z = Undo (поддержка разных раскладок через code и русский 'я')
-      if (isCtrl && !isShift && (key === 'z' || key === 'я' || code === 'KeyZ')) {
-        event.preventDefault()
-        undo()
-      }
-
-      // Ctrl + Y или Ctrl + Shift + Z = Redo
-      if ((isCtrl && !isShift && (key === 'y' || key === 'н' || code === 'KeyY')) ||
-        (isCtrl && isShift && (key === 'z' || key === 'я' || code === 'KeyZ'))) {
-        event.preventDefault()
-        redo()
-      }
-
-      // Пробел для панорамирования
-      if (code === 'Space' && !isSpacePressed) {
-        // Мы не делаем preventDefault для пробела везде, только если нужно
-        setIsSpacePressed(true)
-      }
-    }
-
-    const handleKeyUp = (event: KeyboardEvent) => {
-      if (event.code === 'Space') {
-        setIsSpacePressed(false)
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    window.addEventListener('keyup', handleKeyUp)
-    return () => {
-      window.removeEventListener('keydown', handleKeyUp)
-      window.removeEventListener('keyup', handleKeyUp)
-    }
-  }, [undo, redo, isSpacePressed])
 
   const addComponent = useCallback(
     (type: ComponentType, position?: { x: number; y: number }, vendor?: string, customLabel?: string) => {
@@ -1940,11 +1906,13 @@ function App() {
     updateNodesWithHistory((nds) =>
       nds.map((node) => {
         if (node.id === nodeId) {
+          const { color, ...restConfig } = config
           return {
             ...node,
             data: {
               ...node.data,
-              vectorDatabaseConfig: config,
+              vectorDatabaseConfig: restConfig,
+              ...(config.hasOwnProperty('color') && { color }),
             },
           }
         }
@@ -1954,17 +1922,22 @@ function App() {
     setVectorDBNode(null)
   }, [updateNodesWithHistory])
 
-  // Универсальный обработчик обновления конфигурации компонента
   const handleComponentConfigUpdate = useCallback(
     (nodeId: string, configKey: keyof ComponentData, configValue: any) => {
       updateNodesWithHistory((nds) =>
         nds.map((node) => {
           if (node.id === nodeId) {
+            // Если в configValue есть color, извлекаем его для обновления на верхнем уровне data
+            const { color, ...restConfig } = configValue
             return {
               ...node,
               data: {
                 ...node.data,
-                [configKey]: configValue,
+                [configKey]: {
+                  ...(node.data[configKey] as any),
+                  ...restConfig
+                },
+                ...(configValue.hasOwnProperty('color') && { color }),
               },
             }
           }
@@ -2156,7 +2129,7 @@ function App() {
   )
 
   const handleClassConfigUpdate = useCallback(
-    (nodeId: string, config: { methods: any[] }) => {
+    (nodeId: string, config: { methods: any[]; color?: string }) => {
       updateNodesWithHistory((nds) =>
         nds.map((node) => {
           if (node.id === nodeId) {
@@ -2165,8 +2138,10 @@ function App() {
               data: {
                 ...node.data,
                 classConfig: {
+                  ...node.data.classConfig,
                   methods: config.methods,
                 },
+                ...(config.hasOwnProperty('color') && { color: config.color }),
               },
             }
           }
@@ -2220,18 +2195,24 @@ function App() {
   )
 
   const handleGenericConfigUpdate = useCallback(
-    (nodeId: string, config: any) => {
-      if (!genericConfigNode) return
-      const mapping = GENERIC_COMPONENTS[genericConfigNode.data.type]
-      if (mapping) {
-        handleComponentConfigUpdate(nodeId, mapping.configKey as keyof ComponentData, config)
-      }
+    (nodeId: string, updatedData: ComponentData) => {
+      updateNodesWithHistory((nds) =>
+        nds.map((node) => {
+          if (node.id === nodeId) {
+            return {
+              ...node,
+              data: updatedData,
+            }
+          }
+          return node
+        })
+      )
     },
-    [handleComponentConfigUpdate, genericConfigNode]
+    [updateNodesWithHistory]
   )
 
   const handleControllerConfigUpdate = useCallback(
-    (nodeId: string, config: { endpoints: any[] }) => {
+    (nodeId: string, config: { endpoints: any[]; color?: string }) => {
       updateNodesWithHistory((nds) =>
         nds.map((node) => {
           if (node.id === nodeId) {
@@ -2240,8 +2221,10 @@ function App() {
               data: {
                 ...node.data,
                 controllerConfig: {
+                  ...node.data.controllerConfig,
                   endpoints: config.endpoints,
                 },
+                ...(config.hasOwnProperty('color') && { color: config.color }),
               },
             }
           }
@@ -2253,7 +2236,7 @@ function App() {
   )
 
   const handleRepositoryConfigUpdate = useCallback(
-    (nodeId: string, config: { data: any[] }) => {
+    (nodeId: string, config: { data: any[]; color?: string }) => {
       updateNodesWithHistory((nds) =>
         nds.map((node) => {
           if (node.id === nodeId) {
@@ -2262,8 +2245,10 @@ function App() {
               data: {
                 ...node.data,
                 repositoryConfig: {
+                  ...node.data.repositoryConfig,
                   data: config.data,
                 },
+                ...(config.hasOwnProperty('color') && { color: config.color }),
               },
             }
           }
@@ -3152,7 +3137,6 @@ function App() {
     }
   }, [selectedNodes, nodes, edges, reactFlowInstance, reactFlowInstanceRef])
 
-  // Обработка вставки
   const handlePaste = useCallback(() => {
     // Сначала пытаемся использовать состояние, если нет - загружаем из localStorage
     let dataToPaste = copiedNodes
@@ -3426,7 +3410,89 @@ function App() {
 
     // Сохраняем в историю после вставки
     historyUpdateTypeRef.current = 'immediate'
-  }, [copiedNodes, nodes, edges, setNodes, setEdges, setSelectedNodes, reactFlowInstance])
+  }, [copiedNodes, nodes, edges, setNodes, setEdges, setSelectedNodes, reactFlowInstance, reactFlowInstanceRef, historyUpdateTypeRef])
+
+  // Обработка вставки внешнего контента (изображения, текст)
+  const handleGlobalPaste = useCallback((event: any) => {
+    // Проверяем, не находится ли фокус в поле ввода
+    const activeElement = document.activeElement
+    const isInputFocused = activeElement && (
+      activeElement.tagName === 'INPUT' ||
+      activeElement.tagName === 'TEXTAREA' ||
+      activeElement.getAttribute('contenteditable') === 'true' ||
+      activeElement.closest('[contenteditable="true"]') !== null
+    )
+
+    if (isInputFocused) return
+
+    const items = event.clipboardData?.items
+    if (!items) return
+
+    let imageFile: File | null = null
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        imageFile = items[i].getAsFile()
+        break
+      }
+    }
+
+    const instance = reactFlowInstanceRef.current || reactFlowInstance
+    if (!instance) return
+
+    const center = instance.screenToFlowPosition({
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2
+    })
+
+    if (imageFile) {
+      event.preventDefault()
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const dataURL = e.target?.result as string
+        if (dataURL) {
+          const img = new Image()
+          img.onload = () => {
+            const newNode: Node = {
+              id: `image-${Date.now()}`,
+              type: 'image',
+              position: { x: center.x - img.width / 4, y: center.y - img.height / 4 },
+              data: {
+                type: 'image',
+                label: 'Вставленное изображение',
+                imageConfig: {
+                  dataURL,
+                  width: img.width,
+                  height: img.height
+                }
+              },
+              width: img.width / 2,
+              height: img.height / 2,
+            }
+            setNodes((nds) => [...nds.map(n => ({ ...n, selected: false })), { ...newNode, selected: true }])
+            historyUpdateTypeRef.current = 'immediate'
+          }
+          img.src = dataURL
+        }
+      }
+      reader.readAsDataURL(imageFile)
+    } else {
+      const text = event.clipboardData?.getData('text/plain')
+      if (text && (!copiedNodes || copiedNodes.nodes.length === 0)) {
+        event.preventDefault()
+        const newNode: Node = {
+          id: `note-${Date.now()}`,
+          type: 'note',
+          position: center,
+          data: {
+            type: 'note',
+            label: text,
+          },
+        }
+        setNodes((nds) => [...nds.map(n => ({ ...n, selected: false })), { ...newNode, selected: true }])
+        historyUpdateTypeRef.current = 'immediate'
+      }
+    }
+  }, [copiedNodes, nodes, setNodes, reactFlowInstance, reactFlowInstanceRef, historyUpdateTypeRef])
 
   // Экспорт в PNG
   const handleExportPNG = useCallback(async () => {
@@ -3451,56 +3517,7 @@ function App() {
     }
   }, [])
 
-  // Экспорт в Markdown
-  const handleExportMarkdown = useCallback(() => {
-    let markdown = '# Архитектура Проекта\n\n'
 
-    // Компоненты
-    markdown += '## Компоненты\n\n'
-    const componentsByType: Record<string, string[]> = {}
-    nodes.forEach(node => {
-      const data = node.data as ComponentData
-      const type = data.type || 'unknown'
-      if (!componentsByType[type]) componentsByType[type] = []
-      const label = data.label || node.id
-      componentsByType[type].push(`- **${label}** (${type})`)
-    })
-
-    Object.entries(componentsByType).forEach(([type, items]) => {
-      const typeName = type.charAt(0).toUpperCase() + type.slice(1)
-      markdown += `### ${typeName}\n`
-      markdown += items.join('\n') + '\n\n'
-    })
-
-    // Связи
-    markdown += '## Связи\n\n'
-    edges.forEach(edge => {
-      const sourceNode = nodes.find(n => n.id === edge.source)
-      const targetNode = nodes.find(n => n.id === edge.target)
-      const sourceLabel = (sourceNode?.data as ComponentData)?.label || edge.source
-      const targetLabel = (targetNode?.data as ComponentData)?.label || edge.target
-
-      let relation = '->'
-      if (edge.data?.connectionType === 'bidirectional') relation = '<->'
-
-      markdown += `- ${sourceLabel} ${relation} ${targetLabel}`
-      if (edge.label) markdown += ` : *${edge.label}*`
-      markdown += '\n'
-    })
-
-    // Статистика
-    markdown += '\n## Статистика\n\n'
-    markdown += `- Всего компонентов: ${nodes.length}\n`
-    markdown += `- Всего связей: ${edges.length}\n`
-
-    const blob = new Blob([markdown], { type: 'text/markdown' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.download = `architecture-${Date.now()}.md`
-    link.href = url
-    link.click()
-    URL.revokeObjectURL(url)
-  }, [nodes, edges])
 
   // Дублирование компонентов
   const handleDuplicate = useCallback(() => {
@@ -3566,13 +3583,90 @@ function App() {
     setTimeout(() => {
       setSelectedNodes(newNodes)
     }, 50)
-
   }, [nodes, edges, setNodes, setEdges, setSelectedNodes])
 
-  // Отслеживание зажатой клавиши Space для панорамирования
+
+  // Обработка удаления, копирования, вставки и других горячих клавиш
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.code === 'Space' && !event.repeat) {
+      // Проверка на поле ввода
+      const target = event.target as HTMLElement
+      const isInputFocused =
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable ||
+        target.closest('[contenteditable="true"]') !== null
+
+      // Проверка на выделение текста
+      const selection = window.getSelection()
+      const hasSelection = selection && selection.toString().length > 0
+
+      // Коды клавиш с учетом раскладки
+      const isCtrl = event.ctrlKey || event.metaKey
+      const isShift = event.shiftKey
+      const key = event.key ? event.key.toLowerCase() : ''
+      const code = event.code
+
+      // Определяем намерения
+      const isC = code === 'KeyC' || key === 'c' || key === 'с'
+      const isV = code === 'KeyV' || key === 'v' || key === 'м'
+      const isZ = code === 'KeyZ' || key === 'z' || key === 'я'
+      const isY = code === 'KeyY' || key === 'y' || key === 'н'
+      const isD = code === 'KeyD' || key === 'd' || key === 'в'
+      const isDelete = event.key === 'Delete' || event.key === 'Backspace'
+
+      // Обработка Ctrl+C
+      if (isCtrl && isC && !isInputFocused && !hasSelection) {
+        event.preventDefault()
+        event.stopPropagation()
+        handleCopy()
+        return
+      }
+
+      // Обработка Ctrl+V
+      if (isCtrl && isV && !isInputFocused) {
+        // Если есть внутренние данные, обрабатываем сами
+        const hasInternalData = (copiedNodes && copiedNodes.nodes.length > 0) || localStorage.getItem('copiedArchitecture')
+        if (hasInternalData) {
+          event.preventDefault()
+          event.stopPropagation()
+          handlePaste()
+        }
+        // Если данных нет, пойдет стандартное событие paste, которое поймает handleGlobalPaste
+        return
+      }
+
+      // Обработка Ctrl+D
+      if (isCtrl && isD && !isInputFocused) {
+        event.preventDefault()
+        event.stopPropagation()
+        handleDuplicate()
+        return
+      }
+
+      // Обработка Delete/Backspace
+      if (isDelete && !isInputFocused) {
+        deleteSelected()
+        return
+      }
+
+      // Обработка Undo/Redo
+      if (isCtrl && isZ && !isShift && !isInputFocused) {
+        event.preventDefault()
+        event.stopPropagation()
+        undo()
+        return
+      }
+
+      if (isCtrl && ((isShift && isZ) || isY) && !isInputFocused) {
+        event.preventDefault()
+        event.stopPropagation()
+        redo()
+        return
+      }
+
+      // Обработка Space (панорамирование)
+      if (code === 'Space' && !isInputFocused && !event.repeat) {
         setIsSpacePressed(true)
       }
     }
@@ -3583,117 +3677,18 @@ function App() {
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown)
-    window.addEventListener('keyup', handleKeyUp)
+    // Регистрируем на window для надежности, с useCapture для приоритета
+    window.addEventListener('keydown', handleKeyDown, true)
+    window.addEventListener('keyup', handleKeyUp, true)
+    // Глобальная вставка (для системного буфера)
+    document.addEventListener('paste', handleGlobalPaste)
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-      window.removeEventListener('keyup', handleKeyUp)
+      window.removeEventListener('keydown', handleKeyDown, true)
+      window.removeEventListener('keyup', handleKeyUp, true)
+      document.removeEventListener('paste', handleGlobalPaste)
     }
-  }, [])
-
-  // Обработка удаления, копирования и вставки по клавишам
-  React.useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Проверяем, не находится ли фокус в поле ввода (input, textarea, contenteditable)
-      const activeElement = document.activeElement
-      const isInputFocused = activeElement && (
-        activeElement.tagName === 'INPUT' ||
-        activeElement.tagName === 'TEXTAREA' ||
-        activeElement.getAttribute('contenteditable') === 'true' ||
-        activeElement.closest('[contenteditable="true"]') !== null ||
-        // Проверяем, не является ли активный элемент частью формы или редактируемого поля
-        (activeElement.closest('input') !== null) ||
-        (activeElement.closest('textarea') !== null)
-      )
-
-      // Проверяем, есть ли выделенный текст в документе
-      const selection = window.getSelection()
-      const hasSelection = selection && selection.toString().length > 0
-
-      // Ctrl+C или Cmd+C (Mac) - используем event.code для независимости от раскладки
-      if ((event.ctrlKey || event.metaKey) && event.code === 'KeyC') {
-        // Разрешаем копирование из полей ввода или если выделен текст
-        if (!isInputFocused && !hasSelection) {
-          event.preventDefault()
-          event.stopPropagation()
-          event.stopImmediatePropagation()
-          console.log('⌨️ ========== Ctrl+C (KeyC) обработан - вызываю handleCopy ==========')
-          handleCopy()
-          return false
-        }
-      }
-
-      // Ctrl+V или Cmd+V (Mac) - используем event.code для независимости от раскладки
-      if ((event.ctrlKey || event.metaKey) && event.code === 'KeyV') {
-        // Разрешаем вставку в поля ввода
-        if (!isInputFocused) {
-          event.preventDefault()
-          event.stopPropagation()
-          console.log('⌨️ Ctrl+V (KeyV) обработан')
-          handlePaste()
-        }
-      }
-
-      // Ctrl+D или Cmd+D - Дублирование
-      if ((event.ctrlKey || event.metaKey) && event.code === 'KeyD') {
-        if (!isInputFocused) {
-          event.preventDefault()
-          event.stopPropagation()
-          handleDuplicate()
-          return false
-        }
-      }
-
-      // Delete или Backspace - НЕ удаляем компоненты, если фокус в поле ввода
-      if ((event.code === 'Delete' || event.code === 'Backspace') && !isInputFocused) {
-        deleteSelected()
-      }
-
-      const isZ = event.code === 'KeyZ' || (event.key && event.key.toLowerCase() === 'z') || (event.key && (event.key === 'я' || event.key === 'Я'))
-      const isY = event.code === 'KeyY' || (event.key && event.key.toLowerCase() === 'y') || (event.key && (event.key === 'н' || event.key === 'Н'))
-
-      // Ctrl+Z или Cmd+Z - Undo
-      if ((event.ctrlKey || event.metaKey) && isZ && !event.shiftKey) {
-        if (!isInputFocused) {
-          event.preventDefault()
-          event.stopPropagation()
-          event.stopImmediatePropagation()
-          undo()
-          return false
-        }
-      }
-
-      // Ctrl+Shift+Z или Cmd+Shift+Z - Redo
-      if ((event.ctrlKey || event.metaKey) && isZ && event.shiftKey) {
-        if (!isInputFocused) {
-          event.preventDefault()
-          event.stopPropagation()
-          event.stopImmediatePropagation()
-          redo()
-          return false
-        }
-      }
-
-      // Ctrl+Y или Cmd+Y - Redo
-      if ((event.ctrlKey || event.metaKey) && isY) {
-        if (!isInputFocused) {
-          event.preventDefault()
-          event.stopPropagation()
-          event.stopImmediatePropagation()
-          redo()
-          return false
-        }
-      }
-
-    }
-
-    // Используем capture phase для перехвата событий раньше других обработчиков
-    document.addEventListener('keydown', handleKeyDown, true)
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown, true)
-    }
-  }, [deleteSelected, handleCopy, handlePaste, undo, redo, handleDuplicate])
+  }, [deleteSelected, handleCopy, handlePaste, handleGlobalPaste, undo, redo, handleDuplicate, copiedNodes, setIsSpacePressed])
 
   // Функция для получения рекомендаций
   // Функция для автоматического построения компонентов из рекомендации (удалена - рекомендации отключены)
@@ -3766,7 +3761,7 @@ function App() {
         }
 
         // Создаем узел напрямую
-        const newNodeId = `${componentType}-${Date.now()}-${Math.random()}`
+        const newNodeId = `${componentType} -${Date.now()} -${Math.random()} `
         const isSystemType = componentType === 'system' || componentType === 'external-system' || componentType === 'business-domain'
 
         // Для бизнес-домена определяем уникальный цвет
@@ -3913,7 +3908,7 @@ function App() {
 
                         const connectionType = conn.connectionType as ConnectionType
                         const newEdge: Edge = {
-                          id: `edge-${sourceNodeId}-${targetNodeId}-${Date.now()}-${Math.random()}`,
+                          id: `edge - ${sourceNodeId} -${targetNodeId} -${Date.now()} -${Math.random()} `,
                           source: sourceNodeId,
                           target: targetNodeId,
                           sourceHandle: 'bottom',
@@ -4691,6 +4686,7 @@ function App() {
         }}
       />
     ),
+    image: ImageNode,
     'business-domain': (props: NodeProps) => (
       <BusinessDomainNode
         {...props}
@@ -4745,47 +4741,72 @@ function App() {
   }, [nodes])
 
   // Фильтруем связи: скрываем только связи между дочерними узлами внутри одной свернутой системы
+  // Фильтруем связи: скрываем только связи между дочерними узлами внутри одной свернутой системы
   const visibleEdges = useMemo(() => {
-    // Создаем Map: systemId -> Set of childNodeIds для свернутых систем
-    const collapsedSystemChildren = new Map<string, Set<string>>()
+    // Создаем Map: hiddenNodeId -> systemId
+    // Если узел скрыт, мы знаем, к какой свернутой системе он принадлежит
+    const hiddenNodeToSystem = new Map<string, string>()
 
     for (const node of nodes) {
       const nodeData = node.data as ComponentData
       if (nodeData.type === 'system' || nodeData.type === 'external-system' || nodeData.type === 'business-domain') {
         if (nodeData.systemConfig?.collapsed) {
           const childNodes = nodeData.systemConfig.childNodes || []
-          collapsedSystemChildren.set(node.id, new Set(childNodes))
+          const systemId = node.id
+          for (const childId of childNodes) {
+            hiddenNodeToSystem.set(childId, systemId)
+          }
         }
       }
     }
 
-    if (collapsedSystemChildren.size === 0) {
+    if (hiddenNodeToSystem.size === 0) {
       return edges.filter(e => !(e as any).hidden);
     }
 
     // Фильтруем связи
     return edges.filter((edge) => {
-      // Пропускаем явно скрытые связи (связи между дочерними узлами внутри системы)
+      // Пропускаем явно скрытые связи (например, выставленные пользователем вручную)
       if ((edge as any).hidden === true) {
         return false
       }
 
-      // Проверяем, не находятся ли оба конца связи внутри одной свернутой системы
-      for (const [systemId, childNodes] of collapsedSystemChildren) {
-        // СНАЧАЛА проверяем, перенаправлена ли связь на систему - такие связи всегда показываем
-        if (edge.source === systemId || edge.target === systemId) {
-          return true
-        }
+      // Проверяем, принадлежат ли source и target одной и той же свернутой системе
+      const sourceSystem = hiddenNodeToSystem.get(edge.source)
+      const targetSystem = hiddenNodeToSystem.get(edge.target)
 
-        // Затем проверяем, находятся ли оба узла внутри системы - такие связи скрываем
-        if (childNodes.has(edge.source) && childNodes.has(edge.target)) {
-          return false
-        }
+      // Если оба конца связи внутри ОДНОЙ и той же свернутой системы -> скрываем
+      if (sourceSystem && targetSystem && sourceSystem === targetSystem) {
+        return false
       }
 
+      // Иначе показываем (связи наружу, или между разными системами, или внутри открытых систем)
       return true
     })
   }, [edges, nodes])
+
+
+
+  const handleGoogleDriveLoad = async (data: any) => {
+    if (!data.nodes || !data.edges) {
+      throw new Error('Invalid file format: missing nodes or edges')
+    }
+
+    // Reset history
+    historyUpdateTypeRef.current = 'reset'
+
+    setNodes(data.nodes)
+    setEdges(data.edges)
+
+    // Trigger fit view
+    isFileLoadRef.current = true
+
+    setTimeout(() => {
+      reactFlowInstanceRef.current?.fitView()
+    }, 500)
+
+    return Promise.resolve()
+  }
 
   return (
     <div className="notranslate" translate="no" style={{ width: '100vw', height: '100vh', position: 'relative' }}>
@@ -4856,7 +4877,7 @@ function App() {
             }
 
             const newNode: Node = {
-              id: `${type}-${Date.now()}`,
+              id: `${type} -${Date.now()} `,
               type: 'custom',
               position: { x: centerX - 100 + Math.random() * 50, y: centerY - 100 + Math.random() * 50 },
               data: {
@@ -4879,9 +4900,7 @@ function App() {
         onLoad={handleLoad}
         onExportDrawIO={() => saveToDrawIOFile(nodes, edges)}
         onExportPNG={handleExportPNG}
-        onExportMarkdown={handleExportMarkdown}
         onSaveLayout={handleSaveLayout}
-        onExportAnimation={() => startRecording()}
         onExportRegion={() => setIsSelectingRegion(true)}
       />
 
@@ -5580,6 +5599,7 @@ function getComponentLabel(type: ComponentType): string {
     'business-domain': 'Бизнес-домен',
     group: 'Группа',
     'note': 'Заметка',
+    'image': 'Изображение',
     'system-component': 'Компонент системы',
     'llm-model': 'LLM Модель',
     'vector-database': 'Векторная БД',
@@ -5635,6 +5655,22 @@ function getComponentLabel(type: ComponentType): string {
     'health-check': 'Health Check',
     'config-store': 'Config Store',
     'vcs': 'Система контроля версий',
+    'customer': 'Заказчик',
+    'developer': 'Разработчик',
+    'analyst': 'Аналитик',
+    'devops': 'DevOps',
+    'architect': 'Архитектор',
+    'product-manager': 'Product Manager',
+    'team': 'Команда',
+    'security-engineer': 'Инженер по безопасности',
+    'qa-engineer': 'QA инженер',
+    'dba': 'DBA',
+    'designer': 'Дизайнер',
+    'sre-engineer': 'SRE инженер',
+    'data-scientist': 'Data Scientist',
+    'support': 'Поддержка',
+    'compliance-officer': 'Compliance Officer',
+    'cloud-hosting': 'Облачный хостинг',
   }
   return labels[type] || type
 }

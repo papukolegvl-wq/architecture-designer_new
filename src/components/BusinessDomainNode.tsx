@@ -27,7 +27,7 @@ function BusinessDomainNode({ id, data, selected, onLinkClick, onLinkConfigClick
   const isMedium = zoom < 0.7
 
   // Получаем цвет домена из конфигурации или используем цвет по умолчанию
-  const domainColor = data.systemConfig?.domainColor || '#ffa94d'
+  const domainColor = data.color || data.systemConfig?.domainColor || '#ffa94d'
 
   const handleInfoClick = (e: React.MouseEvent) => {
     e.stopPropagation()

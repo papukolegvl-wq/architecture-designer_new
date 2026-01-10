@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { Node } from 'reactflow'
 import { ComponentData, MonitoringVendor } from '../types'
+import ColorPicker from './ColorPicker'
 
 interface MonitoringConfigPanelProps {
     node: Node
     onUpdate: (nodeId: string, config: {
         vendor: MonitoringVendor
         metricsRetentionDays?: number
+        color?: string
     }) => void
     onClose: () => void
 }
@@ -37,6 +39,7 @@ export default function MonitoringConfigPanel({
     const [metricsRetentionDays, setMetricsRetentionDays] = useState<number>(
         data.monitoringConfig?.metricsRetentionDays || 14
     )
+    const [color, setColor] = useState<string | undefined>(data.color)
 
     useEffect(() => {
         if (!vendor && vendors.length > 0) {
@@ -48,7 +51,8 @@ export default function MonitoringConfigPanel({
         if (vendor) {
             onUpdate(node.id, {
                 vendor,
-                metricsRetentionDays
+                metricsRetentionDays,
+                color: color || data.color
             })
         }
         onClose()
@@ -178,6 +182,8 @@ export default function MonitoringConfigPanel({
                     }}
                 />
             </div>
+
+            <ColorPicker currentColor={color} onColorSelect={setColor} />
 
             <div style={{ display: 'flex', gap: '10px' }}>
                 <button

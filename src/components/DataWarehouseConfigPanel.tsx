@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Node } from 'reactflow'
 import { ComponentData, DataWarehouseVendor } from '../types'
+import ColorPicker from './ColorPicker'
 
 interface DataWarehouseConfigPanelProps {
   node: Node
-  onUpdate: (nodeId: string, config: { vendor: DataWarehouseVendor }) => void
+  onUpdate: (nodeId: string, config: { vendor: DataWarehouseVendor; color?: string }) => void
   onClose: () => void
   onOpenDataPanel?: (nodeId: string, addExample?: boolean) => void
 }
@@ -28,10 +29,11 @@ export default function DataWarehouseConfigPanel({
   const [vendor, setVendor] = useState<DataWarehouseVendor | undefined>(
     data.dataWarehouseConfig?.vendor
   )
+  const [color, setColor] = useState<string | undefined>(data.color)
 
   const handleSave = () => {
     if (vendor) {
-      onUpdate(node.id, { vendor })
+      onUpdate(node.id, { vendor, color: color || data.color })
     }
     onClose()
   }
@@ -129,6 +131,8 @@ export default function DataWarehouseConfigPanel({
           ))}
         </div>
       </div>
+
+      <ColorPicker currentColor={color} onColorSelect={setColor} />
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         <div style={{ display: 'flex', gap: '10px' }}>

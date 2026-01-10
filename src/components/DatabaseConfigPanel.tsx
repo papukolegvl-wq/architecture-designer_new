@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Node } from 'reactflow'
 import { ComponentData, DatabaseType, NoSQLType, DatabaseVendor } from '../types'
+import ColorPicker from './ColorPicker'
 
 interface DatabaseConfigPanelProps {
   node: Node
-  onUpdate: (nodeId: string, config: { dbType: DatabaseType; nosqlType?: NoSQLType; vendor?: DatabaseVendor }) => void
+  onUpdate: (nodeId: string, config: { dbType: DatabaseType; nosqlType?: NoSQLType; vendor?: DatabaseVendor; color?: string }) => void
   onClose: () => void
   onOpenSchemaEditor?: (nodeId: string) => void
 }
@@ -68,6 +69,7 @@ export default function DatabaseConfigPanel({
   const [vendor, setVendor] = useState<DatabaseVendor | undefined>(
     data.databaseConfig?.vendor
   )
+  const [color, setColor] = useState<string | undefined>(data.color)
 
   useEffect(() => {
     if (dbType === 'nosql' && !nosqlType) {
@@ -79,9 +81,9 @@ export default function DatabaseConfigPanel({
     }
   }, [dbType, nosqlType])
 
-  const availableVendors = dbType === 'sql' 
-    ? sqlVendors 
-    : nosqlType 
+  const availableVendors = dbType === 'sql'
+    ? sqlVendors
+    : nosqlType
       ? [...(nosqlVendors[nosqlType] || []), ...searchVendors]
       : []
 
@@ -90,6 +92,7 @@ export default function DatabaseConfigPanel({
       dbType,
       nosqlType: dbType === 'nosql' ? nosqlType : undefined,
       vendor,
+      color: color || data.color
     })
     onClose()
   }
@@ -99,6 +102,7 @@ export default function DatabaseConfigPanel({
       dbType,
       nosqlType: dbType === 'nosql' ? nosqlType : undefined,
       vendor,
+      color: color || data.color
     })
     onClose()
     // После сохранения конфигурации открываем редактор схемы для добавления данных
@@ -308,6 +312,7 @@ export default function DatabaseConfigPanel({
           </div>
         </div>
       )}
+      <ColorPicker currentColor={color} onColorSelect={setColor} />
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         <div style={{ display: 'flex', gap: '10px' }}>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Node } from 'reactflow'
 import { ComponentData, ESBVendor } from '../types'
+import ColorPicker from './ColorPicker'
 
 interface ESBConfigPanelProps {
   node: Node
@@ -11,6 +12,7 @@ interface ESBConfigPanelProps {
     dataTransformation?: boolean
     serviceOrchestration?: boolean
     eventDriven?: boolean
+    color?: string
   }) => void
   onClose: () => void
 }
@@ -49,6 +51,7 @@ export default function ESBConfigPanel({
   const [eventDriven, setEventDriven] = useState(
     data.esbConfig?.eventDriven ?? false
   )
+  const [color, setColor] = useState<string | undefined>(data.color)
 
   useEffect(() => {
     if (!vendor && vendors.length > 0) {
@@ -65,6 +68,7 @@ export default function ESBConfigPanel({
         dataTransformation,
         serviceOrchestration,
         eventDriven,
+        color: color || data.color
       })
     }
     onClose()
@@ -281,6 +285,8 @@ export default function ESBConfigPanel({
           </label>
         </div>
       </div>
+
+      <ColorPicker currentColor={color} onColorSelect={setColor} />
 
       <div style={{ display: 'flex', gap: '10px' }}>
         <button

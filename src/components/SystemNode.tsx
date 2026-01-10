@@ -187,7 +187,7 @@ function SystemNode({ id, data, selected, onLinkClick, onLinkConfigClick }: Syst
       // Устанавливаем новый таймаут с задержкой
       debounceTimeoutRef.current = window.setTimeout(() => {
         if (!isMounted.current) return
-        
+
         if (!isManuallyResized) {
           updateSystemSize()
         } else {
@@ -252,8 +252,8 @@ function SystemNode({ id, data, selected, onLinkClick, onLinkConfigClick }: Syst
   }
 
 
-  const borderColor = selected ? '#4dabf7' : '#666'
-  const backgroundColor = 'rgba(77, 171, 247, 0.05)'
+  const borderColor = selected ? '#4dabf7' : (data.color || '#666')
+  const backgroundColor = data.color ? `${data.color}0d` : 'rgba(77, 171, 247, 0.05)'
 
   return (
     <div

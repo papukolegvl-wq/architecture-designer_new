@@ -141,7 +141,7 @@ function GroupNode({
     }
   }
 
-  const groupColor = '#845ef7' // Фиолетовый цвет для групп
+  const groupColor = data.color || '#845ef7' // Фиолетовый цвет для групп по умолчанию
   const borderColor = selected ? '#4dabf7' : groupColor
 
   return (

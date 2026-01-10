@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Node } from 'reactflow'
 import { ComponentData, SchedulerVendor } from '../types'
+import ColorPicker from './ColorPicker'
 
 interface SchedulerConfigPanelProps {
     node: Node
@@ -8,6 +9,7 @@ interface SchedulerConfigPanelProps {
         vendor: SchedulerVendor
         schedule?: string
         timezone?: string
+        color?: string
     }) => void
     onClose: () => void
 }
@@ -40,6 +42,7 @@ export default function SchedulerConfigPanel({
     const [timezone, setTimezone] = useState<string | undefined>(
         data.schedulerConfig?.timezone
     )
+    const [color, setColor] = useState<string | undefined>(data.color)
 
     useEffect(() => {
         if (!vendor && vendors.length > 0) {
@@ -53,6 +56,7 @@ export default function SchedulerConfigPanel({
                 vendor,
                 schedule,
                 timezone,
+                color: color || data.color
             })
         }
         onClose()
@@ -211,6 +215,8 @@ export default function SchedulerConfigPanel({
                     }}
                 />
             </div>
+
+            <ColorPicker currentColor={color} onColorSelect={setColor} />
 
             <div style={{ display: 'flex', gap: '10px' }}>
                 <button

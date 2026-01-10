@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react'
 import { Node } from 'reactflow'
 import { ComponentData, QueueVendor } from '../types'
+import ColorPicker from './ColorPicker'
 
 interface QueueConfigPanelProps {
   node: Node
-  onUpdate: (nodeId: string, config: { 
+  onUpdate: (nodeId: string, config: {
     vendor: QueueVendor
     queueType?: 'fifo' | 'standard' | 'priority'
     visibilityTimeout?: number
     messageRetention?: number
+    color?: string
   }) => void
   onClose: () => void
 }
@@ -41,6 +43,7 @@ export default function QueueConfigPanel({
   const [messageRetention, setMessageRetention] = useState<number | undefined>(
     data.queueConfig?.messageRetention
   )
+  const [color, setColor] = useState<string | undefined>(data.color)
 
   useEffect(() => {
     if (!vendor && vendors.length > 0) {
@@ -50,11 +53,12 @@ export default function QueueConfigPanel({
 
   const handleSave = () => {
     if (vendor) {
-      onUpdate(node.id, { 
+      onUpdate(node.id, {
         vendor,
         queueType,
         visibilityTimeout,
         messageRetention,
+        color: color || data.color
       })
     }
     onClose()
@@ -245,6 +249,8 @@ export default function QueueConfigPanel({
           }}
         />
       </div>
+
+      <ColorPicker currentColor={color} onColorSelect={setColor} />
 
       <div style={{ display: 'flex', gap: '10px' }}>
         <button

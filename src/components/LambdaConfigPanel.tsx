@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Node } from 'reactflow'
 import { ComponentData, LambdaVendor } from '../types'
+import ColorPicker from './ColorPicker'
 
 interface LambdaConfigPanelProps {
   node: Node
-  onUpdate: (nodeId: string, config: { vendor: LambdaVendor }) => void
+  onUpdate: (nodeId: string, config: { vendor: LambdaVendor; color?: string }) => void
   onClose: () => void
 }
 
@@ -25,6 +26,7 @@ export default function LambdaConfigPanel({
   const [vendor, setVendor] = useState<LambdaVendor | undefined>(
     data.lambdaConfig?.vendor
   )
+  const [color, setColor] = useState<string | undefined>(data.color)
 
   useEffect(() => {
     if (!vendor && vendors.length > 0) {
@@ -34,7 +36,7 @@ export default function LambdaConfigPanel({
 
   const handleSave = () => {
     if (vendor) {
-      onUpdate(node.id, { vendor })
+      onUpdate(node.id, { vendor, color: color || data.color })
     }
     onClose()
   }
@@ -134,6 +136,8 @@ export default function LambdaConfigPanel({
           ))}
         </div>
       </div>
+
+      <ColorPicker currentColor={color} onColorSelect={setColor} />
 
       <div style={{ display: 'flex', gap: '10px' }}>
         <button

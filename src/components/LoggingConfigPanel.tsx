@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { Node } from 'reactflow'
 import { ComponentData, LoggingVendor } from '../types'
+import ColorPicker from './ColorPicker'
 
 interface LoggingConfigPanelProps {
     node: Node
     onUpdate: (nodeId: string, config: {
         vendor: LoggingVendor
         logRetentionDays?: number
+        color?: string
     }) => void
     onClose: () => void
 }
@@ -35,6 +37,7 @@ export default function LoggingConfigPanel({
     const [logRetentionDays, setLogRetentionDays] = useState<number>(
         data.loggingConfig?.logRetentionDays || 30
     )
+    const [color, setColor] = useState<string | undefined>(data.color)
 
     useEffect(() => {
         if (!vendor && vendors.length > 0) {
@@ -46,7 +49,8 @@ export default function LoggingConfigPanel({
         if (vendor) {
             onUpdate(node.id, {
                 vendor,
-                logRetentionDays
+                logRetentionDays,
+                color: color || data.color
             })
         }
         onClose()
@@ -176,6 +180,8 @@ export default function LoggingConfigPanel({
                     }}
                 />
             </div>
+
+            <ColorPicker currentColor={color} onColorSelect={setColor} />
 
             <div style={{ display: 'flex', gap: '10px' }}>
                 <button

@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react'
 import { Node } from 'reactflow'
 import { ComponentData, VPNGatewayVendor } from '../types'
+import ColorPicker from './ColorPicker'
 
 interface VPNGatewayConfigPanelProps {
   node: Node
-  onUpdate: (nodeId: string, config: { 
+  onUpdate: (nodeId: string, config: {
     vendor: VPNGatewayVendor
     connectionCount?: number
     protocol?: 'ipsec' | 'ssl' | 'wireguard'
+    color?: string
   }) => void
   onClose: () => void
 }
@@ -41,6 +43,7 @@ export default function VPNGatewayConfigPanel({
   const [protocol, setProtocol] = useState<'ipsec' | 'ssl' | 'wireguard' | undefined>(
     data.vpnGatewayConfig?.protocol
   )
+  const [color, setColor] = useState<string | undefined>(data.color)
 
   useEffect(() => {
     if (!vendor && vendors.length > 0) {
@@ -50,10 +53,11 @@ export default function VPNGatewayConfigPanel({
 
   const handleSave = () => {
     if (vendor) {
-      onUpdate(node.id, { 
+      onUpdate(node.id, {
         vendor,
         connectionCount,
         protocol,
+        color: color || data.color
       })
     }
     onClose()
@@ -217,6 +221,8 @@ export default function VPNGatewayConfigPanel({
           }}
         />
       </div>
+
+      <ColorPicker currentColor={color} onColorSelect={setColor} />
 
       <div style={{ display: 'flex', gap: '10px' }}>
         <button

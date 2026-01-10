@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Node } from 'reactflow'
 import { ComponentData, WorkflowEngineVendor } from '../types'
+import ColorPicker from './ColorPicker'
 
 interface WorkflowEngineConfigPanelProps {
     node: Node
@@ -8,6 +9,7 @@ interface WorkflowEngineConfigPanelProps {
         vendor: WorkflowEngineVendor
         version?: string
         workflowCount?: number
+        color?: string
     }) => void
     onClose: () => void
 }
@@ -41,6 +43,7 @@ export default function WorkflowEngineConfigPanel({
     const [workflowCount, setWorkflowCount] = useState<number | undefined>(
         data.workflowEngineConfig?.workflowCount
     )
+    const [color, setColor] = useState<string | undefined>(data.color)
 
     useEffect(() => {
         if (!vendor && vendors.length > 0) {
@@ -54,6 +57,7 @@ export default function WorkflowEngineConfigPanel({
                 vendor,
                 version,
                 workflowCount,
+                color: color || data.color
             })
         }
         onClose()
@@ -212,6 +216,8 @@ export default function WorkflowEngineConfigPanel({
                     }}
                 />
             </div>
+
+            <ColorPicker currentColor={color} onColorSelect={setColor} />
 
             <div style={{ display: 'flex', gap: '10px' }}>
                 <button

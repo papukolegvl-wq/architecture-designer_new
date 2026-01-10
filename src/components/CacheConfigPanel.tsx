@@ -1,23 +1,24 @@
 import { useState } from 'react'
 import { Node } from 'reactflow'
 import { ComponentData, CacheType } from '../types'
+import ColorPicker from './ColorPicker'
 
 interface CacheConfigPanelProps {
   node: Node
-  onUpdate: (nodeId: string, config: { cacheType: CacheType }) => void
+  onUpdate: (nodeId: string, config: { cacheType: CacheType; color?: string }) => void
   onClose: () => void
 }
 
 const cacheTypes: Array<{ value: CacheType; label: string; description: string }> = [
-  { 
-    value: 'distributed', 
-    label: 'Распределенный', 
-    description: 'Redis, Memcached, Hazelcast - общий кеш для всех экземпляров' 
+  {
+    value: 'distributed',
+    label: 'Распределенный',
+    description: 'Redis, Memcached, Hazelcast - общий кеш для всех экземпляров'
   },
-  { 
-    value: 'in-memory', 
-    label: 'В памяти приложения', 
-    description: 'Локальный кеш в памяти каждого экземпляра приложения' 
+  {
+    value: 'in-memory',
+    label: 'В памяти приложения',
+    description: 'Локальный кеш в памяти каждого экземпляра приложения'
   },
 ]
 
@@ -30,9 +31,10 @@ export default function CacheConfigPanel({
   const [cacheType, setCacheType] = useState<CacheType>(
     data.cacheConfig?.cacheType || 'distributed'
   )
+  const [color, setColor] = useState<string | undefined>(data.color)
 
   const handleSave = () => {
-    onUpdate(node.id, { cacheType })
+    onUpdate(node.id, { cacheType, color: color || data.color })
     onClose()
   }
 
@@ -129,6 +131,8 @@ export default function CacheConfigPanel({
           ))}
         </div>
       </div>
+
+      <ColorPicker currentColor={color} onColorSelect={setColor} />
 
       <div style={{ display: 'flex', gap: '10px' }}>
         <button

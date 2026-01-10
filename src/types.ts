@@ -78,6 +78,15 @@ export type ComponentType =
   | 'orchestrator'
   | 'service-discovery'
   | 'web-server'
+  | 'security-engineer'
+  | 'qa-engineer'
+  | 'dba'
+  | 'designer'
+  | 'sre-engineer'
+  | 'data-scientist'
+  | 'support'
+  | 'compliance-officer'
+  | 'cloud-hosting'
   | 'monitoring'
   | 'logging'
   | 'queue'
@@ -169,9 +178,17 @@ export type ComponentType =
   | 'health-check'
   | 'config-store'
   | 'vcs'
+  | 'customer'
+  | 'developer'
+  | 'analyst'
+  | 'devops'
+  | 'architect'
+  | 'product-manager'
+  | 'team'
+  | 'image'
 
 
-export type ConnectionType = 'rest' | 'grpc' | 'async' | 'get-information' | 'send-information' | 'database-connection' | 'database-replication' | 'cache-connection' | 'dependency' | 'composition' | 'aggregation' | 'method-call' | 'inheritance' | 'bidirectional' | 'async-bidirectional'
+export type ConnectionType = 'rest' | 'grpc' | 'async' | 'get-information' | 'send-information' | 'database-connection' | 'database-replication' | 'cache-connection' | 'dependency' | 'composition' | 'aggregation' | 'method-call' | 'inheritance' | 'bidirectional' | 'async-bidirectional' | 'relationship'
 
 export type ReplicationApproach =
   | 'master-slave'
@@ -801,8 +818,12 @@ export type DNSServiceVendor =
 export type BackupServiceVendor =
   | 'aws-backup'
   | 'azure-backup'
-  | 'google-backup'
+  | 'google-cloud-backup'
   | 'veeam'
+  | 'acronis'
+  | 'commvault'
+  | 'veritas-netbackup'
+  | 'google-backup'
   | 'rubrik'
 
 export type VCSVendor =
@@ -812,13 +833,6 @@ export type VCSVendor =
   | 'azure-devops'
   | 'aws-codecommit'
   | 'gitea'
-  | 'aws-backup'
-  | 'azure-backup'
-  | 'google-cloud-backup'
-  | 'veeam'
-  | 'acronis'
-  | 'commvault'
-  | 'veritas-netbackup'
 
 export type AnalyticsServiceVendor =
   | 'google-analytics'
@@ -1316,11 +1330,19 @@ export interface ContainerRegistryConfig { vendor?: ContainerRegistryVendor }
 export interface ClientConfig { vendor?: ClientVendor }
 
 
+export interface ImageConfig {
+  dataURL: string
+  width?: number
+  height?: number
+}
+
+
 export interface ComponentData {
   type: ComponentType
   label: string
   connectionType: 'sync' | 'async'
   link?: ComponentLink
+  color?: string // Кастомный цвет компонента
   comment?: string // Комментарий/аннотация к компоненту
   groupId?: string // ID группы для группировки компонентов
   status?: 'new' | 'existing' // Статус компонента: новый или существующий
@@ -1384,6 +1406,7 @@ export interface ComponentData {
   schedulerConfig?: SchedulerConfig
   socSiemConfig?: SOCSIEMConfig
   monitoringConfig?: MonitoringConfig
+  imageConfig?: ImageConfig
   loggingConfig?: LoggingConfig
   serverConfig?: ServerConfig
   webServerConfig?: WebServerConfig

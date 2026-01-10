@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { Node } from 'reactflow'
 import { ComponentData, ServiceLanguage, ServiceEndpoint } from '../types'
 import { Plus, Trash2 } from 'lucide-react'
+import ColorPicker from './ColorPicker'
 
 interface ServiceConfigPanelProps {
   node: Node
-  onUpdate: (nodeId: string, config: { language: ServiceLanguage; endpoints?: ServiceEndpoint[] }) => void
+  onUpdate: (nodeId: string, config: { language: ServiceLanguage; endpoints?: ServiceEndpoint[]; color?: string }) => void
   onClose: () => void
 }
 
@@ -32,12 +33,13 @@ export default function ServiceConfigPanel({
   const [endpoints, setEndpoints] = useState<ServiceEndpoint[]>(
     data.serviceConfig?.endpoints || []
   )
+  const [color, setColor] = useState<string | undefined>(data.color)
   const [newPath, setNewPath] = useState('')
   const [newMethod, setNewMethod] = useState<'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'>('GET')
 
   const handleSave = () => {
     if (language) {
-      onUpdate(node.id, { language, endpoints })
+      onUpdate(node.id, { language, endpoints, color: color || data.color })
     }
     onClose()
   }
@@ -264,6 +266,7 @@ export default function ServiceConfigPanel({
           )}
         </div>
       </div>
+      <ColorPicker currentColor={color} onColorSelect={setColor} />
 
       <div style={{ display: 'flex', gap: '10px' }}>
         <button

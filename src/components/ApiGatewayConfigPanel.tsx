@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Node } from 'reactflow'
 import { ComponentData, ApiGatewayVendor } from '../types'
+import ColorPicker from './ColorPicker'
 
 interface ApiGatewayConfigPanelProps {
   node: Node
@@ -14,6 +15,7 @@ interface ApiGatewayConfigPanelProps {
     loadBalancing?: boolean
     circuitBreaker?: boolean
     apiVersioning?: boolean
+    color?: string
   }) => void
   onClose: () => void
 }
@@ -60,6 +62,7 @@ export default function ApiGatewayConfigPanel({
   const [apiVersioning, setApiVersioning] = useState(
     data.apiGatewayConfig?.apiVersioning ?? false
   )
+  const [color, setColor] = useState<string | undefined>(data.color)
 
   useEffect(() => {
     if (!vendor && vendors.length > 0) {
@@ -79,6 +82,7 @@ export default function ApiGatewayConfigPanel({
         loadBalancing,
         circuitBreaker,
         apiVersioning,
+        color: color || data.color
       })
     }
     onClose()
@@ -355,6 +359,7 @@ export default function ApiGatewayConfigPanel({
           </label>
         </div>
       </div>
+      <ColorPicker currentColor={color} onColorSelect={setColor} />
 
       <div style={{ display: 'flex', gap: '10px' }}>
         <button

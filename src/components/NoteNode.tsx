@@ -146,8 +146,8 @@ const NoteNode: React.FC<NodeProps<any> & {
             style={{
                 padding: isSimple ? '4px' : '12px',
                 borderRadius: '8px',
-                backgroundColor: '#fffbe6',
-                border: `1px solid ${selected ? '#ffd666' : '#ffe58f'}`,
+                backgroundColor: data.color || '#fffbe6',
+                border: `1px solid ${selected ? '#ffd666' : (data.color || '#ffe58f')}`,
                 color: '#262626',
                 minWidth: isSimple ? '40px' : '150px',
                 minHeight: isSimple ? '40px' : '80px',

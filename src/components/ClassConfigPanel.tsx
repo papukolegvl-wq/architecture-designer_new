@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { Node } from 'reactflow'
 import { ComponentData, ClassMethod } from '../types'
 import { X, Plus, Trash2 } from 'lucide-react'
+import ColorPicker from './ColorPicker'
 
 interface ClassConfigPanelProps {
   node: Node
-  onUpdate: (nodeId: string, config: { methods: ClassMethod[] }) => void
+  onUpdate: (nodeId: string, config: { methods: ClassMethod[]; color?: string }) => void
   onClose: () => void
 }
 
@@ -18,6 +19,7 @@ export default function ClassConfigPanel({
   const [methods, setMethods] = useState<ClassMethod[]>(
     data.classConfig?.methods || []
   )
+  const [color, setColor] = useState<string | undefined>(data.color)
 
   const handleAddMethod = () => {
     setMethods([
@@ -51,7 +53,7 @@ export default function ClassConfigPanel({
   const handleSave = () => {
     // Фильтруем методы с заполненным именем
     const validMethods = methods.filter((m) => m.name.trim() !== '')
-    onUpdate(node.id, { methods: validMethods })
+    onUpdate(node.id, { methods: validMethods, color: color || data.color })
     onClose()
   }
 
@@ -314,6 +316,8 @@ export default function ClassConfigPanel({
           </div>
         )}
       </div>
+
+      <ColorPicker currentColor={color} onColorSelect={setColor} />
 
       <div
         style={{

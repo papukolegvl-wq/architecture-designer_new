@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Node } from 'reactflow'
 import { ComponentData, VectorDatabaseVendor, VectorDatabaseConfig } from '../types'
+import ColorPicker from './ColorPicker'
 
 interface VectorDatabaseConfigPanelProps {
     node: Node
-    onUpdate: (nodeId: string, config: VectorDatabaseConfig) => void
+    onUpdate: (nodeId: string, config: VectorDatabaseConfig & { color?: string }) => void
     onClose: () => void
 }
 
@@ -35,12 +36,14 @@ export default function VectorDatabaseConfigPanel({
     const [indexType, setIndexType] = useState<'hnsw' | 'ivf' | 'flat' | 'diskann' | undefined>(
         data.vectorDatabaseConfig?.indexType
     )
+    const [color, setColor] = useState<string | undefined>(data.color)
 
     const handleSave = () => {
         onUpdate(node.id, {
             vendor,
             dimensions,
             indexType,
+            color: color || data.color
         })
         onClose()
     }
@@ -167,6 +170,8 @@ export default function VectorDatabaseConfigPanel({
                     }}
                 />
             </div>
+
+            <ColorPicker currentColor={color} onColorSelect={setColor} />
 
             <div style={{ display: 'flex', gap: '10px' }}>
                 <button
