@@ -547,12 +547,9 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
     }
   }, [updateSize, isExpanded])
 
-  useEffect(() => {
-    if (!isExpanded) return
-    const handleNodesChange = () => { if (isMounted.current) updateSize() }
-    window.addEventListener('nodesChange', handleNodesChange)
-    return () => window.removeEventListener('nodesChange', handleNodesChange)
-  }, [updateSize, isExpanded])
+  /* Optimization: Subscribe to specific zoom thresholds to avoid re-rendering on every zoom frame */
+  const isSimple = useStore((s) => s.transform[2] < 0.4)
+  const isMedium = useStore((s) => s.transform[2] < 0.7)
 
   const toggleExpand = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -564,10 +561,6 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
     window.dispatchEvent(event)
   }
 
-  /* Optimization: Subscribe to specific zoom thresholds to avoid re-rendering on every zoom frame */
-  const isSimple = useStore((s) => s.transform[2] < 0.4)
-  const isMedium = useStore((s) => s.transform[2] < 0.7)
-
   const connectedHandleIds = useStore((s) => {
     // Оптимизированный селектор: фильтруем только те грани, которые связаны с этим узлом
     const ids: string[] = []
@@ -576,7 +569,15 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
       if (e.target === id && e.targetHandle) ids.push(e.targetHandle)
     }
     return ids
-  }, (a, b) => JSON.stringify(a) === JSON.stringify(b));
+  }, (a, b) => {
+    // Shallow compare arrays
+    if (a === b) return true
+    if (a.length !== b.length) return false
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) return false
+    }
+    return true
+  });
 
   const isConnecting = useStore((s) => !!s.connectionStartHandle);
   const [wasConnecting, setWasConnecting] = useState(false);
