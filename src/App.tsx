@@ -3173,23 +3173,112 @@ function App() {
   }, [])
 
   const handleLinkConfigUpdate = useCallback(
-    (nodeId: string, link: ComponentLink | null) => {
-      updateNodesWithHistory((nds) =>
-        nds.map((node) => {
+    (nodeId: string, newLink: ComponentLink | null) => {
+      // Find source node and its old link to handle cleanup
+      const sourceNode = nodes.find((n) => n.id === nodeId)
+      if (!sourceNode) return
+      const oldLink = (sourceNode.data as ComponentData).link
+
+      // 1. Update other workspaces if external links are involved
+      setWorkspaces((prevWorkspaces) => {
+        return prevWorkspaces.map((ws) => {
+          // Skip active workspace as it's handled by setNodes/updateNodesWithHistory
+          if (ws.id === activeWorkspaceId) return ws
+
+          let updatedNodes = ws.nodes
+
+          // Handle Old Link Removal (External target)
+          if (oldLink && oldLink.targetWorkspaceId === ws.id) {
+            updatedNodes = updatedNodes.map((n) => {
+              if (n.id === oldLink.targetNodeId) {
+                // Check if it links back to us before removing? 
+                // We enforce synchronization, so we remove the link.
+                return { ...n, data: { ...n.data, link: undefined } }
+              }
+              return n
+            })
+          }
+
+          // Handle New Link Creation (External target)
+          if (newLink && newLink.targetWorkspaceId === ws.id) {
+            updatedNodes = updatedNodes.map((n) => {
+              if (n.id === newLink.targetNodeId) {
+                // Create back-link
+                return {
+                  ...n,
+                  data: {
+                    ...n.data,
+                    link: {
+                      targetWorkspaceId: activeWorkspaceId,
+                      targetNodeId: nodeId,
+                      label: newLink.label
+                    }
+                  }
+                }
+              }
+              return n
+            })
+          }
+
+          if (updatedNodes !== ws.nodes) {
+            return { ...ws, nodes: updatedNodes }
+          }
+          return ws
+        })
+      })
+
+      // 2. Update nodes in current workspace
+      updateNodesWithHistory((currentNodes) => {
+        let nextNodes = [...currentNodes]
+
+        // Handle Old Link Removal (Local target)
+        if (oldLink && oldLink.targetWorkspaceId === activeWorkspaceId) {
+          nextNodes = nextNodes.map((n) => {
+            if (n.id === oldLink.targetNodeId) {
+              return { ...n, data: { ...n.data, link: undefined } }
+            }
+            return n
+          })
+        }
+
+        // Handle New Link Creation (Local target)
+        if (newLink && newLink.targetWorkspaceId === activeWorkspaceId) {
+          nextNodes = nextNodes.map((n) => {
+            if (n.id === newLink.targetNodeId) {
+              return {
+                ...n,
+                data: {
+                  ...n.data,
+                  link: {
+                    targetWorkspaceId: activeWorkspaceId,
+                    targetNodeId: nodeId,
+                    label: newLink.label
+                  }
+                }
+              }
+            }
+            return n
+          })
+        }
+
+        // Update Source Node
+        nextNodes = nextNodes.map((node) => {
           if (node.id === nodeId) {
             return {
               ...node,
               data: {
                 ...node.data,
-                link: link || undefined,
+                link: newLink || undefined,
               },
             }
           }
           return node
         })
-      )
+
+        return nextNodes
+      })
     },
-    [updateNodesWithHistory]
+    [nodes, activeWorkspaceId, updateNodesWithHistory]
   )
 
   // Обработчик перехода по ссылке

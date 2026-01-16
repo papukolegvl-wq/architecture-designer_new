@@ -848,6 +848,471 @@ export const comparisonData: Record<string, ComparisonCategory> = {
             }
         ]
     }
+    ,
+    'edge-computing': {
+        componentType: 'edge-computing',
+        metrics: [
+            { name: 'latency', label: 'Задержка', description: 'Время отклика для пользователя', type: 'rating' },
+            { name: 'cold_start', label: 'Холодный старт', description: 'Время запуска функции', type: 'rating' },
+            { name: 'runtime', label: 'Среда выполнения', description: 'Поддерживаемые языки (V8, Node, etc.)', type: 'text' },
+            { name: 'global_reach', label: 'Глобальное покрытие', description: 'Количество точек присутствия', type: 'rating' },
+        ],
+        vendors: [
+            {
+                id: 'cloudflare-workers',
+                name: 'Cloudflare Workers',
+                description: 'Serverless платформа на базе V8 изолятов с нулевым холодным стартом.',
+                metrics: { latency: 5, cold_start: 5, runtime: 'V8 (JS/Wasm)', global_reach: 5 }
+            },
+            {
+                id: 'lambda-edge',
+                name: 'AWS Lambda@Edge',
+                description: 'Запуск Node.js/Python функций на CDN CloudFront.',
+                metrics: { latency: 4, cold_start: 3, runtime: 'Node.js, Python', global_reach: 4 }
+            },
+            {
+                id: 'vercel-edge',
+                name: 'Vercel Edge Functions',
+                description: 'Оптимизировано для фронтенд-фреймворков и Next.js.',
+                metrics: { latency: 5, cold_start: 5, runtime: 'Edge Runtime', global_reach: 4 }
+            }
+        ]
+    },
+    'server': {
+        componentType: 'server',
+        metrics: [
+            { name: 'performance', label: 'Производительность', description: 'CPU/RAM соотношение', type: 'rating' },
+            { name: 'scalability', label: 'Масштабируемость', description: 'Вертикальное и горизонтальное', type: 'rating' },
+            { name: 'price_performance', label: 'Цена/Качество', description: 'Стоимость единицы вычислительной мощности', type: 'rating' },
+            { name: 'management', label: 'Управление', description: 'Удобство консоли и API', type: 'rating' },
+        ],
+        vendors: [
+            {
+                id: 'aws-ec2',
+                name: 'Amazon EC2',
+                description: 'Самый широкий выбор типов инстансов на рынке.',
+                metrics: { performance: 5, scalability: 5, price_performance: 4, management: 4 }
+            },
+            {
+                id: 'digitalocean',
+                name: 'DigitalOcean Droplets',
+                description: 'Простые и понятные виртуальные машины для разработчиков.',
+                metrics: { performance: 4, scalability: 3, price_performance: 5, management: 5 }
+            },
+            {
+                id: 'hetzner',
+                name: 'Hetzner Cloud',
+                description: 'Непревзойденное соотношение цены и производительности в Европе.',
+                metrics: { performance: 4, scalability: 3, price_performance: 5, management: 3 }
+            }
+        ]
+    },
+    'container': {
+        componentType: 'container',
+        metrics: [
+            { name: 'isolation', label: 'Изоляция', description: 'Уровень безопасности контейнера', type: 'rating' },
+            { name: 'performance', label: 'Производительность', description: 'Оверхед на виртуализацию', type: 'rating' },
+            { name: 'ecosystem', label: 'Экосистема', description: 'Инструменты и образы', type: 'rating' },
+            { name: 'standard', label: 'Стандарт', description: 'OCI совместимость', type: 'boolean' },
+        ],
+        vendors: [
+            {
+                id: 'docker',
+                name: 'Docker Engine',
+                description: 'Стандарт де-факто для контейнеризации.',
+                metrics: { isolation: 4, performance: 4, ecosystem: 5, standard: true }
+            },
+            {
+                id: 'podman',
+                name: 'Podman',
+                description: 'Daemonless контейнерный движок, совместимый с Docker.',
+                metrics: { isolation: 5, performance: 5, ecosystem: 4, standard: true }
+            },
+            {
+                id: 'containerd',
+                name: 'containerd',
+                description: 'Легковесный runtime, используемый в Kubernetes.',
+                metrics: { isolation: 4, performance: 5, ecosystem: 5, standard: true }
+            }
+        ]
+    },
+    'web-server': {
+        componentType: 'web-server',
+        metrics: [
+            { name: 'performance', label: 'Статика/RPS', description: 'Скорость отдачи статики', type: 'rating' },
+            { name: 'config_ease', label: 'Настройка', description: 'Простота конфигурационных файлов', type: 'rating' },
+            { name: 'features', label: 'Функциональность', description: 'Модули, проксирование, кэш', type: 'rating' },
+            { name: 'memory', label: 'Потребление памяти', description: 'Эффективность ресурсов', type: 'rating' },
+        ],
+        vendors: [
+            {
+                id: 'nginx',
+                name: 'NGINX',
+                description: 'Высокопроизводительный веб-сервер и обратный прокси.',
+                metrics: { performance: 5, config_ease: 3, features: 5, memory: 4 }
+            },
+            {
+                id: 'apache',
+                name: 'Apache HTTP Server',
+                description: 'Гибкий, модульный веб-сервер с долгой историей.',
+                metrics: { performance: 3, config_ease: 2, features: 5, memory: 2 }
+            },
+            {
+                id: 'caddy',
+                name: 'Caddy',
+                description: 'Современный веб-сервер с автоматическим HTTPS.',
+                metrics: { performance: 4, config_ease: 5, features: 4, memory: 3 }
+            }
+        ]
+    },
+    'service-discovery': {
+        componentType: 'service-discovery',
+        metrics: [
+            { name: 'consistency', label: 'Консистентность', description: 'CP или AP (CAP теорема)', type: 'text' },
+            { name: 'health_checks', label: 'Health Checks', description: 'Встроенные проверки здоровья', type: 'boolean' },
+            { name: 'integration', label: 'Интеграция', description: 'DNS, HTTP API, gRPC', type: 'rating' },
+            { name: 'complexity', label: 'Сложность', description: 'Эксплуатационные расходы', type: 'rating' },
+        ],
+        vendors: [
+            {
+                id: 'consul',
+                name: 'HashiCorp Consul',
+                description: 'Полнофункциональное решение для Service Mesh и Discovery.',
+                metrics: { consistency: 'CP (Raft)', health_checks: true, integration: 5, complexity: 4 }
+            },
+            {
+                id: 'etcd',
+                name: 'etcd',
+                description: 'Надежное Key-Value хранилище для распределенных систем (K8s).',
+                metrics: { consistency: 'CP (Raft)', health_checks: false, integration: 3, complexity: 4 }
+            },
+            {
+                id: 'eureka',
+                name: 'Netflix Eureka',
+                description: 'AP-система discovery для микросервисов (Spring Cloud).',
+                metrics: { consistency: 'AP', health_checks: true, integration: 3, complexity: 2 }
+            }
+        ]
+    },
+    'configuration-management': {
+        componentType: 'configuration-management',
+        metrics: [
+            { name: 'architecture', label: 'Архитектура', description: 'Agent-based или Agentless', type: 'text' },
+            { name: 'language', label: 'Язык описания', description: 'YAML, DSL, Ruby', type: 'text' },
+            { name: 'idempotency', label: 'Идемпотентность', description: 'Гарантия стабильного состояния', type: 'rating' },
+            { name: 'learning_curve', label: 'Порог вхождения', description: 'Сложность изучения', type: 'rating' },
+        ],
+        vendors: [
+            {
+                id: 'ansible',
+                name: 'Ansible',
+                description: 'Простой Agentless инструмент на базе YAML.',
+                metrics: { architecture: 'Agentless (SSH)', language: 'YAML', idempotency: 4, learning_curve: 5 }
+            },
+            {
+                id: 'terraform',
+                name: 'Terraform',
+                description: 'Инфраструктура как код (IaC) для облаков.',
+                metrics: { architecture: 'Client-only', language: 'HCL', idempotency: 5, learning_curve: 3 }
+            },
+            {
+                id: 'chef',
+                name: 'Chef',
+                description: 'Мощная система управления конфигурациями на Ruby.',
+                metrics: { architecture: 'Agent-based', language: 'Ruby DSL', idempotency: 5, learning_curve: 2 }
+            }
+        ]
+    },
+    'backup-service': {
+        componentType: 'backup-service',
+        metrics: [
+            { name: 'rto_rpo', label: 'RTO / RPO', description: 'Минимальное время и потери данных', type: 'rating' },
+            { name: 'deduplication', label: 'Дедупликация', description: 'Экономия места хранения', type: 'rating' },
+            { name: 'platform_support', label: 'Платформы', description: 'VM, DB, Cloud, SaaS', type: 'rating' },
+            { name: 'encryption', label: 'Шифрование', description: 'Безопасность бэкапов', type: 'boolean' },
+        ],
+        vendors: [
+            {
+                id: 'aws-backup',
+                name: 'AWS Backup',
+                description: 'Централизованное управление бэкапами в AWS.',
+                metrics: { rto_rpo: 4, deduplication: 3, platform_support: 4, encryption: true }
+            },
+            {
+                id: 'veeam',
+                name: 'Veeam',
+                description: 'Лидер Enterprise решений для бэкапа и восстановления.',
+                metrics: { rto_rpo: 5, deduplication: 5, platform_support: 5, encryption: true }
+            },
+            {
+                id: 'velero',
+                name: 'Velero',
+                description: 'Open Source инструмент для бэкапа Kubernetes кластеров.',
+                metrics: { rto_rpo: 3, deduplication: 1, platform_support: 2, encryption: true }
+            }
+        ]
+    },
+    'proxy': {
+        componentType: 'proxy',
+        metrics: [
+            { name: 'protocols', label: 'Протоколы', description: 'HTTP/1.1, HTTP/2, gRPC', type: 'rating' },
+            { name: 'dynamic_config', label: 'Динамическая конфиг.', description: 'Обновление без перезагрузки', type: 'boolean' },
+            { name: 'observability', label: 'Наблюдаемость', description: 'Метрики и трейсинг', type: 'rating' },
+            { name: 'performance', label: 'Производительность', description: 'RPS и задержки', type: 'rating' },
+        ],
+        vendors: [
+            {
+                id: 'envoy',
+                name: 'Envoy Proxy',
+                description: 'Cloud-native прокси для Service Mesh.',
+                metrics: { protocols: 5, dynamic_config: true, observability: 5, performance: 5 }
+            },
+            {
+                id: 'traefik',
+                name: 'Traefik',
+                description: 'Современный прокси с автоматическим обнаружением сервисов.',
+                metrics: { protocols: 4, dynamic_config: true, observability: 4, performance: 4 }
+            },
+            {
+                id: 'nginx-proxy',
+                name: 'NGINX',
+                description: 'Проверенный временем надежный прокси-сервер.',
+                metrics: { protocols: 4, dynamic_config: false, observability: 3, performance: 5 }
+            }
+        ]
+    },
+    'dns-service': {
+        componentType: 'dns-service',
+        metrics: [
+            { name: 'propagation', label: 'Скорость обновления', description: 'Время распространения записей', type: 'rating' },
+            { name: 'anycast', label: 'Anycast сеть', description: 'Глобальная доступность и скорость', type: 'boolean' },
+            { name: 'security', label: 'Безопасность', description: 'DNSSEC, DDoS защита', type: 'rating' },
+            { name: 'api', label: 'API', description: 'Удобство автоматизации', type: 'rating' },
+        ],
+        vendors: [
+            {
+                id: 'route53',
+                name: 'Amazon Route 53',
+                description: 'Масштабируемый облачный DNS сервис от AWS.',
+                metrics: { propagation: 4, anycast: true, security: 5, api: 5 }
+            },
+            {
+                id: 'cloudflare-dns',
+                name: 'Cloudflare DNS',
+                description: 'Самый быстрый публичный DNS сервис (1.1.1.1).',
+                metrics: { propagation: 5, anycast: true, security: 5, api: 5 }
+            },
+            {
+                id: 'google-dns',
+                name: 'Google Cloud DNS',
+                description: 'Надежный DNS сервис в инфраструктуре Google.',
+                metrics: { propagation: 5, anycast: true, security: 4, api: 4 }
+            }
+        ]
+    },
+    'iot-gateway': {
+        componentType: 'iot-gateway',
+        metrics: [
+            { name: 'protocol_support', label: 'Протоколы', description: 'MQTT, CoAP, HTTP', type: 'rating' },
+            { name: 'offline_mode', label: 'Offline режим', description: 'Работа без связи с облаком', type: 'boolean' },
+            { name: 'device_management', label: 'Управление', description: 'Регистрация и OTA обновления', type: 'rating' },
+            { name: 'scalability', label: 'Масштабируемость', description: 'Миллионы устройств', type: 'rating' },
+        ],
+        vendors: [
+            {
+                id: 'aws-iot-greengrass',
+                name: 'AWS IoT Greengrass',
+                description: 'Расширяет AWS на граничные устройства.',
+                metrics: { protocol_support: 5, offline_mode: true, device_management: 5, scalability: 5 }
+            },
+            {
+                id: 'azure-iot-edge',
+                name: 'Azure IoT Edge',
+                description: 'Контейнеризованные модули IoT от Microsoft.',
+                metrics: { protocol_support: 4, offline_mode: true, device_management: 5, scalability: 5 }
+            },
+            {
+                id: 'emqx',
+                name: 'EMQX',
+                description: 'Open Source MQTT брокер для IoT.',
+                metrics: { protocol_support: 5, offline_mode: false, device_management: 3, scalability: 5 }
+            }
+        ]
+    },
+    'identity-provider': {
+        componentType: 'identity-provider',
+        metrics: [
+            { name: 'sso', label: 'SSO', description: 'Единый вход для всех приложений', type: 'rating' },
+            { name: 'directory', label: 'Каталог', description: 'Интеграция с AD / LDAP', type: 'rating' },
+            { name: 'adaptive_auth', label: 'Адаптивная защита', description: 'Анализ рисков при входе', type: 'rating' },
+            { name: 'pricing', label: 'Ценообразование', description: 'Стоимость за пользователя', type: 'text' },
+        ],
+        vendors: [
+            {
+                id: 'okta',
+                name: 'Okta',
+                description: 'Лидер рынка IDaaS решений.',
+                metrics: { sso: 5, directory: 5, adaptive_auth: 5, pricing: 'Высокая' }
+            },
+            {
+                id: 'entra-id',
+                name: 'Microsoft Entra ID',
+                description: 'Бывший Azure AD, стандарт для Windows-сетей.',
+                metrics: { sso: 5, directory: 5, adaptive_auth: 4, pricing: 'Входит в M365' }
+            },
+            {
+                id: 'auth0',
+                name: 'Auth0',
+                description: 'Ориентирован на разработчиков и B2C приложения.',
+                metrics: { sso: 5, directory: 4, adaptive_auth: 5, pricing: 'Средняя' }
+            }
+        ]
+    },
+    'vpn-gateway': {
+        componentType: 'vpn-gateway',
+        metrics: [
+            { name: 'speed', label: 'Скорость', description: 'Пропускная способность туннеля', type: 'rating' },
+            { name: 'security', label: 'Безопасность', description: 'Протоколы шифрования', type: 'rating' },
+            { name: 'ease_of_use', label: 'Удобство', description: 'Настройка клиента и сервера', type: 'rating' },
+            { name: 'platform_support', label: 'ОС', description: 'Windows, Mac, Linux, Mobile', type: 'rating' },
+        ],
+        vendors: [
+            {
+                id: 'wireguard',
+                name: 'WireGuard',
+                description: 'Современный, быстрый и простой VPN протокол.',
+                metrics: { speed: 5, security: 5, ease_of_use: 4, platform_support: 4 }
+            },
+            {
+                id: 'openvpn',
+                name: 'OpenVPN',
+                description: 'Классический стандарт VPN с высокой совместимостью.',
+                metrics: { speed: 3, security: 5, ease_of_use: 2, platform_support: 5 }
+            },
+            {
+                id: 'tailscale',
+                name: 'Tailscale',
+                description: 'Mesh VPN на базе WireGuard с нулевой конфигурацией.',
+                metrics: { speed: 4, security: 5, ease_of_use: 5, platform_support: 5 }
+            }
+        ]
+    },
+    'vcs': {
+        componentType: 'vcs',
+        metrics: [
+            { name: 'collaboration', label: 'Коллаборация', description: 'Code Review, PRs, Wiki', type: 'rating' },
+            { name: 'cicd', label: 'Встроенный CI/CD', description: 'Качество пайплайнов', type: 'rating' },
+            { name: 'storage', label: 'Хранение (LFS)', description: 'Лимиты на большие файлы', type: 'rating' },
+            { name: 'price', label: 'Цена', description: 'Бесплатный план', type: 'text' },
+        ],
+        vendors: [
+            {
+                id: 'github',
+                name: 'GitHub',
+                description: 'Самая популярная платформа для разработки.',
+                metrics: { collaboration: 5, cicd: 5, storage: 4, price: 'Отличный Free Tier' }
+            },
+            {
+                id: 'gitlab',
+                name: 'GitLab',
+                description: 'Платформа полного цикла DevOps.',
+                metrics: { collaboration: 4, cicd: 5, storage: 4, price: 'Free Self-hosted' }
+            },
+            {
+                id: 'bitbucket',
+                name: 'Bitbucket',
+                description: 'Тесная интеграция с Jira и продуктами Atlassian.',
+                metrics: { collaboration: 3, cicd: 3, storage: 3, price: 'Ограниченный Free' }
+            }
+        ]
+    },
+    'blockchain': {
+        componentType: 'blockchain',
+        metrics: [
+            { name: 'tps', label: 'TPS', description: 'Транзакций в секунду', type: 'text' },
+            { name: 'decentralization', label: 'Децентрализация', description: 'Количество нод валидаторов', type: 'rating' },
+            { name: 'smart_contracts', label: 'Смарт-контракты', description: 'Гибкость программирования', type: 'rating' },
+            { name: 'finality', label: 'Финализация', description: 'Время до необратимости', type: 'text' },
+        ],
+        vendors: [
+            {
+                id: 'ethereum',
+                name: 'Ethereum',
+                description: 'Ведущая платформа смарт-контрактов.',
+                metrics: { tps: '~15 (L1)', decentralization: 5, smart_contracts: 5, finality: '~15 мин' }
+            },
+            {
+                id: 'solana',
+                name: 'Solana',
+                description: 'Высокопроизводительный блокчейн с низкой задержкой.',
+                metrics: { tps: '65,000+', decentralization: 3, smart_contracts: 4, finality: '~400 мс' }
+            },
+            {
+                id: 'hyperledger-fabric',
+                name: 'Hyperledger Fabric',
+                description: 'Корпоративный приватный блокчейн.',
+                metrics: { tps: '3,000+', decentralization: 1, smart_contracts: 4, finality: 'Мгновенно' }
+            }
+        ]
+    },
+    'analytics-service': {
+        componentType: 'analytics-service',
+        metrics: [
+            { name: 'realtime', label: 'Real-time', description: 'Задержка появления данных', type: 'rating' },
+            { name: 'customization', label: 'Кастомизация', description: 'Гибкость отчетов', type: 'rating' },
+            { name: 'privacy', label: 'Приватность', description: 'GDPR/HIPAA комплаенс', type: 'rating' },
+            { name: 'integration', label: 'SDK', description: 'Простота внедрения', type: 'rating' },
+        ],
+        vendors: [
+            {
+                id: 'google-analytics',
+                name: 'Google Analytics 4',
+                description: 'Стандарт веб-аналитики.',
+                metrics: { realtime: 3, customization: 4, privacy: 3, integration: 5 }
+            },
+            {
+                id: 'mixpanel',
+                name: 'Mixpanel',
+                description: 'Аналитика поведения пользователей (Product Analytics).',
+                metrics: { realtime: 5, customization: 5, privacy: 4, integration: 5 }
+            },
+            {
+                id: 'posthog',
+                name: 'PostHog',
+                description: 'Open Source платформа продуктовой аналитики.',
+                metrics: { realtime: 4, customization: 5, privacy: 5, integration: 4 }
+            }
+        ]
+    },
+    'business-intelligence': {
+        componentType: 'business-intelligence',
+        metrics: [
+            { name: 'visualizations', label: 'Визуализации', description: 'Качество и разнообразие графиков', type: 'rating' },
+            { name: 'data_sources', label: 'Источники данных', description: 'Поддержка различных БД и API', type: 'rating' },
+            { name: 'self_service', label: 'Self-Service', description: 'Удобство для бизнес-пользователей', type: 'rating' },
+            { name: 'pricing', label: 'Цена', description: 'Лицензионная модель', type: 'text' },
+        ],
+        vendors: [
+            {
+                id: 'power-bi',
+                name: 'Microsoft Power BI',
+                description: 'Лидер BI рынка, глубокая интеграция с Microsoft.',
+                metrics: { visualizations: 5, data_sources: 5, self_service: 4, pricing: '$10/мес' }
+            },
+            {
+                id: 'tableau',
+                name: 'Tableau',
+                description: 'Мощнейший инструмент для визуального анализа данных.',
+                metrics: { visualizations: 5, data_sources: 5, self_service: 3, pricing: '$75/мес' }
+            },
+            {
+                id: 'superset',
+                name: 'Apache Superset',
+                description: 'Современная Open Source BI платформа.',
+                metrics: { visualizations: 4, data_sources: 4, self_service: 3, pricing: 'Бесплатно' }
+            }
+        ]
+    }
 }
 
 export interface RecommendationScenario {
