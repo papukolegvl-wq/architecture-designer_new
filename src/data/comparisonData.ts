@@ -1322,6 +1322,8 @@ export interface RecommendationScenario {
     recommendedTypes: ComponentType[]
     recommendedVendors: string[] // vendor IDs
     reasoning: string
+    icon?: string
+    category?: 'Data' | 'Microservices' | 'Infrastructure' | 'AI' | 'DevOps' | 'Security' | 'FinTech'
 }
 
 export const recommendationScenarios: RecommendationScenario[] = [
@@ -1331,7 +1333,9 @@ export const recommendationScenarios: RecommendationScenario[] = [
         description: 'Высокая частота небольших транзакций, строгая согласованность данных (ACID).',
         recommendedTypes: ['database'],
         recommendedVendors: ['postgresql', 'mysql', 'sql-server'],
-        reasoning: 'Для OLTP нагрузок лучше всего подходят реляционные базы данных, обеспечивающие ACID транзакции и надежность хранения строк.'
+        reasoning: 'Для OLTP нагрузок лучше всего подходят реляционные базы данных, обеспечивающие ACID транзакции и надежность хранения строк.',
+        icon: 'Database',
+        category: 'Data'
     },
     {
         id: 'analytical',
@@ -1339,7 +1343,9 @@ export const recommendationScenarios: RecommendationScenario[] = [
         description: 'Сложные выборки по большим объемам данных, агрегации, отчетность.',
         recommendedTypes: ['data-warehouse', 'database'],
         recommendedVendors: ['snowflake', 'bigquery', 'clickhouse'],
-        reasoning: 'Колоночные базы данных и хранилища данных (DWH) оптимизированы для чтения и агрегации больших массивов данных.'
+        reasoning: 'Колоночные базы данных и хранилища данных (DWH) оптимизированы для чтения и агрегации больших массивов данных.',
+        icon: 'BarChart3',
+        category: 'Data'
     },
     {
         id: 'search',
@@ -1347,7 +1353,9 @@ export const recommendationScenarios: RecommendationScenario[] = [
         description: 'Быстрый поиск по тексту, фасетная навигация, ранжирование результатов.',
         recommendedTypes: ['search-engine'],
         recommendedVendors: ['elasticsearch', 'opensearch', 'algolia'],
-        reasoning: 'Специализированные поисковые движки используют обратные индексы для мгновенного поиска по текстовым данным.'
+        reasoning: 'Специализированные поисковые движки используют обратные индексы для мгновенного поиска по текстовым данным.',
+        icon: 'Search',
+        category: 'Data'
     },
     {
         id: 'bigdata-nosql',
@@ -1355,7 +1363,9 @@ export const recommendationScenarios: RecommendationScenario[] = [
         description: 'Миллионы событий в секунду, гибкая схема данных, горизонтальное масштабирование.',
         recommendedTypes: ['database'],
         recommendedVendors: ['cassandra', 'mongodb', 'dynamodb'],
-        reasoning: 'NoSQL базы данных (особенно семейство Wide Column и Document) обеспечивают высокую доступность и скорость записи при горизонтальном масштабировании.'
+        reasoning: 'NoSQL базы данных (особенно семейство Wide Column и Document) обеспечивают высокую доступность и скорость записи при горизонтальном масштабировании.',
+        icon: 'Zap',
+        category: 'Data'
     },
     {
         id: 'data-integration',
@@ -1363,7 +1373,9 @@ export const recommendationScenarios: RecommendationScenario[] = [
         description: 'Перемещение данных между системами, нормализация, загрузка в DWH.',
         recommendedTypes: ['etl-service'],
         recommendedVendors: ['airbyte', 'fivetran', 'talend'],
-        reasoning: 'Специализированные ETL-инструменты предоставляют сотни готовых коннекторов и управляют надежностью передачи данных.'
+        reasoning: 'Специализированные ETL-инструменты предоставляют сотни готовых коннекторов и управляют надежностью передачи данных.',
+        icon: 'ArrowLeftRight',
+        category: 'Data'
     },
     {
         id: 'stream-processing',
@@ -1371,7 +1383,9 @@ export const recommendationScenarios: RecommendationScenario[] = [
         description: 'Обработка событий в реальном времени, оконные функции, агрегации на лету.',
         recommendedTypes: ['message-broker', 'stream-processor'],
         recommendedVendors: ['kafka', 'kafka-streams', 'apache-flink'],
-        reasoning: 'Использование брокера для буферизации (Kafka) и потокового движка (Flink/Streams) позволяет обрабатывать данные с минимальной задержкой.'
+        reasoning: 'Использование брокера для буферизации (Kafka) и потового движка (Flink/Streams) позволяет обрабатывать данные с минимальной задержкой.',
+        icon: 'Activity',
+        category: 'Data'
     },
     {
         id: 'api-management',
@@ -1379,7 +1393,9 @@ export const recommendationScenarios: RecommendationScenario[] = [
         description: 'Единая точка входа, аутентификация, rate limiting, мониторинг API.',
         recommendedTypes: ['api-gateway'],
         recommendedVendors: ['kong', 'aws-api-gateway', 'apigee'],
-        reasoning: 'API Gateway централизует сквозную функциональность (безопасность, лимиты), разгружая микросервисы.'
+        reasoning: 'API Gateway централизует сквозную функциональность (безопасность, лимиты), разгружая микросервисы.',
+        icon: 'Webhook',
+        category: 'Microservices'
     },
     {
         id: 'task-orchestration',
@@ -1387,7 +1403,9 @@ export const recommendationScenarios: RecommendationScenario[] = [
         description: 'Планирование и выполнение зависимых задач по расписанию (DAGs).',
         recommendedTypes: ['batch-processor'],
         recommendedVendors: ['apache-airflow', 'prefect', 'dagster'],
-        reasoning: 'Оркестраторы рабочих процессов (Workflow Engines) позволяют описывать сложные зависимости между задачами и мониторить их исполнение.'
+        reasoning: 'Оркестраторы рабочих процессов (Workflow Engines) позволяют описывать сложные зависимости между задачами и мониторить их исполнение.',
+        icon: 'Workflow',
+        category: 'DevOps'
     },
     {
         id: 'caching',
@@ -1395,7 +1413,9 @@ export const recommendationScenarios: RecommendationScenario[] = [
         description: 'Ускорение доступа к часто запрашиваемым данным, снижение нагрузки на БД.',
         recommendedTypes: ['cache'],
         recommendedVendors: ['redis', 'memcached', 'hazelcast'],
-        reasoning: 'In-memory хранилища обеспечивают суб-миллисекундный доступ к данным, что критично для высоконагруженных систем.'
+        reasoning: 'In-memory хранилища обеспечивают суб-миллисекундный доступ к данным, что критично для высоконагруженных систем.',
+        icon: 'Gauge',
+        category: 'Infrastructure'
     },
     {
         id: 'async-processing',
@@ -1403,7 +1423,9 @@ export const recommendationScenarios: RecommendationScenario[] = [
         description: 'Отложенное выполнение задач, развязывание сервисов, сглаживание пиков нагрузки.',
         recommendedTypes: ['queue', 'message-broker'],
         recommendedVendors: ['rabbitmq', 'amazon-sqs', 'kafka'],
-        reasoning: 'Очереди сообщений позволяют сервисам не блокироваться при отправке задач и гарантируют, что задача будет обработана консьюмером.'
+        reasoning: 'Очереди сообщений позволяют сервисам не блокироваться при отправке задач и гарантируют, что задача будет обработана консьюмером.',
+        icon: 'Network',
+        category: 'Microservices'
     },
     {
         id: 'serverless',
@@ -1411,15 +1433,19 @@ export const recommendationScenarios: RecommendationScenario[] = [
         description: 'Автоматическое масштабирование, оплата только за использование, отсутствие серверов.',
         recommendedTypes: ['lambda', 'api-gateway', 'database'],
         recommendedVendors: ['aws-lambda', 'google-functions', 'amazon-sqs'],
-        reasoning: 'Serverless позволяет сфокусироваться на коде, передавая управление инфраструктурой облачному провайдеру.'
+        reasoning: 'Serverless позволяет сфокусироваться на коде, передавая управление инфраструктурой облачному провайдеру.',
+        icon: 'CloudLightning',
+        category: 'Infrastructure'
     },
     {
         id: 'gen-ai',
         label: 'Generative AI / RAG',
-        description: 'Системы на базе LLM с использованием собственной базы знаний.',
+        description: 'Системы на базе LLM with использованием собственной базы знаний.',
         recommendedTypes: ['llm-model', 'vector-database', 'ai-agent'],
         recommendedVendors: ['gpt-4o', 'pinecone', 'claude-3-5-sonnet'],
-        reasoning: 'Комбинация мощной LLM и векторной БД позволяет строить системы, которые отвечают на вопросы на основе ваших данных.'
+        reasoning: 'Комбинация мощной LLM и векторной БД позволяет строить системы, которые отвечают на вопросы на основе ваших данных.',
+        icon: 'BrainCircuit',
+        category: 'AI'
     },
     {
         id: 'security-first',
@@ -1427,6 +1453,78 @@ export const recommendationScenarios: RecommendationScenario[] = [
         description: 'Максимальная защита от внешних угроз, управление секретами и доступом.',
         recommendedTypes: ['firewall', 'secret-management', 'auth-service'],
         recommendedVendors: ['cloudflare-waf', 'hashicorp-vault', 'keycloak'],
-        reasoning: 'Многоуровневая защита (Edge, Vault, Auth) обеспечивает безопасность критических данных организации.'
+        reasoning: 'Многоуровневая защита (Edge, Vault, Auth) обеспечивает безопасность критических данных организации.',
+        icon: 'ShieldCheck',
+        category: 'Security'
+    },
+    {
+        id: 'observability',
+        label: 'Observability & Monitoring',
+        description: 'Полный контроль над состоянием системы: метрики, логи, трейсинг.',
+        recommendedTypes: ['monitoring', 'logging', 'service-mesh'],
+        recommendedVendors: ['prometheus', 'grafana', 'elasticsearch', 'datadog'],
+        reasoning: 'Набор инструментов для сбора телеметрии позволяет быстро диагностировать проблемы и понимать поведение системы в реальном времени.',
+        icon: 'Eye',
+        category: 'DevOps'
+    },
+    {
+        id: 'iot-edge',
+        label: 'IoT & Edge Computing',
+        description: 'Обработка данных с датчиков на периферии, агрегация и отправка в облако.',
+        recommendedTypes: ['iot-gateway', 'edge-computing', 'message-broker', 'time-series-database'],
+        recommendedVendors: ['aws-iot-core', 'azure-iot-hub', 'lambda-edge', 'influxdb'],
+        reasoning: 'Edge-вычисления минимизируют задержку, обрабатывая данные ближе к источнику, а Time Series БД оптимальны для хранения потоков от датчиков.',
+        icon: 'Cpu',
+        category: 'Infrastructure'
+    },
+    {
+        id: 'devops-platform',
+        label: 'DevOps & CI/CD Platform',
+        description: 'Автоматизация разработки, тестирования и доставки ПО.',
+        recommendedTypes: ['vcs', 'ci-cd-pipeline', 'orchestrator', 'configuration-management'],
+        recommendedVendors: ['github', 'gitlab', 'jenkins', 'kubernetes', 'terraform'],
+        reasoning: 'Интеграция VCS с пайплайнами и оркестратором позволяет реализовать концепцию Infrastructure as Code и обеспечить быструю доставку фич.',
+        icon: 'Settings2',
+        category: 'DevOps'
+    },
+    {
+        id: 'mlops-bigdata',
+        label: 'Big Data & ML Pipeline',
+        description: 'Хранение сырых данных, обучение моделей и деплой инференса.',
+        recommendedTypes: ['data-lake', 'ml-data-pipeline', 'ml-training', 'ml-inference', 'gpu-cluster'],
+        recommendedVendors: ['aws-sagemaker', 's3-data-lake', 'pytorch', 'tensorflow', 'nvidia-gpu'],
+        reasoning: 'Сквозной пайплайн от Data Lake до GPU кластеров обеспечивает эффективный цикл обучения и работы AI моделей на больших объемах данных.',
+        icon: 'Binary',
+        category: 'AI'
+    },
+    {
+        id: 'fintech-blockchain',
+        label: 'FinTech & Blockchain Solution',
+        description: 'Высокая надежность транзакций, неизменяемый аудит, защита ключей.',
+        recommendedTypes: ['blockchain', 'secret-management', 'database', 'identity-provider'],
+        recommendedVendors: ['hyperledger', 'ethereum-enterprise', 'hashicorp-vault', 'postgresql', 'okta'],
+        reasoning: 'Сочетание блокчейна для неизменяемости и Vault для хранения ключей обеспечивает уровень безопасности, необходимый для финансовых систем.',
+        icon: 'Coins',
+        category: 'FinTech'
+    },
+    {
+        id: 'content-delivery',
+        label: 'Высоконагруженный Web / Content',
+        description: 'Быстрая отдача статики и динамики по всему миру, защита от DDoS.',
+        recommendedTypes: ['cdn', 'object-storage', 'cache', 'load-balancer', 'web-server'],
+        recommendedVendors: ['cloudflare', 'aws-cloudfront', 's3', 'redis', 'nginx'],
+        reasoning: 'CDN и кэширование на границе (Edge) позволяют отдавать контент с минимальной задержкой, защищая основную инфраструктуру от перегрузок.',
+        icon: 'Globe',
+        category: 'Infrastructure'
+    },
+    {
+        id: 'search-analytics',
+        label: 'Поиск и BI Аналитика',
+        description: 'Интеллектуальный поиск по документам и визуализация бизнес-метрик.',
+        recommendedTypes: ['search-engine', 'data-warehouse', 'business-intelligence', 'analytics-service'],
+        recommendedVendors: ['elasticsearch', 'clickhouse', 'tableau', 'superset', 'google-analytics'],
+        reasoning: 'Интеграция быстрого поиска and аналитического хранилища с BI инструментами позволяет принимать решения на основе данных в реальном времени.',
+        icon: 'LineChart',
+        category: 'Data'
     }
 ]

@@ -13,7 +13,7 @@ import ReactFlow, {
   NodeTypes,
   NodeProps,
   ReactFlowInstance,
-
+  PanOnScrollMode, // Import PanOnScrollMode
   SelectionMode,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
@@ -3338,68 +3338,7 @@ function App() {
   const onPaneClick = useCallback(() => {
     setSelectedEdge(null)
     setSelectedNodes([])
-    setDatabaseConfigNode(null)
-    setDatabaseSchemaNode(null)
-    setTableEditorNode(null)
-    setVectorDBNode(null)
-    setCacheConfigNode(null)
-    setServiceConfigNode(null)
-    setFrontendConfigNode(null)
-    setDataWarehouseConfigNode(null)
-    setDataWarehouseDataNode(null)
-    setMessageBrokerConfigNode(null)
-    setMessageBrokerMessagesNode(null)
-    setCdnConfigNode(null)
-    setLambdaConfigNode(null)
-    setObjectStorageConfigNode(null)
-    setAuthServiceConfigNode(null)
-    setFirewallConfigNode(null)
-    setLoadBalancerConfigNode(null)
-    setApiGatewayConfigNode(null)
-    setEsbConfigNode(null)
-    setClassConfigNode(null)
-    setControllerConfigNode(null)
-    setRepositoryConfigNode(null)
-    setLinkConfigNode(null)
-    setBackupServiceConfigNode(null)
-    setQueueConfigNode(null)
-    setProxyConfigNode(null)
-    setVpnGatewayConfigNode(null)
-    setDnsServiceConfigNode(null)
-    setEventBusConfigNode(null)
-    setStreamProcessorConfigNode(null)
-    setSearchEngineConfigNode(null)
-    setGraphDatabaseConfigNode(null)
-    setTimeSeriesDatabaseConfigNode(null)
-    setServiceMeshConfigNode(null)
-    setConfigurationManagementConfigNode(null)
-    setCiCdPipelineConfigNode(null)
-    setIdentityProviderConfigNode(null)
-    setSecretManagementConfigNode(null)
-    setIntegrationPlatformConfigNode(null)
-    setBatchProcessorConfigNode(null)
-    setEtlServiceConfigNode(null)
-    setDataLakeConfigNode(null)
-    setMlServiceConfigNode(null)
-    setNotificationServiceConfigNode(null)
-    setEmailServiceConfigNode(null)
-    setSmsGatewayConfigNode(null)
-    setAnalyticsServiceConfigNode(null)
-    setBusinessIntelligenceConfigNode(null)
-    setMonitoringConfigNode(null)
-    setLoggingConfigNode(null)
-    setVcsConfigNode(null)
-    setWebServerConfigNode(null)
-    setContainerConfigNode(null)
-    setServerConfigNode(null)
-    setOrchestratorConfigNode(null)
-    setServiceDiscoveryConfigNode(null)
-    setLlmModelConfigNode(null)
-    setCommentNode(null)
-    setInfoComponentType(null)
-    setComparisonType(null)
-    setShowStatistics(false)
-    setShowAIAssistant(false)
+    // Panels should remain visible until explicitly closed by the user
   }, [])
 
   const onDragOver = useCallback((event: React.DragEvent) => {
@@ -5536,7 +5475,7 @@ function App() {
           selectNodesOnDrag={false}
           panOnDrag={[1, 2]} // Панорамирование правой и средней кнопкой мыши
           panOnScroll={true}
-          panOnScrollMode="free" // Свободное панорамирование при скролле
+          panOnScrollMode={PanOnScrollMode.Free} // Свободное панорамирование при скролле
           zoomOnScroll={true}
           zoomOnPinch={true}
           selectionOnDrag={!isSpacePressed && !activeWorkspace?.isLocked} // Выделение обводкой работает только когда пробел не зажат и не заблокировано

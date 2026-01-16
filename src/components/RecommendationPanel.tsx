@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { X, Check, ChevronRight, Plus, GitCompare, Lightbulb } from 'lucide-react'
+import * as LucideIcons from 'lucide-react'
+import { X, ChevronRight, Plus, GitCompare, Lightbulb } from 'lucide-react'
 import { recommendationScenarios, comparisonData } from '../data/comparisonData'
 import { ComponentType } from '../types'
 
@@ -14,6 +15,14 @@ export default function RecommendationPanel({ onClose, onAdd, onCompare }: Recom
 
     const selectedScenario = recommendationScenarios.find(s => s.id === selectedScenarioId)
 
+    // Group scenarios by category
+    const groupedScenarios = recommendationScenarios.reduce((acc, scenario) => {
+        const category = scenario.category || 'Other'
+        if (!acc[category]) acc[category] = []
+        acc[category].push(scenario)
+        return acc
+    }, {} as Record<string, typeof recommendationScenarios>)
+
     // Helper to find vendor details across all categories
     const getVendorDetails = (vendorId: string) => {
         for (const key of Object.keys(comparisonData)) {
@@ -24,6 +33,11 @@ export default function RecommendationPanel({ onClose, onAdd, onCompare }: Recom
             }
         }
         return null
+    }
+
+    const renderIcon = (iconName?: string, size = 18) => {
+        const Icon = (LucideIcons as any)[iconName || 'Lightbulb'] || Lightbulb
+        return <Icon size={size} />
     }
 
     return (
@@ -110,56 +124,78 @@ export default function RecommendationPanel({ onClose, onAdd, onCompare }: Recom
                         padding: '16px',
                         backgroundColor: '#222',
                     }}>
-                        <h3 style={{
-                            color: '#666',
-                            fontSize: '12px',
-                            fontWeight: 600,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.5px',
-                            marginBottom: '12px',
-                            paddingLeft: '8px'
-                        }}>
-                            Сценарии использования
-                        </h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            {recommendationScenarios.map(scenario => {
-                                const isSelected = selectedScenarioId === scenario.id
-                                return (
-                                    <button
-                                        key={scenario.id}
-                                        onClick={() => setSelectedScenarioId(scenario.id)}
-                                        style={{
-                                            padding: '12px 16px',
-                                            borderRadius: '8px',
-                                            border: 'none',
-                                            backgroundColor: isSelected ? '#4dabf7' : 'transparent',
-                                            color: isSelected ? '#fff' : '#ccc',
-                                            cursor: 'pointer',
-                                            textAlign: 'left',
-                                            transition: 'all 0.2s',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            fontWeight: isSelected ? 500 : 400,
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            if (!isSelected) {
-                                                e.currentTarget.style.backgroundColor = '#2d2d2d'
-                                                e.currentTarget.style.color = '#fff'
-                                            }
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            if (!isSelected) {
-                                                e.currentTarget.style.backgroundColor = 'transparent'
-                                                e.currentTarget.style.color = '#ccc'
-                                            }
-                                        }}
-                                    >
-                                        <span>{scenario.label}</span>
-                                        {isSelected && <ChevronRight size={16} />}
-                                    </button>
-                                )
-                            })}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                            {Object.entries(groupedScenarios).map(([category, scenarios]) => (
+                                <div key={category}>
+                                    <h3 style={{
+                                        color: '#555',
+                                        fontSize: '11px',
+                                        fontWeight: 700,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '1px',
+                                        marginBottom: '8px',
+                                        paddingLeft: '8px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px'
+                                    }}>
+                                        {category}
+                                    </h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                        {scenarios.map(scenario => {
+                                            const isSelected = selectedScenarioId === scenario.id
+                                            return (
+                                                <button
+                                                    key={scenario.id}
+                                                    onClick={() => setSelectedScenarioId(scenario.id)}
+                                                    style={{
+                                                        padding: '10px 12px',
+                                                        borderRadius: '8px',
+                                                        border: 'none',
+                                                        backgroundColor: isSelected ? 'rgba(77, 171, 247, 0.15)' : 'transparent',
+                                                        color: isSelected ? '#4dabf7' : '#aaa',
+                                                        cursor: 'pointer',
+                                                        textAlign: 'left',
+                                                        transition: 'all 0.2s',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '12px',
+                                                        fontWeight: isSelected ? 600 : 400,
+                                                        fontSize: '13px',
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        if (!isSelected) {
+                                                            e.currentTarget.style.backgroundColor = '#2d2d2d'
+                                                            e.currentTarget.style.color = '#fff'
+                                                        }
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        if (!isSelected) {
+                                                            e.currentTarget.style.backgroundColor = 'transparent'
+                                                            e.currentTarget.style.color = '#aaa'
+                                                        }
+                                                    }}
+                                                >
+                                                    <span style={{
+                                                        color: isSelected ? '#4dabf7' : '#666',
+                                                        display: 'flex',
+                                                        alignItems: 'center'
+                                                    }}>
+                                                        {renderIcon(scenario.icon, 16)}
+                                                    </span>
+                                                    <span style={{ flex: 1 }}>{scenario.label}</span>
+                                                    {isSelected && <div style={{
+                                                        width: '4px',
+                                                        height: '4px',
+                                                        borderRadius: '50%',
+                                                        backgroundColor: '#4dabf7'
+                                                    }} />}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
 

@@ -182,6 +182,7 @@ export type ComponentType =
   | 'risk-register'
   | 'compliance'
   | 'tracking'
+  | 'roadmap'
 
 
 export type ConnectionType = 'rest' | 'grpc' | 'async' | 'database-connection' | 'database-replication' | 'cache-connection' | 'dependency' | 'composition' | 'aggregation' | 'method-call' | 'inheritance' | 'bidirectional' | 'async-bidirectional' | 'related'

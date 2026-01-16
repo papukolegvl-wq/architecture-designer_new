@@ -57,26 +57,25 @@ const categories: QualityCategory[] = [
         lessons: [
             {
                 id: 'scalability-lb',
-                title: 'Load Balancing (Балансировка)',
+                title: 'Load Balancing (E-commerce)',
                 pattern: 'Load Balancer',
                 tactic: 'Распределение нагрузки.',
-                description: 'Компонент, распределяющий входящий трафик между инстансами приложений. Может работать на уровне L4 (Transport, TCP/UDP) или L7 (Application, HTTP/gRPC). Включает в себя терминацию SSL/TLS.',
-                keyIdea: 'Ни один сервер не должен стать узким местом (Bottleneck), и отказ одного не должен валить систему.',
+                description: 'Сценарий: "Черная пятница" в интернет-магазине. Тысячи пользователей одновременно обновляют страницу товара. Один сервер не справляется.',
+                keyIdea: 'Ни один кассир не должен собрать очередь, если свободны другие.',
                 dataFlow: [
-                    '1. Клиент отправляет HTTPS запрос на VIP (Virtual IP) балансировщика.',
-                    '2. Балансировщик терминирует SSL, расшифровывает пакет.',
-                    '3. Выбирает Target по алгоритму (Least Connections для длинных сессий, Round Robin для коротких).',
-                    '4. Перенаправляет запрос на приватный IP выбранного сервиса.',
+                    '1. Покупатель заходит на сайт (HTTPS запрос на VIP).',
+                    '2. Балансировщик принимает запрос и расшифровывает SSL.',
+                    '3. Выбирает наименее загруженный инстанс "Storefront".',
+                    '4. Перенаправляет запрос на него.',
                 ],
                 commonMistakes: [
-                    '❌ Балансировщик как SPOF (нужен HA-кластер, например, через VRRP/Keepalived).',
-                    '❌ Отсутствие Session Affinity (Sticky Sessions) для приложений, хранящих стейт в памяти.',
+                    '❌ Балансировщик как SPOF (нужен HA-кластер).',
+                    '❌ Хранение корзины в памяти (Session Affinity теряется при сбое узла).',
                     '❌ "Thundering Herd" — одновременный рестарт всех бэкендов после сбоя.',
-                    '❌ Ненастроенные Health Checks (TCP check проходит, а приложение выдает 500).'
                 ],
                 instructions: [
-                    '1. Разместите компонент "Балансировщик" (Load Balancer).',
-                    '2. Разместите два компонента "Сервис" (Service), представляющих экземпляры приложения.',
+                    '1. Разместите "Балансировщик" (Load Balancer) для приема трафика.',
+                    '2. Разместите два компонента "Сервис" (назовем их Storefront A и Storefront B).',
                     '3. Соедините "Балансировщик" с первым "Сервисом".',
                     '4. Соедините "Балансировщик" со вторым "Сервисом".'
                 ],
@@ -84,222 +83,212 @@ const categories: QualityCategory[] = [
                     requiredComponents: [{ type: 'load-balancer', count: 1 }, { type: 'service', count: 2 }],
                     requiredConnections: [{ from: 'load-balancer', to: 'service' }]
                 },
-                realWorldExample: 'NGINX Upstream (L7), HAProxy (High Performance), AWS ALB (Application Load Balancer), Kubernetes Ingress.'
+                realWorldExample: 'Amazon Retail, Shopify Black Friday handling (millions of RPM).'
             },
             {
                 id: 'scalability-sharding',
-                title: 'Database Sharding',
+                title: 'Database Sharding (SaaS / Social)',
                 pattern: 'Sharding',
                 tactic: 'Горизонтальное партиционирование.',
-                description: 'Метод горизонтального масштабирования БД, когда данные распределяются по разным физическим серверам (шардам) на основе Sharding Key. Позволяет преодолеть лимиты записи (Write IOPS) одного сервера.',
-                keyIdea: 'Разделяй и властвуй: данные распределены, запросы изолированы.',
+                description: 'Сценарий: Социальная сеть с миллиардом пользователей. База данных просто не успевает записывать лайки и сообщения в одну таблицу.',
+                keyIdea: 'Разделяй пользователей по корзинам (Shards).',
                 dataFlow: [
-                    '1. Клиент/Proxy вычисляет хэш от Shard Key (e.g. hash(User_ID) % 3).',
-                    '2. Запрос маршрутизируется исключительно на Шард №2.',
-                    '3. Шард выполняет операцию локально, не зная о других шардах (Shared Nothing).',
+                    '1. Пользователь ID=123 (EU) хочет поставить лайк.',
+                    '2. Приложение вычисляет Шард: UserID % 3 = 0 (Shard A).',
+                    '3. Запрос на запись уходит ТОЛЬКО в Shard A.',
                 ],
                 commonMistakes: [
-                    '❌ "Hot Shard" — неудачный выбор ключа (например, дата), приводящий к записи всех данных в один шард.',
-                    '❌ Cross-Shard Joins — попытка связать таблицы с разных серверов (убивает производительность).',
-                    '❌ Отсутствие стратегии решардинга (что делать, когда 3 сервера переполнятся?).',
-                    '❌ Утеря транзакционности (ACID) между шардами.'
+                    '❌ "Hot Shard" — все знаменитости попали на один шард и положили его.',
+                    '❌ Cross-Shard Joins — попытка найти "друзей друзей друзей" на разных серверах.',
+                    '❌ Утеря транзакционности (нельзя одной транзакцией обновить два разных шарда).',
                 ],
                 instructions: [
-                    '1. Разместите компонент "Сервис" (Application Service).',
-                    '2. Разместите три компонента "База данных" (Database), представляющие отдельные шарды.',
-                    '3. Проведите связь от "Сервиса" к первому шарду "База данных".',
-                    '4. Проведите связь от "Сервиса" ко второму шарду "База данных".',
-                    '5. Проведите связь от "Сервиса" к третьему шарду "База данных".'
+                    '1. Разместите компонент "Сервис" (Social Network API).',
+                    '2. Разместите три компонента "База данных" (Shard 1, Shard 2, Shard 3).',
+                    '3. Проведите связь от "Сервиса" к каждому из трех шардов.'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'database', count: 3 }, { type: 'service', count: 1 }],
                     requiredConnections: [{ from: 'service', to: 'database' }]
                 },
-                realWorldExample: 'MongoDB Sharded Cluster, Cassandra (Ring Architecture), Vitess (for MySQL), Citus (for PostgreSQL).'
+                realWorldExample: 'Discord (Messages), Slack, Instagram (Media storage).'
             },
             {
                 id: 'scalability-microservices',
-                title: 'Microservices',
+                title: 'Microservices (Taxi App)',
                 pattern: 'Database per Service',
                 tactic: 'Декомпозиция по бизнес-доменам.',
-                description: 'Разделение монолита на автономные сервисы. Каждый микросервис владеет своей базой данных. Доступ к данным чужого сервиса — ТОЛЬКО через его API. Это обеспечивает независимый деплой и масштабирование.',
-                keyIdea: 'Share-Nothing Architecture. Инкапсуляция данных внутри сервиса.',
+                description: 'Сценарий: Приложение такси. Сервис Заказов (Orders) не должен зависеть от падения Сервиса Платежей (Payments). У каждого своя база.',
+                keyIdea: 'Share-Nothing Architecture. Чужую базу трогать нельзя.',
                 dataFlow: [
-                    '1. Client делает запрос в API Gateway.',
-                    '2. Gateway маршрутизирует в Order Service.',
-                    '3. Order Service пишет в Order DB.',
-                    '4. Order Service отправляет событие "OrderCreated".',
-                    '5. Payment Service ловит событие и списывает деньги в Payment DB.'
+                    '1. Пользователь вызывает такси через API Gateway.',
+                    '2. Gateway зовет Order Service (создает заказ).',
+                    '3. Order Service пишет в СВОЮ базу.',
+                    '4. Order Service шлет событие. Payment Service видит его и списывает деньги в СВОЕЙ базе.'
                 ],
                 commonMistakes: [
-                    '❌ Distributed Monolith — тесная связность, синхронные HTTP-цепочки вызовов.',
-                    '❌ Shared Database — несколько сервисов лезут в одну БД (нарушение изоляции).',
-                    '❌ Игнорирование Eventual Consistency (попытка сделать все транзакционно сразу).',
-                    '❌ Сложность отладки и трассировки (нужен Distributed Tracing).'
+                    '❌ Distributed Monolith — сервисы ходят друг к другу по HTTP синхронно.',
+                    '❌ Shared Database — Заказы и Платежи в одной схеме БД (нарушение изоляции).',
+                    '❌ Потеря целостности (нужны Saga или Eventual Consistency).',
                 ],
                 instructions: [
-                    '1. Разместите компонент "API Gateway".',
-                    '2. Создайте Сервис А: добавьте "Сервис" и "Базу данных", соедините Сервис -> БД.',
-                    '3. Создайте Сервис Б: добавьте второй "Сервис" и вторую "Базу данных", соедините Сервис -> БД.',
-                    '4. Подключите "API Gateway" к Сервису А.',
-                    '5. Подключите "API Gateway" к Сервису Б.'
+                    '1. Разместите "API Gateway".',
+                    '2. Создайте ветку "Orders": добавьте "Сервис" и подсоедините к нему "Базу данных".',
+                    '3. Создайте ветку "Payments": добавьте второй "Сервис" и вторую "Базу данных".',
+                    '4. Подключите "API Gateway" к обоим сервисам (Orders и Payments).'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'service', count: 2 }, { type: 'database', count: 2 }, { type: 'api-gateway', count: 1 }],
                     requiredConnections: [{ from: 'service', to: 'database' }, { from: 'api-gateway', to: 'service' }]
                 },
-                realWorldExample: 'Netflix (1000+ services), Uber, Amazon. Implementation: Spring Boot, GoKit, gRPC.'
+                realWorldExample: 'Uber (4000+ services). Drivers, Riders, Eats, Maps separated.'
             },
             {
                 id: 'scalability-async',
-                title: 'Async Messaging',
-                pattern: 'Message Queue / Broker',
-                tactic: 'Асинхронный обмен сообщениями.',
-                description: 'Развязывание сервисов (Decoupling) через брокер сообщений. Позволяет сглаживать пики нагрузки (Load Leveling) и гарантировать доставку сообщений (Durability).',
-                keyIdea: 'Producer не ждет Consumer. Fire and Forget.',
+                title: 'Async Messaging (Supply Chain)',
+                pattern: 'Publisher-Subscriber',
+                tactic: 'Асинхронность и Decoupling.',
+                description: 'Сценарий: Система логистики. При создании заказа нужно уведомить Склад, Курьеров и Бухгалтерию. Делать это последовательно (синхронно) — долго и ненадежно.',
+                keyIdea: 'Fire and Forget. Брось письмо в ящик и иди дальше.',
                 dataFlow: [
-                    '1. Producer отправляет событие (Event) в Топик брокера.',
-                    '2. Брокер сохраняет сообщение на диск (Persistence) и шлет ACK.',
-                    '3. Consumer (в группе) вычитывает сообщение.',
-                    '4. Consumer обрабатывает задачу и шлет ACK брокеру (Commit Offset).',
+                    '1. Order Service (Producer) кидает событие "Заказ создан" в брокер.',
+                    '2. Брокер (Kafka/Rabbit) сохраняет и ждет.',
+                    '3. Склад (Consumer A) читает: "Резервирую товар".',
+                    '4. Курьер (Consumer B) читает: "Ищу водителя".',
                 ],
                 commonMistakes: [
-                    '❌ Отсутствие идемпотентности у Consumer-а (сообщение может прийти дважды: At-least-once delivery).',
-                    '❌ Использование БД как очереди (Polling убивает базу).',
-                    '❌ Потеря порядка сообщений (если важен порядок, нужно партиционирование по ключу).',
-                    '❌ Отсутствие Dead Letter Queue (DLQ) для битых сообщений.'
+                    '❌ Использование БД как очереди (Polling каждые 100мс убивает базу).',
+                    '❌ Необработанные сообщения (нужен DLQ - Dead Letter Queue).',
+                    '❌ Ожидание мгновенной реакции (это Eventually Consistent система).',
                 ],
                 instructions: [
-                    '1. Разместите "Сервис" (Producer).',
-                    '2. Разместите компонент "Очередь" (Queue/Broker).',
-                    '3. Разместите "Сервис" (Consumer).',
-                    '4. Создайте связь от Producer к "Очереди".',
-                    '5. Создайте связь от "Очереди" к Consumer.'
+                    '1. Разместите "Сервис" (Order Service).',
+                    '2. Разместите компонент "Очередь" (Message Broker).',
+                    '3. Разместите "Сервис" (Warehouse Service).',
+                    '4. Соедините Order Service -> Очередь.',
+                    '5. Соедините Очередь -> Warehouse Service.'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'service', count: 2 }, { type: 'queue', count: 1 }],
                     requiredConnections: [{ from: 'service', to: 'queue' }, { from: 'queue', to: 'service' }]
                 },
-                realWorldExample: 'Apache Kafka (Log-based), RabbitMQ (Queue-based), Amazon SQS/SNS.'
+                realWorldExample: 'FedEx/UPS tracking systems, Banking transaction processing.'
             },
             {
                 id: 'scalability-cache',
-                title: 'Caching Strategies',
-                pattern: 'Cache-Aside / Write-Through',
-                tactic: 'Снижение latency и нагрузки на БД.',
-                description: 'Хранение часто запрашиваемых данных в быстрой in-memory базе. Pattern Cache-Aside: приложение само управляет кэшем. Pattern Write-Through: кэш сам пишет в БД.',
-                keyIdea: 'Память быстрее диска, но дороже и меньше.',
+                title: 'Caching (News Portal)',
+                pattern: 'Cache-Aside',
+                tactic: 'Снижение нагрузки на БД.',
+                description: 'Сценарий: Новостной портал. Горячая новость "Итоги выборов" запрашивается 10,000 раз в секунду. База умрет. Нужен кэш.',
+                keyIdea: 'Память (RAM) быстрее диска (SSD) в 1000 раз.',
                 dataFlow: [
-                    '1. App запрашивает User ID=1.',
-                    '2. App проверяет Redis (GET user:1).',
-                    '3. Cache Miss: App идет в Postgres (SELECT * FROM users WHERE id=1).',
-                    '4. App записывает результат в Redis (SETEX user:1 3600 ...) и возвращает ответ.',
+                    '1. Читатель открывает статью.',
+                    '2. Бэкенд проверяет Redis. Если есть (Hit) — отдает сразу.',
+                    '3. Если нет (Miss) — идет в тяжелую БД, берет статью, кладет в Redis и отдает.'
                 ],
                 commonMistakes: [
-                    '❌ Кэширование без TTL (Time To Live) — память переполнится.',
-                    '❌ Cache Penetration — запросы несуществующих ключей пробивают кэш насмерть (нужен Bloom Filter/Null object).',
-                    '❌ Cache Stampede — 1000 запросов одновременно идут в БД при протухании горячего ключа (нужна Locking/Probabilistic eviction).',
-                    '❌ Рассинхрон с БД (нужна инвалидация при записи).'
+                    '❌ Кэширование без TTL (память закончится).',
+                    '❌ Cache Stampede — кэш протух, и сразу 1000 запросов пробили его в базу.',
+                    '❌ Рассинхрон — новость обновили, а в кэше старая версия.'
                 ],
                 instructions: [
-                    '1. Разместите компонент "Сервис" (Service).',
-                    '2. Разместите компонент "Кэш" (Cache).',
-                    '3. Разместите компонент "База данных" (Database).',
-                    '4. Соедините "Сервис" с "Кэшем".',
-                    '5. Соедините "Сервис" с "Базой данных".'
+                    '1. Разместите компонент "Сервис" (News Backend).',
+                    '2. Разместите "Кэш" (Redis/Memcached).',
+                    '3. Разместите "Базу данных" (Main DB).',
+                    '4. Соедините Сервис -> Кэш.',
+                    '5. Соедините Сервис -> База данных.'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'service', count: 1 }, { type: 'cache', count: 1 }, { type: 'database', count: 1 }],
                     requiredConnections: [{ from: 'service', to: 'cache' }, { from: 'service', to: 'database' }]
                 },
-                realWorldExample: 'Redis (In-memory structure store), Memcached. Used for Session storage, API responses, counters.'
+                realWorldExample: 'Twitter Timelines, Reddit Comments, CNN.com.'
             },
             {
                 id: 'scalability-cdn',
-                title: 'CDN (Content Delivery Network)',
+                title: 'CDN (Streaming Service)',
                 pattern: 'Edge Caching',
-                tactic: 'Географическое распределение статики.',
-                description: 'Сеть серверов (PoP), кэширующая контент максимально близко к конечному пользователю. Снижает нагрузку на Origin и уменьшает Latency.',
-                keyIdea: 'Speed of Light matters. Доставляй контент с соседней улицы.',
+                tactic: 'Географическая дистрибуция.',
+                description: 'Сценарий: Видеостриминг (Netflix/YouTube). Пользователь из Австралии не должен качать фильм с сервера в США (пинги ужасные, буферизация). Ему нужен сервер в Сиднее.',
+                keyIdea: 'Доставляй контент с соседней улицы.',
                 dataFlow: [
-                    '1. Браузер запрашивает style.css.',
-                    '2. DNS направляет пользователя на ближайший Edge Server (например, во Frankfurt).',
-                    '3. Edge отдает файл из кэша. Если нет — идет на Origin сервер (в US), кэширует и отдает.',
+                    '1. Пользователь нажимает Play.',
+                    '2. Плеер запрашивает video-chunk.mp4.',
+                    '3. Запрос летит на ближайший Edge-сервер CDN (в городе пользователя).',
+                    '4. Edge отдает файл из кэша мгновенно.'
                 ],
                 commonMistakes: [
-                    '❌ Использование CDN для динамического/приватного API без настройки (риск утечки).',
-                    '❌ Отсутствие версионирования ассетов (style.v1.css) — проблемы с инвалидацией.',
-                    '❌ Игнорирование HTTP заголовков Cache-Control и ETag.'
+                    '❌ Использование CDN для приватных данных без подписи (Signed URLs).',
+                    '❌ Отсутствие версионирования (обновили картинку, а CDN отдает старую).',
+                    '❌ Неправильные HTTP заголовки Cache-Control (браузер кэширует ошибки).'
                 ],
                 instructions: [
-                    '1. Разместите компонент "Клиент".',
-                    '2. Разместите компонент "CDN".',
-                    '3. Разместите компонент "Сервер" (Origin).',
-                    '4. Соедините "Клиент" с "CDN".',
-                    '5. Соедините "CDN" с "Сервером".'
+                    '1. Разместите "Клиент" (Viewer).',
+                    '2. Разместите "CDN" (Edge Network).',
+                    '3. Разместите "Сервер" (Origin Server в США).',
+                    '4. Соедините Клиент -> CDN.',
+                    '5. Соедините CDN -> Сервер.'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'cdn', count: 1 }, { type: 'server', count: 1 }],
                     requiredConnections: [{ from: 'cdn', to: 'server' }]
                 },
-                realWorldExample: 'Cloudflare, AWS CloudFront, Akamai. Uses Anycast IP to route to nearest PoP.'
+                realWorldExample: 'Netflix Open Connect, YouTube Googlevideo, Cloudflare Stream.'
             },
             {
                 id: 'scalability-serverless',
-                title: 'Serverless / FaaS',
+                title: 'Serverless (Image Processing)',
                 pattern: 'Function as a Service',
-                tactic: 'Event-driven compute.',
-                description: 'Модель облачных вычислений, где облачный провайдер динамически управляет выделением ресурсов. Код (функция) запускается только в ответ на события.',
-                keyIdea: 'No Server to Manage. Scale to Zero.',
+                tactic: 'Событийная обработка.',
+                description: 'Сценарий: Пользователь загружает аватарку. Нам нужно создать 3 версии (small, medium, large). Держать для этого сервер 24/7 дорого. Используем лямбду.',
+                keyIdea: 'Нет работы — не платишь (Scale to Zero).',
                 dataFlow: [
-                    '1. Пользователь загружает фото в Object Storage (S3).',
-                    '2. S3 генерирует событие "ObjectCreated".',
-                    '3. Облако запускает Lambda-функцию для ресайза фото.',
-                    '4. Функция сохраняет превью и умирает.',
+                    '1. Пользователь грузит файл в S3 (хранилище).',
+                    '2. S3 кидает событие "FileUploaded".',
+                    '3. Облако запускает Lambda-функцию "Resizer".',
+                    '4. Функция режет картинку и кладет обратно. И выключается.'
                 ],
                 commonMistakes: [
-                    '❌ Cold Starts — задержка 1-5 сек при запуске "холодного" контейнера (проблема для API).',
-                    '❌ Использование Serverless для задач с длительным выполнением (Hard limits 15 min).',
-                    '❌ Проблемы с коннектами к RDBMS (исчерпание лимитов подключений) — нужен Proxy.',
-                    '❌ Vendor Lock-in (привязка к инфраструктуре AWS/Azure).'
+                    '❌ Cold Starts — пользователь ждет 2 секунды, пока "прогреется" контейнер.',
+                    '❌ Использование Serverless для задач > 15 минут (timeout).',
+                    '❌ Соединение с обычной SQL базой (закончатся коннекты, нужен Proxy).',
                 ],
                 instructions: [
-                    '1. Разместите компонент "API Gateway".',
-                    '2. Разместите первый компонент "Бессерверная функция" (Logic A).',
-                    '3. Разместите второй компонент "Бессерверная функция" (Logic B).',
-                    '4. Создайте связь от "API Gateway" к первой функции.',
-                    '5. Создайте связь от "API Gateway" ко второй функции.'
+                    '1. Разместите "API Gateway" (Front Door).',
+                    '2. Разместите "Бессерверную функцию" (Upload Handler).',
+                    '3. Разместите вторую "Бессерверную функцию" (Thumbnail Generator).',
+                    '4. Подключите все к API Gateway (для упрощения задачи).'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'api-gateway', count: 1 }, { type: 'lambda', count: 2 }],
                     requiredConnections: [{ from: 'api-gateway', to: 'lambda' }]
                 },
-                realWorldExample: 'AWS Lambda, Azure Functions, Google Cloud Functions, Vercel Functions.'
+                realWorldExample: 'Instagram image uploads, PDF generation services, Scheduled Cron jobs.'
             },
             {
                 id: 'scalability-cqrs',
-                title: 'CQRS + Event Sourcing',
+                title: 'CQRS (Banking Ledger)',
                 pattern: 'Command Query Responsibility Segregation',
-                tactic: 'Разделение моделей чтения и записи.',
-                description: 'Паттерн, где операции модификации (Command) и чтения (Query) разделены на разные модели и базы данных. Часто используется с Event Sourcing, где состояние — это последовательность событий.',
-                keyIdea: 'Оптимизируй Write для целостности, а Read для скорости и масштаба.',
+                tactic: 'Разделение чтения и записи.',
+                description: 'Сценарий: Банковский процессинг. Операции перевода (Command) супер-критичны и сложны. Просмотр баланса (Query) прост и част. Разделяем их на разные сервисы.',
+                keyIdea: 'Оптимизируй Write для надежности, а Read для скорости.',
                 dataFlow: [
-                    '1. Command Service валидирует и пишет в Write DB (Event Store).',
-                    '2. Событие пушится в Шину (Kafka).',
-                    '3. Projection Service (Worker) читает событие и обновляет Read DB (Elastic/Redis).',
-                    '4. Query Service читает готовый "View" из Read DB мгновенно.',
+                    '1. Клиент делает перевод (Command Service -> Write DB).',
+                    '2. Событие "MoneySent" летит в Шину (Event Bus).',
+                    '3. Projection Service ловит его и обновляет "быструю" Read DB.',
+                    '4. Клиент смотрит баланс через Query Service -> Read DB.'
                 ],
                 commonMistakes: [
-                    '❌ Eventual Consistency Lag — пользователь не видит свои изменения сразу (нужен UI Optimistic Updates).',
-                    '❌ Сложность инфраструктуры x2 (нужны 2 базы, шина, воркеры).',
-                    '❌ Необходимость обработки идемпотентности и порядка событий.'
+                    '❌ Lag — клиент сделал перевод, обновил страницу, а баланс старый (нужен Optimistic UI).',
+                    '❌ Сложность x3 — теперь у вас две базы и синхронизация.',
+                    '❌ Потеря событий — баланс никогда не сойдется.'
                 ],
                 instructions: [
                     '1. Разместите "Сервис" (Command).',
                     '2. Разместите "Базу данных" (Write DB). Соедините Command -> Write DB.',
-                    '3. Разместите компонент "Event Bus". Соедините Command -> Event Bus.',
-                    '4. Разместите "Сервис" (Updater). Соедините Event Bus -> Updater.',
-                    '5. Разместите "Базу данных" (Read DB). Соедините Updater -> Read DB.',
+                    '3. Разместите "Event Bus" (Kafka). Соедините Command -> Event Bus.',
+                    '4. Разместите "Сервис" (Projector). Соедините Event Bus -> Projector.',
+                    '5. Разместите "Базу данных" (Read DB). Соедините Projector -> Read DB.',
                     '6. Разместите "Сервис" (Query). Соедините Read DB -> Query.'
                 ],
                 validationParams: {
@@ -315,68 +304,67 @@ const categories: QualityCategory[] = [
                         { from: 'database', to: 'service' }
                     ]
                 },
-                realWorldExample: 'High-load systems (banking, ordering). Axon Framework, Kafka Streams Projections.'
+                realWorldExample: 'Bank transaction logs vs Balance check, High-load Booking systems.'
             },
             {
                 id: 'scalability-parallel',
-                title: 'Parallel Processing / Fan-out',
-                pattern: 'Competing Consumers / Worker Pool',
-                tactic: 'Параллелизм на уровне данных.',
-                description: 'Обработка большого массива задач путем их распределения между множеством параллельных воркеров. Используется для фоновых задач, ресайза картинок, аналитики.',
-                keyIdea: 'Divide and Conquer. Батчинг повышает пропускную способность.',
+                title: 'Fan-Out (Analytics Pipeline)',
+                pattern: 'Parallel Workers',
+                tactic: 'Параллельная обработка.',
+                description: 'Сценарий: Обработка логов. Каждую секунду прилетает 10GB логов. Один сервер подавится. Нужно разбить данные на куски (partitioning) и скормить их 100 воркерам.',
+                keyIdea: 'Divide and Conquer. Разделяй проблемы на маленькие части.',
                 dataFlow: [
-                    '1. Producer разбивает задачу на чанки и кладет в Очередь.',
-                    '2. Свободные Воркеры разбирают задачи (Pull).',
-                    '3. Воркеры обрабатывают их параллельно.',
-                    '4. Результаты складываются в Result DB.',
+                    '1. Ingest Service принимает логи и кидает в Kafka (с Partitioning key).',
+                    '2. Группа Воркеров (Consumer Group) читает топик.',
+                    '3. Каждый воркер берет свой кусок и обрабатывает его.',
+                    '4. Результаты пишутся в Data Warehouse.'
                 ],
                 commonMistakes: [
-                    '❌ "Poison Pill" — сообщение, которое крашит воркер, возвращается в очередь и крашит следующий (бесконечный цикл). Нужен Retry Limit / DLQ.',
-                    '❌ Race Conditions при записи результатов в общую БД.',
-                    '❌ Истощение пула соединений к БД из-за тысяч воркеров.'
+                    '❌ Race Conditions — два воркера пытаются обновить одну запись.',
+                    '❌ Poison Pill — битое сообщение крашит воркер, возвращается в очередь и крашит следующего.',
+                    '❌ Узкое место на записи — воркеры быстры, а база в конце не успевает.'
                 ],
                 instructions: [
-                    '1. Разместите компонент "Очередь" (Queue).',
-                    '2. Разместите три компонента "Пакетный обработчик" (Batch Processor).',
-                    '3. Соедините "Очередь" с первым обработчиком.',
-                    '4. Соедините "Очередь" со вторым обработчиком.',
-                    '5. Соедините "Очередь" с третьим обработчиком.'
+                    '1. Разместите "Очередь" (Kafka Topic).',
+                    '2. Разместите три "Пакетных обработчика" (Worker 1, 2, 3).',
+                    '3. Подключите все обработчики к Очереди.'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'queue', count: 1 }, { type: 'batch-processor', count: 3 }],
                     requiredConnections: [{ from: 'queue', to: 'batch-processor' }]
                 },
-                realWorldExample: 'Video Transcoding, Sending Emails, Data Ingestion pipelines (Hadoop/Spark).'
+                realWorldExample: 'Video Transcoding (YouTube), ETL pipelines, MapReduce jobs.'
             },
             {
                 id: 'scalability-edge',
-                title: 'Edge Computing / IoT',
+                title: 'Edge/IoT (Smart Factory)',
                 pattern: 'Fog Computing',
-                tactic: 'Обработка данных "на краю".',
-                description: 'Перенос вычислений с центрального облака на периферийные устройства (шлюзы, локальные серверы). Критично для снижения задержек и экономии трафика.',
-                keyIdea: 'Решай проблемы локально. В облако шли только агрегаты.',
+                tactic: 'Локальная обработка.',
+                description: 'Сценарий: "Умный завод". Датчики вибрации на турбине шлют 1ТБ данных в час. Слать это все в облако — разоришься на трафике. Нужно обрабатывать на месте.',
+                keyIdea: 'Решай проблемы там, где они возникают.',
                 dataFlow: [
-                    '1. 1000 сенсоров шлют телеметрию (1 GB/sec) на IoT Gateway (Edge).',
-                    '2. Gateway фильтрует шум, анализирует (ML inference) и реагирует (Stop Machine).',
-                    '3. В Облако передается только отчет об инциденте (1 KB).',
+                    '1. Датчики шлют данные на локальный IoT Gateway (компьютер в цехе).',
+                    '2. Gateway анализирует вибрацию (ML модель).',
+                    '3. Если "Опасно" — шлет команду "СТОП" на турбину (мгновенно).',
+                    '4. В облако уходит только отчет: "Была тревога".'
                 ],
                 commonMistakes: [
-                    '❌ Зависимость Edge-устройств от постоянного интернета (они должны работать Offline).',
-                    '❌ Security at Edge — физический доступ к устройству позволяет хакеру извлечь ключи (нужен TPM/Secure Enclave).',
-                    '❌ Сложность обновления прошивок и моделей на тысячах устройств.'
+                    '❌ Зависимость от интернета (интернет отпал, турбина взорвалась).',
+                    '❌ Физическая безопасность (хакер может воткнуть флешку в Gateway).',
+                    '❌ Сложность обновления софта на тысячах устройств.'
                 ],
                 instructions: [
-                    '1. Разместите "IoT Шлюз" (IoT Gateway).',
-                    '2. Разместите "Edge Computing" (Локальная обработка).',
-                    '3. Разместите "Облако" (System).',
-                    '4. Соедините "IoT Шлюз" с "Edge Computing".',
-                    '5. Соедините "Edge Computing" с "Облаком".'
+                    '1. Разместите "IoT Шлюз" (Local Gateway).',
+                    '2. Разместите "Edge Computing" (ML Processor).',
+                    '3. Разместите "Облако" (Central System).',
+                    '4. Соедините IoT Шлюз -> Edge.',
+                    '5. Соедините Edge -> Облако.'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'iot-gateway', count: 1 }, { type: 'edge-computing', count: 1 }, { type: 'system', count: 1 }],
                     requiredConnections: [{ from: 'iot-gateway', to: 'edge-computing' }, { from: 'edge-computing', to: 'system' }]
                 },
-                realWorldExample: 'Smart Factories, Autonomous Cars, Amazon Greengrass, Azure IoT Edge.'
+                realWorldExample: 'Tesla Autopilot (process video locally), Smart Cities, Oil Rigs.'
             },
         ]
     },
@@ -388,305 +376,300 @@ const categories: QualityCategory[] = [
         lessons: [
             {
                 id: 'avail-replication',
-                title: 'Active-Passive Replication',
+                title: 'Data Replication (Healthcare)',
                 pattern: 'Primary-Replica',
-                tactic: 'Резервирование данных.',
-                description: 'Наличие резервной копии БД (Replica), которая получает поток изменений (WAL logs) от Primary. Используется для Failover и (иногда) для масштабирования чтения.',
-                keyIdea: 'Один пишет, другой ждет (Cold/Warm Standby).',
+                tactic: 'Сохранность данных.',
+                description: 'Сценарий: Медицинская карта пациента. Потерять запись "У пациента аллергия на пенициллин" недопустима. Данные должны лежать минимум на двух дисках.',
+                keyIdea: 'Резервная копия спасает жизни.',
                 dataFlow: [
-                    '1. Приложение пишет данные в Primary.',
-                    '2. Primary подтверждает запись и асинхронно шлет WAL-лог в Replica.',
-                    '3. Replica применяет изменения.',
-                    '4. При падении Primary, Orchestrator повышает Replica до Primary (Failover).',
+                    '1. Врач сохраняет диагноз в Primary DB.',
+                    '2. Primary подтверждает запись и шлет данные в Replica DB.',
+                    '3. Если Primary сгорит, мы переключаемся на Replica, где данные уже есть.',
                 ],
                 commonMistakes: [
-                    '❌ Replication Lag — чтение с реплики может вернуть устаревшие данные.',
-                    '❌ Split Brain — оба узла считают себя главными и принимают разную запись (нужен Quorum/Fencing).',
-                    '❌ Отсутствие бэкапов (репликация мгновенно удалит данные и на реплике при DROP TABLE).'
+                    '❌ Async Replication Lag — врач записал, открыл на другом планшете, а данных еще нет.',
+                    '❌ Split Brain — два сервера подумали, что они главные, и записали разные данные.',
+                    '❌ Бэкапы не делаются (репликация спасает от сбоя оборудования, но не от `DROP TABLE`).'
                 ],
                 instructions: [
-                    '1. Разместите компонент "База данных" (Primary/Master).',
-                    '2. Разместите второй компонент "База данных" (Secondary/Replica).',
-                    '3. Создайте связь от Master к Replica для настройки репликации.'
+                    '1. Разместите "Базу данных" (Primary DB).',
+                    '2. Разместите вторую "Базу данных" (Secondary DB).',
+                    '3. Соедините Primary -> Secondary.'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'database', count: 2 }],
                     requiredConnections: [{ from: 'database', to: 'database' }]
                 },
-                realWorldExample: 'PostgreSQL Streaming Replication, MySQL Binlog Replication, AWS RDS Multi-AZ.'
+                realWorldExample: 'Hospital Information Systems (HIS), Banking Ledgers.'
             },
             {
                 id: 'avail-redundancy',
-                title: 'Service Redundancy (N+1)',
+                title: 'Redundancy (Payment System)',
                 pattern: 'Horizontal Scaling',
-                tactic: 'Избыточность вычислительных мощностей.',
-                description: 'Запуск нескольких экземпляров критического сервиса. Если один падает, остальные берут нагрузку на себя. Важно разносить их по разным физическим хостам (Anti-Affinity).',
-                keyIdea: 'Устранение единой точки отказа (SPOF).',
+                tactic: 'Избыточность.',
+                description: 'Сценарий: Обработка платежей картой. Если один сервер "Visa Gateway" завис, платеж должен пройти через второй или третий.',
+                keyIdea: 'Дублируй критические узлы (N+1).',
                 dataFlow: [
-                    '1. Балансировщик принимает запросы.',
-                    '2. Проверяет здоровье (Health Check) инстансов.',
-                    '3. Шлет запрос только живому инстансу.',
+                    '1. Терминал шлет запрос на Балансировщик.',
+                    '2. Балансировщик видит, что Узел А не отвечает.',
+                    '3. Пересылает запрос на Узел Б.',
+                    '4. Оплата проходит успешно.'
                 ],
                 commonMistakes: [
-                    '❌ Размещение всех реплик на одной физической машине/стойке/AZ.',
-                    '❌ Отсутствие запаса по мощности (N+1 может не хватить для пика, нужно N+2).',
-                    '❌ State (состояние) в памяти инстанса (теряется при падении, используйте Redis).'
+                    '❌ Размещение всех реплик в одной стойке (питание стойки упало - все умерли).',
+                    '❌ Отсутствие запаса мощности (в пике нужно N+2, а не просто N).',
+                    '❌ Сохранение состояния транзакции в памяти конкретного сервера.'
                 ],
                 instructions: [
-                    '1. Разместите "Балансировщик" (Load Balancer).',
-                    '2. Разместите три компонента "Сервис" (Service), обеспечивающих избыточность (N+1).',
-                    '3. Соедините "Балансировщик" с первым сервисом.',
-                    '4. Соедините "Балансировщик" со вторым сервисом.',
-                    '5. Соедините "Балансировщик" с третьим сервисом.'
+                    '1. Разместите "Балансировщик".',
+                    '2. Разместите три компонента "Сервис" (Payment Node 1, 2, 3).',
+                    '3. Подключите все узлы к Балансировщику.'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'load-balancer', count: 1 }, { type: 'service', count: 3 }],
                     requiredConnections: [{ from: 'load-balancer', to: 'service' }]
                 },
-                realWorldExample: 'Kubernetes ReplicaSet (relicas: 3), AWS Auto Scaling Group.'
+                realWorldExample: 'Visa/Mastercard processing centers, Telecommunications.'
             },
             {
                 id: 'avail-circuit-breaker',
-                title: 'Circuit Breaker',
+                title: 'Circuit Breaker (Travel Aggregator)',
                 pattern: 'Circuit Breaker',
-                tactic: 'Предотвращение каскадных сбоев.',
-                description: 'Паттерн для защиты системы от перегрузки. Если сервис начинает тормозить или ошибаться, Breaker "размыкает цепь" и мгновенно возвращает ошибку, давая упавшему сервису прийти в себя.',
-                keyIdea: 'Fail Fast. Не жди таймаута, если сервис мертв.',
+                tactic: 'Изоляция сбоев.',
+                description: 'Сценарий: Агрегатор авиабилетов. Мы опрашиваем 100 авиакомпаний. API "Pobeda Airlines" начало тормозить (30 сек ответ). Если мы будем всех ждать, наш сайт зависнет.',
+                keyIdea: 'Если партнер умер, перестань ему звонить.',
                 dataFlow: [
-                    '1. Client вызывает Service B через Breaker.',
-                    '2. Ошибки превышают порог (50%). Breaker переходит в состояние OPEN.',
-                    '3. Новые запросы отбиваются мгновенно (Fail fast).',
-                    '4. Через timeout (5s) Breaker переходит в HALF-OPEN (пропускает 1 тестовый запрос).',
-                    '5. Если успех — CLOSED. Если ошибка — снова OPEN.'
+                    '1. Наш Сервис вызывает API авиакомпании.',
+                    '2. Получает 5 ошибок подряд (Timeout).',
+                    '3. Circuit Breaker "открывается" и сразу возвращает ошибку, не делая запросов.',
+                    '4. Сайт работает быстро, просто без рейсов этой авиакомпании.'
                 ],
                 commonMistakes: [
-                    '❌ Отсутствие логики Fallback (возврат заглушки/кэша при ошибке).',
-                    '❌ Слишком долгий Time to recover (система простаивает, хотя сервис уже жив).',
-                    '❌ Отсутствие "Bulkhead" (изоляции пулов потоков) — один тормозящий метод вешает весь сервис.'
+                    '❌ Отсутствие дефолтного ответа (Fallback).',
+                    '❌ Слишком долгое восстановление (Half-Open state logic).',
+                    '❌ Отсутствие изоляции потоков (один тормоз может занять все треды сервера).'
                 ],
                 instructions: [
-                    '1. Разместите "Сервис" (Client), который делает запросы.',
-                    '2. Разместите компонент "Circuit Breaker" для защиты.',
-                    '3. Разместите "Сервис" (Server), который может отказывать.',
-                    '4. Соедините Client -> Circuit Breaker.',
-                    '5. Соедините Circuit Breaker -> Server.'
+                    '1. Разместите "Сервис" (Aggregator).',
+                    '2. Разместите "Circuit Breaker" (защита).',
+                    '3. Разместите "Сервис" (Slow Airline API).',
+                    '4. Соедините Aggregator -> Circuit Breaker.',
+                    '5. Соедините Circuit Breaker -> Airline API.'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'circuit-breaker', count: 1 }, { type: 'service', count: 2 }],
                     requiredConnections: [{ from: 'service', to: 'circuit-breaker' }, { from: 'circuit-breaker', to: 'service' }]
                 },
-                realWorldExample: 'Netflix Hystrix, Resilience4j, Polly (.NET), Istio Circuit Breaking.'
+                realWorldExample: 'Skyscanner, Expedia, Microservices calling unpredictable Legacy systems.'
             },
             {
                 id: 'avail-failover',
-                title: 'Failover & Disaster Recovery',
+                title: 'Disaster Recovery (Stock Exchange)',
                 pattern: 'Active-Standby',
-                tactic: 'Автоматическое переключение.',
-                description: 'Стратегия переключения трафика на резервный дата-центр или регион в случае тотального сбоя (Disaster). Использует DNS или Global Load Balancer.',
-                keyIdea: 'RTO (Recovery Time) и RPO (Recovery Point) определяют стратегию.',
+                tactic: 'Катастрофоустойчивость.',
+                description: 'Сценарий: Нью-Йоркская биржа. Ураган обесточил дата-центр в Нью-Джерси. Торги не должны остановиться ни на минуту. Переключаемся на Чикаго.',
+                keyIdea: 'Всегда имей запасной аэродром.',
                 dataFlow: [
-                    '1. Health Checks обнаруживают, что Region A недоступен.',
-                    '2. DNS сервис (Route53) удаляет IP Region A из ответа.',
-                    '3. Трафик перенаправляется в Region B (Standby).',
+                    '1. Мониторинг видит, что DC1 недоступен.',
+                    '2. DNS сервис меняет запись "exchange.com" на IP DC2 (Чикаго).',
+                    '3. Трейдеры автоматически перенаправляются в живой дата-центр.'
                 ],
                 commonMistakes: [
-                    '❌ DNS TTL слишком большой (клиенты кэшируют плохой IP часами).',
-                    '❌ Cold Standby в резервном регионе не прогрет и падает от нагрузки.',
-                    '❌ Split Brain в кластере управления (нужен Quorum).'
+                    '❌ Cold Standby не "прогрет" и падает от резкой нагрузки.',
+                    '❌ DNS кэширование (трейдеры еще час ломятся в мертвый DC1).',
+                    '❌ Split Brain (оба DC работают и принимают встречные заявки).'
                 ],
                 instructions: [
                     '1. Разместите "DNS сервис" (Global Traffic Manager).',
-                    '2. Разместите два "Балансировщика" (Load Balancer) для разных регионов.',
-                    '3. Соедините DNS с первым Балансировщиком (Primary Region).',
-                    '4. Соедините DNS со вторым Балансировщиком (Failover Region).'
+                    '2. Разместите "Балансировщик" (DC1, New York).',
+                    '3. Разместите "Балансировщик" (DC2, Chicago).',
+                    '4. Подключите DNS к обоим балансировщикам.'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'dns-service', count: 1 }, { type: 'load-balancer', count: 2 }],
                     requiredConnections: [{ from: 'dns-service', to: 'load-balancer' }]
                 },
-                realWorldExample: 'AWS Route53 Failover Record, Cloudflare Load Balancing.'
+                realWorldExample: 'NASDAQ, NYSE, Cloud Region Failover (AWS us-east-1 -> us-west-2).'
             },
             {
                 id: 'avail-backup',
-                title: 'Backup & Point-in-Time Recovery',
+                title: 'Backup (Legal Archive)',
                 pattern: 'Backup / Archive',
-                tactic: 'Восстановление после сбоев.',
-                description: 'Регулярное создание снапшотов данных. Point-in-Time Recovery позволяет откатиться на **любую** секунду в прошлом (используя Full Backup + WAL logs).',
-                keyIdea: 'Backup strategy is useless without Restore Strategy.',
+                tactic: 'Восстановление данных.',
+                description: 'Сценарий: Юридическая фирма. Вирус-шифровальщик уничтожил все документы. Закон требует хранить дела 50 лет. Спасет только "холодный" бэкап в другом месте.',
+                keyIdea: 'Бэкап не проверен = бэкапа нет.',
                 dataFlow: [
-                    '1. Cron запускает процесс бэкапа (pg_dump / snapshot).',
-                    '2. Данные шифруются и заливаются в Object Storage (S3 Glacier).',
-                    '3. Периодически запускается Test Restore для проверки архивов.',
+                    '1. Ночью запускается скрипт резервного копирования.',
+                    '2. Данные шифруются и улетают в S3 Glacier (дешевое хранилище).',
+                    '3. Раз в месяц происходит тестовое восстановление.'
                 ],
                 commonMistakes: [
-                    '❌ Хранение бэкапов в том же аккаунте/регионе (хакер удалит и базу, и бэкапы).',
-                    '❌ Отсутствие проверки бэкапов (файл есть, но битый).',
-                    '❌ RPO (Recovery Point) = 24 часа. (Потеря данных за сутки недопустима для банка).'
+                    '❌ Хранение бэкапов на том же сервере (вирус съест и их).',
+                    '❌ Игнорирование шифрования (утечка всего архива компании).',
+                    '❌ RPO=24 часа (потеряли работу целого дня).'
                 ],
                 instructions: [
-                    '1. Разместите "Базу данных" (Source), которая хранит данные.',
-                    '2. Разместите "Сервис Резервного Копирования" (Backup Service).',
-                    '3. Разместите "Объектное хранилище" (Object Storage) для архивов.',
-                    '4. Соедините Базу данных -> Backup Service.',
-                    '5. Соедините Backup Service -> Object Storage.'
+                    '1. Разместите "Базу данных" (Document Store).',
+                    '2. Разместите "Сервис Резервного Копирования" (Backup Agent).',
+                    '3. Разместите "Объектное хранилище" (Secure Storage).',
+                    '4. Соедините DB -> Backup Agent.',
+                    '5. Соедините Backup Agent -> Storage.'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'database', count: 1 }, { type: 'backup-service', count: 1 }, { type: 'object-storage', count: 1 }],
                     requiredConnections: [{ from: 'database', to: 'backup-service' }, { from: 'backup-service', to: 'object-storage' }]
                 },
-                realWorldExample: 'AWS Backup, Velero (for K8s), Postgres WAL Archiving (Barman).'
+                realWorldExample: 'Iron Mountain Digital, AWS Backup, Corporate Compliance strategies.'
             },
             {
                 id: 'avail-monitor',
-                title: 'Health Checks & Probes',
-                pattern: 'Watchdog / Monitoring',
-                tactic: 'Обнаружение сбоев.',
-                description: 'Механизм, позволяющий оркестратору (K8s) узнать состояние приложения. Liveness Probe: жив ли процесс? Readiness Probe: готов ли принимать трафик?',
-                keyIdea: 'Не шли трафик тому, кто не готов.',
+                title: 'Health Checks (Ride Hailing)',
+                pattern: 'Watchdog',
+                tactic: 'Обнаружение проблем.',
+                description: 'Сценарий: Агрегатор такси. 1000 микросервисов. Как понять, почему водители не могут уйти на линию? Kubernetes должен сам убивать зависшие поды.',
+                keyIdea: 'Не притворяйся живым, если не можешь работать.',
                 dataFlow: [
-                    '1. K8s шлет GET /healthz каждые 10 сек.',
-                    '2. Сервис проверяет коннект к БД Local Cache.',
-                    '3. Если БД недоступна — возвращает 503 (Not Ready).',
-                    '4. K8s убирает под из балансировки, но не перезагружает (если Liveness OK).',
+                    '1. K8s спрашивает сервис каждые 5 сек: "Ты жив?".',
+                    '2. Сервис проверяет: "База доступна? Кэш доступен?".',
+                    '3. Если нет — отвечает 500. K8s перезапускает его.'
                 ],
                 commonMistakes: [
-                    '❌ Deep Health Check в Liveness Probe — если БД тормозит, K8s рестартует все поды (Cascading Failure).',
+                    '❌ "Deep Checks" в Liveness Probe — если база тормозит, K8s убьет все сервисы (Cascade Fail).',
                     '❌ Отсутствие таймаутов на проверки.',
-                    '❌ Проверка внешних зависимостей (не надо проверять Google.com в readiness пробах).'
+                    '❌ Проверка внешних сайтов (интернет моргнул - сервис умер).'
                 ],
                 instructions: [
-                    '1. Разместите компонент "Мониторинг" (Orchestrator/K8s).',
-                    '2. Разместите два компонента "Сервис" (Service).',
-                    '3. Создайте связь от "Мониторинга" к первому "Сервису" (Health Probe).',
-                    '4. Создайте связь от "Мониторинга" ко второму "Сервису".'
+                    '1. Разместите "Мониторинг" (K8s Controller).',
+                    '2. Разместите два "Сервиса" (Driver API).',
+                    '3. Подключите Мониторинг к обоим сервисам (Health Probes).'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'monitoring', count: 1 }, { type: 'service', count: 2 }],
                     requiredConnections: [{ from: 'monitoring', to: 'service' }]
                 },
-                realWorldExample: 'Kubernetes Liveness/Readiness Probes, AWS ELB Health Checks.'
+                realWorldExample: 'Kubernetes Probes, Load Balancer Health Checks.'
             },
             {
                 id: 'avail-graceful',
-                title: 'Graceful Degradation',
-                pattern: 'Fallback / Feature Flags',
-                tactic: 'Частичная работоспособность.',
-                description: 'Способность системы отключать некритичный функционал при перегрузке или сбоях, сохраняя ядро. Например, интернет-магазин показывает товары, но отключает "Рекомендации".',
-                keyIdea: 'Лучше ограниченный сервис, чем никакого.',
+                title: 'Graceful Degradation (Video UI)',
+                pattern: 'Fallback',
+                tactic: 'Частичный отказ.',
+                description: 'Сценарий: Онлайн-кинотеатр. Сервис "Рекомендации" ("Вам может понравиться") упал. Нельзя показывать пользователю ошибку 500. Покажите просто список новинок.',
+                keyIdea: 'Худой мир лучше доброй ссоры (или пустой страницы).',
                 dataFlow: [
-                    '1. Сервис пытается получить рекомендации от Recommendation Engine.',
-                    '2. Таймаут/Ошибка соединения.',
-                    '3. Сервис ловит ошибку и возвращает пустой список или "Популярные товары" из кэша.',
-                    '4. UI рендерит страницу без блока "Рекомендовано для вас".',
+                    '1. UI запрашивает персональные рекомендации.',
+                    '2. Сервис Рекомендаций не отвечает (Timeot).',
+                    '3. UI идет в Кэш за списком "Топ-10 за неделю".',
+                    '4. Пользователь даже не заметил сбоя.'
                 ],
                 commonMistakes: [
-                    '❌ Отсутствие таймаутов (клиент висит вечно).',
-                    '❌ Fallback, который сам потребляет много ресурсов (и добивает систему).',
-                    '❌ Скрытие критических ошибок (система молчит, а заказы не принимаются).'
+                    '❌ Блокировка всей страницы из-за второстепенного виджета.',
+                    '❌ Бесконечный спиннер (Loader) вместо контента.',
+                    '❌ Отсутствие мониторинга на срабатывание фоллбэков.'
                 ],
                 instructions: [
-                    '1. Разместите "Сервис" (Service).',
-                    '2. Разместите "Внешнюю Систему" (External System), которая может упасть.',
-                    '3. Разместите "Кэш" (Cache) для фоллбэка.',
-                    '4. Соедините Сервис -> Внешняя Система (основной поток).',
-                    '5. Соедините Сервис -> Кэш (резервный поток).'
+                    '1. Разместите "Сервис" (UI BFF).',
+                    '2. Разместите "Внешнюю Систему" (RecSys - Unreliable).',
+                    '3. Разместите "Кэш" (Redis with Top-10).',
+                    '4. Соедините BFF -> RecSys (Primary).',
+                    '5. Соедините BFF -> Кэш (Fallback).'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'service', count: 1 }, { type: 'external-system', count: 1 }, { type: 'cache', count: 1 }],
                     requiredConnections: [{ from: 'service', to: 'external-system' }, { from: 'service', to: 'cache' }]
                 },
-                realWorldExample: 'Netflix UI (if recommendation service fails, showing generic lists), Amazon Checkout.'
+                realWorldExample: 'Netflix UI resilience, Amazon Homepage (static fallbacks).'
             },
             {
                 id: 'avail-multi-region',
-                title: 'Multi-Region Deployment',
+                title: 'Multi-Region (MMO Game)',
                 pattern: 'Geodistribution',
-                tactic: 'Географическое распределение.',
-                description: 'Развертывание инстансов в разных регионах (US, EU, Asia) для снижения задержек (Latency) и защиты от падения целого региона.',
-                keyIdea: 'Data Sovereignty (GDPR) и Latency диктуют архитектуру.',
+                tactic: 'Близость к пользователю.',
+                description: 'Сценарий: Онлайн-шутер. Пинг решает все. Игроку из Берлина нужен сервер во Франкфурте, игроку из Токио — в Японии.',
+                keyIdea: 'Законы физики не обманешь.',
                 dataFlow: [
-                    '1. Пользователь из Берлина обращается к google.com.',
-                    '2. GeoDNS видит IP пользователя и отдает IP Load Balancer во Frankfurt.',
-                    '3. Данные пользователя (German Profile) загружаются из локальной EU-базы.',
+                    '1. Игрок запускает игру.',
+                    '2. GeoDNS определяет IP игрока (Германия).',
+                    '3. Возвращает адрес игрового сервера в EU-Central.',
+                    '4. Пинг 20мс. Игрок счастлив.'
                 ],
                 commonMistakes: [
-                    '❌ Синхронная репликация между регионами (скорость света ограничивает RTT ~100ms+).',
-                    '❌ Игнорирование законов о хранении данных (GDPR запрещает вывозить данные граждан ЕС в США).',
-                    '❌ Сложность деплоя (нужен CD пайплайн, катящий сразу везде).'
+                    '❌ Синхронизация баз данных между регионами в реальном времени (невозможно для игр).',
+                    '❌ Общие глобальные таблицы лидеров, которые тормозят локальный геймплей.',
+                    '❌ GDPR (данные игрока из ЕС нельзя хранить в США).'
                 ],
                 instructions: [
-                    '1. Разместите "DNS сервис" (GeoDNS).',
-                    '2. Разместите два компонента "Сервер" (Server/Service), по одному на регион.',
-                    '3. Создайте связь от DNS к первому Серверу (Region A).',
-                    '4. Создайте связь от DNS к второму Серверу (Region B).'
+                    '1. Разместите "DNS сервис" (Matchmaker).',
+                    '2. Разместите "Сервер" (EU Server).',
+                    '3. Разместите "Сервер" (US Server).',
+                    '4. Соедините DNS -> EU Server.',
+                    '5. Соедините DNS -> US Server.'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'dns-service', count: 1 }, { type: 'server', count: 2 }],
                     requiredConnections: [{ from: 'dns-service', to: 'server' }]
                 },
-                realWorldExample: 'Netflix global control plane, AWS Global Accelerator.'
+                realWorldExample: 'Fortnite, CS:GO matchmaking, Riot Direct.'
             },
             {
                 id: 'avail-queue-leveling',
-                title: 'Queue-Based Load Leveling',
+                title: 'Queue Leveling (Ticket Sales)',
                 pattern: 'Load Leveling',
                 tactic: 'Сглаживание пиков.',
-                description: 'Использование очереди как буфера, чтобы сервис мог обрабатывать запросы с постоянной скоростью, несмотря на всплески трафика ("Backpressure").',
-                keyIdea: 'Буферизируй всплески, спасай базу.',
+                description: 'Сценарий: Старт продаж билетов на концерт Taylor Swift. 1,000,000 человек ломятся на сайт за 1 секунду. Если всех пустить к базе — она взорвется.',
+                keyIdea: 'Поставь их в очередь, как в кассу.',
                 dataFlow: [
-                    '1. API Gateway принимает 10 000 req/sec во время распродажи.',
-                    '2. Gateway сбрасывает запросы в Kafka/RabbitMQ (очень быстро).',
-                    '3. Order Service разбирает очередь со скоростью 500 req/sec (его предел).',
-                    '4. База данных жива и счастлива.',
+                    '1. Gateway принимает запрос и тут же кидает в Очередь (Kafka).',
+                    '2. Пользователь видит "Вы в очереди, ваше место 5432".',
+                    '3. Consumer не спеша (500 req/sec) разбирает очередь и бронирует билеты в БД.'
                 ],
                 commonMistakes: [
-                    '❌ Очередь переполняется и OOM (нужен мониторинг глубины и лимиты).',
-                    '❌ Пользователь ждет синхронного ответа (паттерн работает только для асинхронных задач).',
-                    '❌ Потеря сообщений при перезагрузке брокера.'
+                    '❌ Очередь не резиновая (нужен лимит длины).',
+                    '❌ Пользователь не знает, что происходит (нужен WebSocket для обновления позиции).',
+                    '❌ Очередь упала и потеряла заказы (нужен Persistence).'
                 ],
                 instructions: [
-                    '1. Разместите "API Gateway" (принимает трафик).',
-                    '2. Разместите "Очередь" (Queue) для буферизации.',
-                    '3. Разместите "Сервис" (Service) Worker.',
-                    '4. Соедините API Gateway -> Очередь.',
-                    '5. Соедините Очередь -> Сервис.'
+                    '1. Разместите "API Gateway" (Ticket Site).',
+                    '2. Разместите "Очередь" (Waiting Room).',
+                    '3. Разместите "Сервис" (Booking Worker).',
+                    '4. Gateway -> Очередь.',
+                    '5. Очередь -> Сервис.'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'api-gateway', count: 1 }, { type: 'queue', count: 1 }, { type: 'service', count: 1 }],
                     requiredConnections: [{ from: 'api-gateway', to: 'queue' }, { from: 'queue', to: 'service' }]
                 },
-                realWorldExample: 'Black Friday sales handling, Log ingestion systems.'
+                realWorldExample: 'Ticketmaster Virtual Waiting Room, Black Friday Flash Sales.'
             },
             {
                 id: 'avail-active-active',
-                title: 'Active-Active Replication',
+                title: 'Active-Active (Messenger)',
                 pattern: 'Multi-Master',
-                tactic: 'Одновременная запись в несколько узлов.',
-                description: 'Конфигурация, где все узлы (в разных ЦОД) принимают запись. Требует сложного разрешения конфликтов (Conflict Resolution Strategy).',
-                keyIdea: '100% SLA... теоретически. На практике — ад синхронизации.',
+                tactic: 'Глобальная доступность.',
+                description: 'Сценарий: Мессенджер. Пользователь А подключен к серверу в Азии, Пользователь Б — в США. Они переписываются. Оба сервера должны принимать запись сообщений.',
+                keyIdea: 'Две головы лучше... но сложнее договориться.',
                 dataFlow: [
-                    '1. Пользователь 1 пишет в DC1 (User.name = "Alice").',
-                    '2. Пользователь 2 пишет в DC2 (User.name = "Bob") одновременно.',
-                    '3. Системы репликации пытаются слить изменения. Возникает конфликт.',
-                    '4. Применяется стратегия "Last Write Wins" (по timestamp).',
+                    '1. User A пишет сообщение в Asia Node.',
+                    '2. User B пишет ответ в US Node.',
+                    '3. Базы данных синхронизируются в фоне (Conflict Resolution: Last Write Wins).',
+                    '4. Сообщения появляются у обоих.'
                 ],
                 commonMistakes: [
-                    '❌ Игнорирование конфликтов (потеря данных).',
-                    '❌ Использование автоинкрементных ID на разных мастерах (дублирование PK).',
-                    '❌ Ожидание мгновенной консистентности между континентами.'
+                    '❌ Конфликты (одновременное редактирование профиля в разных регионах).',
+                    '❌ Автоинкремент ID (нужны UUID или диапазоны ID для каждого региона).',
+                    '❌ Ожидание, что данные появятся мгновенно (Speed of Light problem).'
                 ],
                 instructions: [
-                    '1. Разместите "Балансировщик" (Load Balancer).',
-                    '2. Разместите две "Базы данных" (Active Node A и Active Node B).',
-                    '3. Подключите Балансировщик к первой БД.',
-                    '4. Подключите Балансировщик ко второй БД.',
-                    '5. Создайте связь между базами данных для двусторонней синхронизации.'
+                    '1. Разместите "Балансировщик".',
+                    '2. Разместите две "Базы данных" (Node Asia, Node US).',
+                    '3. Подключите Балансировщик к обоим узлам.',
+                    '4. Соедините базы между собой для репликации.'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'database', count: 2 }, { type: 'load-balancer', count: 1 }],
                     requiredConnections: [{ from: 'load-balancer', to: 'database' }, { from: 'database', to: 'database' }]
                 },
-                realWorldExample: 'Google Spanner (TrueTime), Amazon DynamoDB Global Tables, CockroachDB.'
+                realWorldExample: 'Google Spanner, DynamoDB Global Tables, Telegram DC architecture.'
             },
         ]
     },
@@ -698,49 +681,50 @@ const categories: QualityCategory[] = [
         lessons: [
             {
                 id: 'sec-firewall',
-                title: 'Firewall / DMZ',
+                title: 'Firewall (Corporate Network)',
                 pattern: 'Firewall',
                 tactic: 'Фильтрация трафика.',
-                description: 'Сетевой экран, изолирующий внутреннюю защищенную сеть от внешней (интернет) путем фильтрации пакетов.',
+                description: 'Сценарий: Офисная сеть "Big Corp". Бухгалтерия не должна быть видна из Гостевого Wi-Fi. Сервер с базой данных не должен торчать в интернет.',
                 keyIdea: 'Запрещено все, что не разрешено явно.',
                 dataFlow: [
-                    '1. Внешний запрос приходит на публичный IP.',
-                    '2. Firewall проверяет правила (IP, Port, Protocol).',
-                    '3. Разрешенный трафик (e.g., tcp/443) проходит к Серверу в DMZ.',
+                    '1. Хакер сканирует порты публичного IP.',
+                    '2. Firewall блокирует все входящие, кроме 443 (VPN) и 80 (Web).',
+                    '3. Сотрудник из бухгалтерии получает доступ к 1C-серверу через разрешенное правило.',
                 ],
                 commonMistakes: [
-                    '❌ Правило Any-Any Allow в проде.',
+                    '❌ Правило "Allow Any Any" (временное, которое стало постоянным).',
                     '❌ Размещение Базы Данных в DMZ (публичном сегменте).',
                     '❌ Отсутствие Deny logging для анализа атак.'
                 ],
                 instructions: [
-                    '1. Разместите компонент "Внешняя система" (Интернет).',
+                    '1. Разместите компонент "Внешняя система" (Internet/Guest).',
                     '2. Разместите компонент "Межсетевой экран" (Firewall).',
-                    '3. Разместите компонент "Сервер" (Protected Server).',
+                    '3. Разместите компонент "Сервер" (Sensitive Internal DB).',
                     '4. Соедините "Внешнюю систему" с "Межсетевым экраном".',
                     '5. Соедините "Межсетевой экран" с "Сервером".'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'firewall', count: 1 }, { type: 'server', count: 1 }],
                     requiredConnections: [{ from: 'firewall', to: 'server' }]
-                }
+                },
+                realWorldExample: 'Palo Alto Networks, Cisco ASA, AWS Security Groups.'
             },
             {
                 id: 'sec-auth-service',
-                title: 'Auth Service',
+                title: 'Auth Service (SaaS Platform)',
                 pattern: 'Identity Provider',
                 tactic: 'Централизованная аутентификация.',
-                description: 'Вынос логики проверки личности (Authentication) и выдачи токенов в отдельный надежный компонент.',
+                description: 'Сценарий: SaaS платформа с 50 микросервисами. Если каждый сервис будет сам проверять логин/пароль — мы сойдем с ума. Нужен единый центр выдачи пропусков.',
                 keyIdea: 'Единый источник истины о пользователях.',
                 dataFlow: [
-                    '1. Пользователь отправляет логин/пароль в API Gateway.',
-                    '2. Gateway пересылает креды в Auth Service.',
-                    '3. Auth Service проверяет хэш пароля и возвращает JWT Token.',
+                    '1. Пользователь логинится через форму входа.',
+                    '2. Auth Service проверяет пароль и выдает подписанный JWT токен.',
+                    '3. Пользователь идет с этим токеном в любой другой микросервис.',
                 ],
                 commonMistakes: [
-                    '❌ Реализация Auth логики в каждом микросервисе (дублирование и дыры).',
-                    '❌ Хранение паролей в открытом виде.',
-                    '❌ Отсутствие механизма отзыва (Revocation) токенов.'
+                    '❌ Реализация Auth логики в каждом микросервисе (Copy-Paste уязвимостей).',
+                    '❌ Хранение паролей без "соли" и хэширования.',
+                    '❌ Невозможность отозвать украденный токен (нужен Blacklist или короткий TTL).'
                 ],
                 instructions: [
                     '1. Разместите компонент "API Gateway".',
@@ -750,24 +734,25 @@ const categories: QualityCategory[] = [
                 validationParams: {
                     requiredComponents: [{ type: 'api-gateway', count: 1 }, { type: 'auth-service', count: 1 }],
                     requiredConnections: [{ from: 'api-gateway', to: 'auth-service' }]
-                }
+                },
+                realWorldExample: 'Auth0, Keycloak, AWS Cognito, Google Sign-In.'
             },
             {
                 id: 'sec-api-gateway',
-                title: 'API Gateway Security',
+                title: 'Gateway Security (Public API)',
                 pattern: 'Gateway Offloading',
                 tactic: 'Проверка токенов на входе.',
-                description: 'API Gateway действует как единая точка входа, проверяющая авторизацию запросов перед их передачей внутренним сервисам.',
-                keyIdea: 'Никаких неавторизованных запросов внутри периметра.',
+                description: 'Сценарий: Публичный API погоды. Мы не хотим, чтобы каждый внутренний микросервис проверял токены и лимиты. Пусть это делает "вышибала" на входе.',
+                keyIdea: 'Никаких неавторизованных запросов внутри дома.',
                 dataFlow: [
-                    '1. Клиент шлет запрос с Bearer Token.',
-                    '2. API Gateway валидирует подпись токена (Stateless) или зовет Auth (Stateful).',
-                    '3. Если валидно — запрос проксируется в Сервис.',
+                    '1. Клиент шлет запрос с API Key.',
+                    '2. API Gateway проверяет ключ и лимиты (1000 req/day).',
+                    '3. Если ОК — проксирует запрос чистому микросервису.',
                 ],
                 commonMistakes: [
-                    '❌ Пропуск "сырых" запросов к внутренним API.',
-                    '❌ Отсутствие Rate Limiting на Gateway (риск DDOS).',
-                    '❌ Gateway имеет слишком много бизнес-логики.'
+                    '❌ Пропуск "сырых" запросов в обход Gateway.',
+                    '❌ Gateway становится "Богом" и содержит бизнес-логику.',
+                    '❌ Отсутствие Rate Limiting (один клиент кладет весь API).'
                 ],
                 instructions: [
                     '1. Разместите компонент "API Gateway".',
@@ -778,25 +763,26 @@ const categories: QualityCategory[] = [
                 validationParams: {
                     requiredComponents: [{ type: 'api-gateway', count: 1 }, { type: 'service', count: 2 }],
                     requiredConnections: [{ from: 'api-gateway', to: 'service' }]
-                }
+                },
+                realWorldExample: 'Kong, Apigee, AWS API Gateway.'
             },
             {
                 id: 'sec-secrets',
-                title: 'Secrets Management',
+                title: 'Secrets Management (Fintech)',
                 pattern: 'Vault',
                 tactic: 'Безопасное хранение секретов.',
-                description: 'Централизованное хранение ключей и паролей в Vault, исключающее их нахождение в коде или конфигурационных файлах.',
+                description: 'Сценарий: Банковское ядро. Пароль от базы данных клиентов нельзя хранить в Git репозитории или конфиг файле. Он должен браться из защищенного сейфа.',
                 keyIdea: 'Код не знает паролей. Код знает, где их взять.',
                 dataFlow: [
-                    '1. App стартует и аутентифицируется в Vault (через Role/Cert).',
-                    '2. App запрашивает секрет (например, DB Password).',
-                    '3. Vault возвращает секрет (возможно, временный TTL).',
-                    '4. App использует секрет для коннекта к БД.',
+                    '1. Приложение стартует и стучится в Vault.',
+                    '2. Vault проверяет сертификат приложения.',
+                    '3. Vault выдает временный (TTL 5 мин) пароль к БД.',
+                    '4. Приложение подключается к БД.'
                 ],
                 commonMistakes: [
-                    '❌ Хардкод паролей в Git.',
-                    '❌ Передача секретов через Environment Variables (видны в process list).',
-                    '❌ Долгоживущие секреты без ротации.'
+                    '❌ Hardcoded credentials в исходном коде (даже в энкодере).',
+                    '❌ Передача секретов через ENV variables (видны в диспетчере задач).',
+                    '❌ Использование одного "Root пароля" для всех сервисов.'
                 ],
                 instructions: [
                     '1. Разместите компонент "Сервис".',
@@ -808,25 +794,26 @@ const categories: QualityCategory[] = [
                 validationParams: {
                     requiredComponents: [{ type: 'service', count: 1 }, { type: 'secret-management', count: 1 }, { type: 'database', count: 1 }],
                     requiredConnections: [{ from: 'service', to: 'secret-management' }, { from: 'service', to: 'database' }]
-                }
+                },
+                realWorldExample: 'HashiCorp Vault, AWS Secrets Manager, Azure Key Vault.'
             },
             {
                 id: 'sec-waf',
-                title: 'WAF (Web App Firewall)',
+                title: 'WAF (E-commerce Protection)',
                 pattern: 'WAF',
                 tactic: 'Защита от атак уровня приложений.',
-                description: 'Специализированный Firewall, анализирующий HTTP-трафик для блокировки атак (SQL Injection, XSS, CSRF).',
-                keyIdea: 'Глубокая инспекция HTTP пакетов.',
+                description: 'Сценарий: Интернет-магазин в Черную Пятницу. Хакеры пытаются внедрить SQL-инъекции в поле "Search", чтобы слить базу клиентов.',
+                keyIdea: 'Умный страж, понимающий HTTP.',
                 dataFlow: [
-                    '1. Хакер посылает запрос с SQL Injection.',
-                    '2. WAF анализирует тело и заголовки запроса.',
-                    '3. WAF распознает сигнатуру атаки и блокирует запрос.',
-                    '4. Легитимный трафик проходит к Веб-серверу.',
+                    '1. Бот шлет запрос: GET /search?q=\' OR 1=1; DROP TABLE Users;--',
+                    '2. WAF анализирует тело запроса и видит SQL сигнатуру.',
+                    '3. WAF блокирует запрос (403 Forbidden).',
+                    '4. База данных в безопасности.'
                 ],
                 commonMistakes: [
-                    '❌ Работа в режиме "Monitoring Only" без блокировки.',
-                    '❌ Отсутствие настройки под конкретное приложение (Generic Rules).',
-                    '❌ SSL Termination перед WAF не настроен (WAF не видит шифрованный трафик).',
+                    '❌ Режим "Monitoring Only" (видим атаку, но не блокируем).',
+                    '❌ Ложные срабатывания (блокировка легитимных клиентов).',
+                    '❌ Отсутствие SSL терминации на WAF (он не видит шифрованный трафик).'
                 ],
                 instructions: [
                     '1. Разместите компонент "Клиент" (Client).',
@@ -838,24 +825,25 @@ const categories: QualityCategory[] = [
                 validationParams: {
                     requiredComponents: [{ type: 'waf', count: 1 }, { type: 'web-server', count: 1 }],
                     requiredConnections: [{ from: 'waf', to: 'web-server' }]
-                }
+                },
+                realWorldExample: 'Cloudflare WAF, AWS WAF, Imperva.'
             },
             {
                 id: 'sec-vpn',
-                title: 'VPN Access',
+                title: 'VPN (Remote Work)',
                 pattern: 'VPN Gateway',
-                tactic: 'Защищенный туннель.',
-                description: 'Предоставление доступа к внутренним корпоративным ресурсам через шифрованный канал (туннель).',
-                keyIdea: 'Интернет — это враждебная среда. Строй туннель.',
+                tactic: 'Защищенный периметр.',
+                description: 'Сценарий: 2020 год, все ушли на удаленку. Админы должны подключаться к внутренним серверам компании из дома безопасно, как будто они в офисе.',
+                keyIdea: 'Туннель через враждебный интернет.',
                 dataFlow: [
-                    '1. Удаленный сотрудник запускает VPN-клиент.',
-                    '2. Устанавливается шифрованный туннель к VPN Шлюзу.',
-                    '3. Трафик к внутренним серверам идет внутри туннеля.',
+                    '1. Сисадмин запускает OpenVPN клиент на ноутбуке.',
+                    '2. Создается зашифрованный туннель до офисного шлюза.',
+                    '3. Внутри туннеля сисадмин заходит по SSH на сервер.',
                 ],
                 commonMistakes: [
-                    '❌ Split Tunneling (утечка корпоративного трафика в открытый инет).',
-                    '❌ Слабая аутентификация пользователя (без MFA).',
-                    '❌ Доступ ко всей подсети, а не к конкретным ресурсам (Zero Trust лучше).',
+                    '❌ Split Tunneling (корпоративный трафик защищен, а YouTube смотрится напрямую — риск заражения).',
+                    '❌ Слабые пароли для VPN (нужен MFA!).',
+                    '❌ Доступ ко всей сети сразу (нужна микросегментация).'
                 ],
                 instructions: [
                     '1. Разместите компонент "Клиент" (Remote Employee).',
@@ -867,24 +855,25 @@ const categories: QualityCategory[] = [
                 validationParams: {
                     requiredComponents: [{ type: 'vpn-gateway', count: 1 }, { type: 'server', count: 1 }],
                     requiredConnections: [{ from: 'vpn-gateway', to: 'server' }]
-                }
+                },
+                realWorldExample: 'OpenVPN, WireGuard, Cisco AnyConnect, Tailscale.'
             },
             {
                 id: 'sec-audit',
-                title: 'Audit Logging',
+                title: 'Audit Logging (Medical Data)',
                 pattern: 'Audit Trail',
                 tactic: 'Регистрация действий.',
-                description: 'Непрерывная запись всех значимых событий безопасности и действий пользователей для последующего анализа.',
+                description: 'Сценарий: Больница. Врач посмотрел карту болезни знаменитости. Законом (HIPAA/GDPR) требуется знать, КТО, КОГДА и ЗАЧЕМ смотрел эти данные.',
                 keyIdea: 'Если это не записано, этого не было.',
                 dataFlow: [
-                    '1. Пользователь выполняет действие (Edit/Delete).',
-                    '2. Сервис выполняет действие и асинхронно отправляет событие в Audit Log.',
-                    '3. Audit Log сохраняет: Кто? Что? Где? Когда?',
+                    '1. Врач открывает карту пациента.',
+                    '2. Система показывает карту И пишет событие в Audit Log.',
+                    '3. "User: Dr. House, Action: READ, Resource: Patient #13, Time: 12:00".',
                 ],
                 commonMistakes: [
-                    '❌ Логирование чувствительных данных (паролей, PII).',
-                    '❌ Возможность модификации логов хакером (нужен WORM storage).',
-                    '❌ Слишком короткий срок хранения логов.'
+                    '❌ Логи можно удалить или подделать (нужен WORM - Write Once Read Many).',
+                    '❌ Логирование самих медицинских данных (утечка в логи).',
+                    '❌ Срок хранения меньше требуемого законом (нужно хранить годами).'
                 ],
                 instructions: [
                     '1. Разместите компонент "Сервис".',
@@ -894,24 +883,25 @@ const categories: QualityCategory[] = [
                 validationParams: {
                     requiredComponents: [{ type: 'audit-log', count: 1 }, { type: 'service', count: 1 }],
                     requiredConnections: [{ from: 'service', to: 'audit-log' }]
-                }
+                },
+                realWorldExample: 'CloudTrail, Splunk, Kibana Audit Logs.'
             },
             {
                 id: 'sec-ids',
-                title: 'IDS (Intrusion Detection)',
+                title: 'IDS (Gov Cloud)',
                 pattern: 'Sidecar Monitor',
                 tactic: 'Анализ трафика.',
-                description: 'Система пассивного мониторинга, анализирующая копию сетевого трафика на предмет аномалий и сигнатур атак.',
+                description: 'Сценарий: Правительственный дата-центр. Мы не знаем новые типы атак, но можем увидеть аномалии. Вдруг сервер начал майнить биткоины или сканировать соседей?',
                 keyIdea: 'Слушай сеть, ищи зло.',
                 dataFlow: [
-                    '1. Весь трафик проходит через Firewall к Серверу.',
-                    '2. Firewall (или TAP) дублирует пакеты в IDS.',
-                    '3. IDS анализирует копию и шлет алерт админу, если нашла атаку.',
+                    '1. Весь трафик копируется (Port Mirroring) на сенсор IDS.',
+                    '2. IDS видит сигнатуру "WannaCry exploit".',
+                    '3. IDS шлет красный алерт дежурному офицеру безопасности.',
                 ],
                 commonMistakes: [
                     '❌ Огромное количество ложных срабатываний (Alert Fatigue).',
                     '❌ Анализ зашифрованного трафика без расшифровки (бесполезно).',
-                    '❌ Отсутствие реакции на инцидент.'
+                    '❌ Отсутствие реакции (система кричит, а все спят).'
                 ],
                 instructions: [
                     '1. Разместите компонент "Межсетевой экран" (Firewall).',
@@ -923,24 +913,25 @@ const categories: QualityCategory[] = [
                 validationParams: {
                     requiredComponents: [{ type: 'server', count: 1 }, { type: 'firewall', count: 1 }],
                     requiredConnections: [{ from: 'firewall', to: 'server' }]
-                }
+                },
+                realWorldExample: 'Snort, Suricata, AWS GuardDuty.'
             },
             {
                 id: 'sec-crypt',
-                title: 'Encryption (Шифрование)',
-                pattern: 'Application-Level Encryption / Envelope Encryption',
-                tactic: 'Шифрование данных перед записью.',
-                description: 'Сервис запрашивает ключи у KMS, шифрует данные и только потом пишет их в БД. База данных хранит нечитаемый шифротекст.',
-                keyIdea: 'База данных видит только мусор, ключи у нее нет.',
+                title: 'Encryption (PCI DSS)',
+                pattern: 'Envelope Encryption',
+                tactic: 'Шифрование данных.',
+                description: 'Сценарий: Платежный шлюз. Хранить номера кредиток (PAN) в открытом виде запрещено стандартом PCI DSS. Если базу украдут — данные должны быть мусором для хакера.',
+                keyIdea: 'База данных хранит сейф, а ключ у нас.',
                 dataFlow: [
-                    '1. Сервис получает конфиденциальные данные.',
-                    '2. Сервис запрашивает Data Encryption Key (DEK) у KMS.',
-                    '3. Сервис шифрует данные и пишет шифротекст в БД.',
+                    '1. Сервис получает номер карты.',
+                    '2. Сервис просит ключ у KMS (Key Management Service).',
+                    '3. Сервис шифрует карту и пишет шифротекст в БД.',
                 ],
                 commonMistakes: [
-                    '❌ Хранение ключа шифрования в той же БД.',
-                    '❌ Использование слабых алгоритмов (DES, MD5).',
-                    '❌ Нет ротации ключей.'
+                    '❌ Хранение ключа шифрования в той же БД рядом с данными.',
+                    '❌ Самодельные алгоритмы шифрования (всегда используйте AES-GCM).',
+                    '❌ Нет ротации ключей (один ключ на 10 лет).'
                 ],
                 instructions: [
                     '1. Разместите компонент "Сервис".',
@@ -952,36 +943,38 @@ const categories: QualityCategory[] = [
                 validationParams: {
                     requiredComponents: [{ type: 'service', count: 1 }, { type: 'database', count: 1 }, { type: 'kms', count: 1 }],
                     requiredConnections: [{ from: 'service', to: 'kms' }, { from: 'service', to: 'database' }]
-                }
+                },
+                realWorldExample: 'AWS KMS, HashiCorp Vault Transit Engine, Google Cloud KMS.'
             },
             {
                 id: 'sec-ddos',
-                title: 'DDoS Protection',
-                pattern: 'Scrubbing Center / CDN',
-                tactic: 'Поглощение объемных атак.',
-                description: 'Использование распределенной сети (CDN) или очистительных центров для поглощения вредоносного трафика до того, как он достигнет Origin.',
+                title: 'DDoS Protection (Online Gaming)',
+                pattern: 'Scrubbing Center',
+                tactic: 'Поглощение атак.',
+                description: 'Сценарий: Запуск MMO игры. Конкуренты заказали атаку, чтобы "положить" сервера логина в день старта. Нам нужна защита, которая примет удар на себя.',
                 keyIdea: 'Масса (емкость сети) побеждает массу (трафик ботнета).',
                 dataFlow: [
-                    '1. Весь входящий трафик направляется на CDN (Anycast IP).',
-                    '2. CDN фильтрует L3/L4 атаки и кэширует контент.',
-                    '3. Только чистые запросы проксируются на Балансировщик.',
+                    '1. Миллионы ботов шлют мусорный трафик.',
+                    '2. Весь трафик заворачивается в Scrubbing Center (огромная труба).',
+                    '3. Мусор фильтруется, к нам долетают только чистые пакеты игроков.',
                 ],
                 commonMistakes: [
-                    '❌ Раскрытие реального IP-адреса Origin сервера (Atacker bypasses CDN).',
-                    '❌ Отсутствие Rate Limiting на уровне приложения.',
-                    '❌ Полагаться только на Firewal (он упадет первым).'
+                    '❌ Засвет реального IP-адреса сервера (атака пойдет в обход защиты).',
+                    '❌ Блокировка легитимных игроков (False Positives).',
+                    '❌ Защита только Web (для игр нужна защита UDP протокола).'
                 ],
                 instructions: [
-                    '1. Разместите компонент "Внешняя система" (Attacker).',
+                    '1. Разместите компонент "Внешняя система" (Botnet).',
                     '2. Разместите компонент "CDN".',
-                    '3. Разместите компонент "Балансировщик" (Load Balancer).',
+                    '3. Разместите компонент "Балансировщик" (Game Server LB).',
                     '4. Соедините "Внешнюю систему" с "CDN".',
                     '5. Соедините "CDN" с "Балансировщиком".'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'cdn', count: 1 }, { type: 'load-balancer', count: 1 }],
                     requiredConnections: [{ from: 'cdn', to: 'load-balancer' }]
-                }
+                },
+                realWorldExample: 'Cloudflare Magic Transit, AWS Shield Advanced, Akamai Prolexic.'
             },
         ]
     },
@@ -993,20 +986,20 @@ const categories: QualityCategory[] = [
         lessons: [
             {
                 id: 'obs-log',
-                title: 'Centralized Logging',
+                title: 'Logging (Logistics)',
                 pattern: 'Log Aggregator',
                 tactic: 'Сбор логов в одном месте.',
-                description: 'Агрегация логов от всех сервисов в единое хранилище для удобного поиска и анализа.',
+                description: 'Сценарий: Логистическая компания. Посылка потерялась. Нужно найти все записи о ней по ID трека среди терабайтов логов с 500 серверов сортировочных центров.',
                 keyIdea: 'Логи — это поток событий (Stream), а не файлы.',
                 dataFlow: [
-                    '1. Сервис пишет лог в Stdout/Stderr (формат JSON).',
-                    '2. Агент (Fluentd/Filebeat) читает поток и отправляет в хранилище (Elasticsearch).',
-                    '3. Разработчик ищет логи через Kibana.',
+                    '1. Сортировочный робот пишет "Parcel #123 Scanned" в Stdout.',
+                    '2. Агент (Filebeat) ловит строку, добавляет метки (Region=US) и шлет в Elastic.',
+                    '3. Оператор вводит ID #123 в Kibana и видит весь путь посылки.',
                 ],
                 commonMistakes: [
-                    '❌ Запись логов в локальные файлы внутри контейнера (теряются при рестарте).',
-                    '❌ Неструктурированный текст вместо JSON (сложно парсить).',
-                    '❌ Логирование секретов или огромных пейлоадов.'
+                    '❌ Запись логов в файлы внутри контейнера (контейнер умер = логи пропали).',
+                    '❌ Текстовые логи вместо JSON (нельзя автоматически парсить поля).',
+                    '❌ Логирование PII (адрес клиента) в открытом виде.'
                 ],
                 instructions: [
                     '1. Добавьте 2 компонента "Сервис".',
@@ -1017,53 +1010,56 @@ const categories: QualityCategory[] = [
                 validationParams: {
                     requiredComponents: [{ type: 'service', count: 2 }, { type: 'logging', count: 1 }],
                     requiredConnections: [{ from: 'service', to: 'logging' }]
-                }
+                },
+                realWorldExample: 'ELK Stack (Elasticsearch, Logstash, Kibana), Datadog Logs, Splunk.'
             },
             {
                 id: 'obs-metric',
-                title: 'Metrics Visualization',
-                pattern: 'Pull-Based Monitoring (Prometheus style)',
-                tactic: 'Сбор метрик (Scraping).',
-                description: 'Система мониторинга периодически опрашивает (pull) сервисы и базы данных для сбора метрик (Time Series Data).',
+                title: 'Metrics (Trading)',
+                pattern: 'Pull-Based Monitoring',
+                tactic: 'Сбор метрик в реальном времени.',
+                description: 'Сценарий: Биржа. Трейдерам важна каждая миллисекунда. Мы должны знать latency ордеров прямо сейчас. Если задержка выше 100мс — мы теряем миллионы.',
                 keyIdea: 'Знай, "сколько" и "как быстро", прямо сейчас.',
                 dataFlow: [
-                    '1. Сервис выставляет endpoint /metrics.',
-                    '2. Prometheus периодически делает GET /metrics (Scrape).',
-                    '3. Grafana рисует графики на основе данных из Prometheus.',
+                    '1. Торговый движок на C++ инкрементирует счетчик `orders_processed` в RAM.',
+                    '2. Prometheus каждые 15 сек забирает (Scrape) значения метрик.',
+                    '3. Grafana рисует график "Orders Per Second" на стене в офисе.',
                 ],
                 commonMistakes: [
-                    '❌ High Cardinality (слишком много уникальных значений меток, например user_id).',
-                    '❌ Push-модель там, где можно Pull (усложняет агенты).',
-                    '❌ Сбор метрик, которые никто не смотрит (шум).'
+                    '❌ High Cardinality (метрика с user_id каждого юзера убьет Prometheus).',
+                    '❌ Путать метрики (агрегаты) и логи (события).',
+                    '❌ Отсутствие алертов на "отсутствие данных".'
                 ],
                 instructions: [
-                    '1. Добавьте "Сервис" (Service).',
+                    '1. Добавьте "Сервис" (Trading Engine).',
                     '2. Добавьте "Базу данных" (Database).',
-                    '3. Добавьте "Мониторинг" (Monitoring).',
+                    '3. Добавьте "Мониторинг" (Prometheus).',
                     '4. Соедините Мониторинг с Сервисом (Scrape).',
                     '5. Соедините Мониторинг с Базой данных (Scrape).'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'monitoring', count: 1 }, { type: 'service', count: 1 }, { type: 'database', count: 1 }],
                     requiredConnections: [{ from: 'monitoring', to: 'service' }, { from: 'monitoring', to: 'database' }]
-                }
+                },
+                realWorldExample: 'Prometheus, Grafana, VictoriaMetrics.'
             },
             {
                 id: 'obs-trace',
-                title: 'Distributed Tracing',
-                pattern: 'Tracing',
-                tactic: 'Отслеживание запроса.',
-                description: 'Идентификация полного пути запроса через множество микросервисов для отладки задержек и ошибок.',
+                title: 'Tracing (E-commerce)',
+                pattern: 'Distributed Tracing',
+                tactic: 'Полный путь запроса.',
+                description: 'Сценарий: Пользователь нажал "Купить", и сайт завис. Где проблема? В Сервисе Корзины? В Платежке? В Базе? Трейсинг покажет всю цепочку.',
                 keyIdea: 'Единый Trace ID связывает все логи и вызовы.',
                 dataFlow: [
-                    '1. Клиент делает запрос -> Сервис А (генерирует Trace ID).',
-                    '2. Сервис А вызывает Сервис Б, передавая Trace ID в заголовках.',
-                    '3. Оба сервиса шлют Spans (отрезки времени) в Jaeger.',
+                    '1. Frontend генерирует TraceID=abc и зовет Backend.',
+                    '2. Backend зовет Payment Service, передавая TraceID=abc в заголовке.',
+                    '3. Payment Service зовет Database.',
+                    '4. Jaeger показывает диаграмму Ганта: БД тормозила 5 секунд.',
                 ],
                 commonMistakes: [
-                    '❌ Потеря контекста (Trace ID) при асинхронных вызовах.',
-                    '❌ 100% сэмплирование в проде (дорого и медленно).',
-                    '❌ Неинструментированные БД или внешние вызовы (слепые пятна).'
+                    '❌ Потеря контекста (забыли передать хедер при асинхронном вызове).',
+                    '❌ 100% сэмплирование (хранить трейс каждого чиха дорого, достаточно 1%).',
+                    '❌ Неинструментированные базы данных (черные ящики в трейсе).'
                 ],
                 instructions: [
                     '1. Добавьте 3 компонента "Сервис".',
@@ -1073,24 +1069,26 @@ const categories: QualityCategory[] = [
                 validationParams: {
                     requiredComponents: [{ type: 'tracing', count: 1 }, { type: 'service', count: 3 }],
                     requiredConnections: [{ from: 'service', to: 'tracing' }]
-                }
+                },
+                realWorldExample: 'Jaeger, Zipkin, OpenTelemetry, Honeycomb.'
             },
             {
                 id: 'obs-alert',
-                title: 'Alerting',
+                title: 'Alerting (Power Plant)',
                 pattern: 'Alert Manager',
                 tactic: 'Уведомление об инцидентах.',
-                description: 'Автоматическая отправка оповещений инженерам при выходе метрик за критические пороги.',
+                description: 'Сценарий: Система охлаждения АЭС. Если температура > 100°C в течение 1 минуты — звони дежурному инженеру на пейджер немедленно, даже ночью.',
                 keyIdea: 'Буди человека только если он должен что-то сделать.',
                 dataFlow: [
-                    '1. Monitoring вычисляет правило (Error Rate > 5%).',
-                    '2. Если True — шлет событие в Alert Manager.',
-                    '3. Alert Manager группирует, дедуплицирует и звонит в PagerDuty.',
+                    '1. Prometheus видит: temp=105 уже 60 секунд.',
+                    '2. Шлет алерт в AlertManager.',
+                    '3. AlertManager группирует (чтобы не спамить) и звонит в PagerDuty.',
+                    '4. Инженер просыпается и бежит чинить.'
                 ],
                 commonMistakes: [
-                    '❌ Alert Fatigue (слишком много неважных алертов).',
-                    '❌ Алерты на CPU (причина), а не на Latency/Errors (симптом).',
-                    '❌ Отсутствие Playbooks (инструкций) к алертам.'
+                    '❌ Алерт на каждый чих (инженер привыкает и игнорирует — "Волки!").',
+                    '❌ Алерты без Playbook (пришло уведомление, а что делать — непонятно).',
+                    '❌ Отсутствие эскалации (если дежурный помер, кто узнает?).'
                 ],
                 instructions: [
                     '1. Добавьте "Мониторинг" (Monitoring).',
@@ -1102,24 +1100,25 @@ const categories: QualityCategory[] = [
                 validationParams: {
                     requiredComponents: [{ type: 'monitoring', count: 1 }, { type: 'alert-manager', count: 1 }, { type: 'team', count: 1 }],
                     requiredConnections: [{ from: 'monitoring', to: 'alert-manager' }, { from: 'alert-manager', to: 'team' }]
-                }
+                },
+                realWorldExample: 'PagerDuty, OpsGenie, Alertmanager.'
             },
             {
                 id: 'obs-health',
-                title: 'Health Endpoint',
+                title: 'Healthcheck (Cloud LB)',
                 pattern: 'Health Check',
                 tactic: 'Самодиагностика.',
-                description: 'Сервис предоставляет специальный HTTP endpoint (/health) сообщает о своей готовности принимать трафик.',
+                description: 'Сценарий: Облачный балансировщик перед кластером. Он должен знать, на какие сервера слать трафик, а какие зависли или обновляются.',
                 keyIdea: 'Простой ответ на сложный вопрос "Ты жив?".',
                 dataFlow: [
-                    '1. Load Balancer шлет GET /health.',
-                    '2. Сервис проверяет коннект к БД.',
-                    '3. Возвращает 200 OK.',
+                    '1. Load Balancer пингует /health endpoint каждые 5 сек.',
+                    '2. Сервис А отвечает 200 OK — трафик идет.',
+                    '3. Сервис Б отвечает 500 (БД отвалилась) — LB выключает его из ротации.',
                 ],
                 commonMistakes: [
-                    '❌ Кэширование ответа health check (всегда OK, даже если труп).',
-                    '❌ Тяжелые проверки (SELECT count(*) from large_table).',
-                    '❌ Отсутствие Liveness и Readiness проб (Kubernetes distinction).'
+                    '❌ Локальный ответ "Я жив" при мертвых зависимостях (Zombies).',
+                    '❌ Тяжелые проверки в healthcheck (выполнять SQL query каждую секунду - плохая идея).',
+                    '❌ Отсутствие таймаутов.'
                 ],
                 instructions: [
                     '1. Добавьте "Балансировщик" (Load Balancer).',
@@ -1129,24 +1128,25 @@ const categories: QualityCategory[] = [
                 validationParams: {
                     requiredComponents: [{ type: 'load-balancer', count: 1 }, { type: 'service', count: 1 }],
                     requiredConnections: [{ from: 'load-balancer', to: 'service' }]
-                }
+                },
+                realWorldExample: 'K8s Liveness/Readiness Probes, AWS ALB Targeting.'
             },
             {
                 id: 'obs-audit',
-                title: 'User Activity Tracking',
+                title: 'Product Analytics (Mobile App)',
                 pattern: 'Activity Stream',
                 tactic: 'Анализ поведения.',
-                description: 'Сбор аналитических событий о действиях пользователя для продуктовой аналитики.',
+                description: 'Сценарий: Маркетологи хотят знать, на какие кнопки жмут пользователи в новом приложении, чтобы понять, удобен ли интерфейс ("Воронка продаж").',
                 keyIdea: 'Понимай, как пользователи используют продукт.',
                 dataFlow: [
-                    '1. Браузер (Frontend) отправляет событие нажатия кнопки.',
-                    '2. Analytics Service буферизует события.',
-                    '3. События сохраняются в Data Warehouse (BigQuery/ClickHouse).',
+                    '1. Юзер нажимает "Добавить в корзину".',
+                    '2. Приложение шлет событие {event: "add_to_cart", item: "socks"} в аналитику.',
+                    '3. Данные улетают в Data Warehouse для постройки Dashboard.',
                 ],
                 commonMistakes: [
-                    '❌ Блокировка UI потока отправкой метрик.',
-                    '❌ Отправка PII (персональных данных) в аналитику.',
-                    '❌ Потеря событий при закрытии вкладки (используй Beacon API).'
+                    '❌ Блокировка UI при отправке событий (приложение тормозит).',
+                    '❌ Отправка PII (имя, телефон) в систему аналитики (нарушение GDPR).',
+                    '❌ Потеря событий при закрытии приложения (нужен local buffer).'
                 ],
                 instructions: [
                     '1. Добавьте компонент "Frontend".',
@@ -1156,51 +1156,53 @@ const categories: QualityCategory[] = [
                 validationParams: {
                     requiredComponents: [{ type: 'analytics-service', count: 1 }, { type: 'frontend', count: 1 }],
                     requiredConnections: [{ from: 'frontend', to: 'analytics-service' }]
-                }
+                },
+                realWorldExample: 'Google Analytics, Amplitude, Mixpanel, Segment.'
             },
             {
                 id: 'obs-crash',
-                title: 'Crash Reporting',
+                title: 'Crash Reporting (Game)',
                 pattern: 'Error Tracking',
-                tactic: 'Сбор ошибок.',
-                description: 'Автоматический сбор Stack Trace неперехваченных исключений с клиентов и серверов.',
-                keyIdea: 'Ошибки случаются. Надо знать о них первыми.',
+                tactic: 'Ловля багов.',
+                description: 'Сценарий: Игра падает у 1% пользователей. У них разные телефоны и версии Android. Нужно собрать стектрейсы, чтобы понять, в какой строке кода ошибка.',
+                keyIdea: 'Ошибки случаются. Узнай о них первым.',
                 dataFlow: [
-                    '1. JS падает с ошибкой в браузере пользователя.',
-                    '2. Sentry/Bugsnag SDK перехватывает ошибку.',
-                    '3. Отправляет отчет с контекстом (OS, Browser, User) на сервер.',
+                    '1. Игрок убивает Босса, игра вылетает (Crash).',
+                    '2. При следующем запуске SDK отправляет отчет (Stacktrace + Device Info).',
+                    '3. Разработчик видит: `NullPointerException at Boss.cs:42`.',
                 ],
                 commonMistakes: [
-                    '❌ "Swallowing errors" (пустые try-catch блоки).',
-                    '❌ Отсутствие Source Maps (нечитаемый минифицированный код в логе).',
-                    '❌ Логирование чувствительных данных в payload ошибки.'
+                    '❌ "Swallowing errors" (пустые try-catch блоки скрывают проблему).',
+                    '❌ Отсутствие Source Maps (в отчете виден только минифицированный мусор).',
+                    '❌ Логирование паролей в отчете об ошибке.'
                 ],
                 instructions: [
-                    '1. Добавьте компонент "Frontend".',
+                    '1. Добавьте компонент "Frontend" (Mobile Game).',
                     '2. Добавьте компонент "Error Tracking".',
                     '3. Соедините Frontend с Error Tracking.'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'frontend', count: 1 }, { type: 'logging', count: 1 }],
                     requiredConnections: [{ from: 'frontend', to: 'logging' }]
-                }
+                },
+                realWorldExample: 'Sentry, Bugsnag, Crashlytics (Firebase).'
             },
             {
                 id: 'obs-cost',
-                title: 'Cost Monitoring',
+                title: 'Cost Monitor (Startup)',
                 pattern: 'FinOps Monitor',
-                tactic: 'Отслеживание затрат.',
-                description: 'Мониторинг расходов на инфраструктуру в реальном времени для предотвращения перерасхода бюджета.',
+                tactic: 'Контроль бюджета.',
+                description: 'Сценарий: Стартап забыл выключить мощный GPU сервер на выходные. В понедельник пришел счет на $5000. Нужен мониторинг трат.',
                 keyIdea: 'Облако бесконечно, но деньги — нет.',
                 dataFlow: [
-                    '1. Cloud Provider собирает метрики использования ресурсов.',
-                    '2. Cost Management система агрегирует данные по тегам/проектам.',
-                    '3. При превышении бюджета отправляется Alert.',
+                    '1. Cloud Provider собирает биллинг каждый час.',
+                    '2. Система мониторинга прогнозирует траты на конец месяца.',
+                    '3. Если прогноз > Бюджета — шлет Alert CEO в Slack.',
                 ],
                 commonMistakes: [
-                    '❌ Зомби-ресурсы (забытые сервера/диски).',
-                    '❌ Over-provisioning (покупка слишком мощных серверов "на всякий случай").',
-                    '❌ Отсутствие тегирования ресурсов (непонятно, кто тратит).'
+                    '❌ Зомби-ресурсы (забытые диски и Load Balancers).',
+                    '❌ Over-provisioning (взяли сервер в 10 раз мощнее, чем надо).',
+                    '❌ Отсутствие тегов (Costs Tagging) — непонятно, какой отдел потратил деньги.'
                 ],
                 instructions: [
                     '1. Добавьте "Облако" (System).',
@@ -1210,24 +1212,25 @@ const categories: QualityCategory[] = [
                 validationParams: {
                     requiredComponents: [{ type: 'cost-monitoring', count: 1 }, { type: 'system', count: 1 }],
                     requiredConnections: [{ from: 'system', to: 'cost-monitoring' }]
-                }
+                },
+                realWorldExample: 'AWS Cost Explorer, Kubecost, CloudHealth.'
             },
             {
                 id: 'obs-slo',
-                title: 'SLO/SLA Tracking',
+                title: 'SLO Tracking (SaaS)',
                 pattern: 'SLO Manager',
-                tactic: 'Контроль уровня сервиса.',
-                description: 'Отслеживание соблюдения целевых показателей уровня обслуживания (SLO) и бюджета ошибок.',
-                keyIdea: '100% надежности не существует и она не нужна.',
+                tactic: 'Инженерия надежности.',
+                description: 'Сценарий: SaaS сервис обещает клиентам доступность 99.9%. У нас есть "Бюджет Ошибок" (Error Budget) — 43 минуты простоя в месяц. Если бюджет кончается — мы замораживаем релизы.',
+                keyIdea: '100% надежности не существует. Договоритесь о 99.something%.',
                 dataFlow: [
-                    '1. Monitoring собирает SLI (Service Level Indicators, например Availability).',
-                    '2. SLO Manager сравненивает текущее значение с Target (99.9%).',
-                    '3. Вычисляется оставшийся Error Budget.',
+                    '1. Мониторинг считает успешные запросы (SLI).',
+                    '2. SLO виджет показывает: "Осталось бюджета: 15 минут".',
+                    '3. Команда видит: "Бюджет сгорел, чиним техдолг на следующей неделе".',
                 ],
                 commonMistakes: [
-                    '❌ Обещание 100% SLA.',
-                    '❌ Измерение показателей, не влияющих на пользователя (CPU load vs Response Time).',
-                    '❌ Отсутствие действий при исчерпании бюджета ошибок (Freezing deploys).'
+                    '❌ Обещание 100% SLA (технически невозможно и безумно дорого).',
+                    '❌ Измерение CPU вместо User Experience (юзеру плевать на CPU, ему важна скорость загрузки).',
+                    '❌ Отсутствие последствий (SLO нарушен, а мы продолжаем катить фичи).'
                 ],
                 instructions: [
                     '1. Добавьте "Мониторинг" (Monitoring).',
@@ -1237,34 +1240,37 @@ const categories: QualityCategory[] = [
                 validationParams: {
                     requiredComponents: [{ type: 'slo-manager', count: 1 }, { type: 'monitoring', count: 1 }],
                     requiredConnections: [{ from: 'monitoring', to: 'slo-manager' }]
-                }
+                },
+                realWorldExample: 'Google SRE Book practices, Nobl9, Datadog SLO.'
             },
             {
                 id: 'obs-profiling',
-                title: 'Continuous Profiling',
-                pattern: 'Profiler',
-                tactic: 'Анализ производительности кода.',
-                description: 'Постоянный сбор профилей (CPU, Memory, Locks) с работающих сервисов для поиска узких мест.',
-                keyIdea: 'Видеть, где код "тупит" в продакшене.',
+                title: 'Profiling (AI Inference)',
+                pattern: 'Continuous Profiler',
+                tactic: 'Поиск узких мест.',
+                description: 'Сценарий: Сервис генерации картинок работает 5 секунд. Почему? CPU? Память? I/O? Профайлер показывает, что 4 секунды мы просто ждем загрузку весов модели с диска.',
+                keyIdea: 'Не гадай, где тормозит. Смотри Flame Graph.',
                 dataFlow: [
-                    '1. Агент (Profiler) подключается к процессу приложения.',
-                    '2. Периодически снимает Stack Trace (сэмплирование).',
-                    '3. Строит Flame Graph: ширина блока = время выполнения.',
+                    '1. Профайлер подключается к процессу Python.',
+                    '2. Каждые 10мс смотрит, какая функция выполняется.',
+                    '3. Строит график: 80% времени занимает `load_model()`.',
+                    '4. Решение: кэшировать модель в RAM.',
                 ],
                 commonMistakes: [
-                    '❌ Высокий оверхед от профилировщика (тормозит прод).',
-                    '❌ Профилирование только в Dev среде (данные не репрезентативны).',
-                    '❌ Игнорирование блокировок (Lock contention) и I/O wait.'
+                    '❌ Преждевременная оптимизация без замеров.',
+                    '❌ Профилирование в Debug режиме (он медленнее Release).',
+                    '❌ Игнорирование блокировок (Lock Contention) — CPU свободен, а потоки стоят.'
                 ],
                 instructions: [
-                    '1. Добавьте "Сервис" (Service).',
+                    '1. Добавьте "Сервис" (AI Service).',
                     '2. Добавьте "Мониторинг" (Profiler).',
                     '3. Соедините Сервис с Мониторингом.'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'service', count: 1 }, { type: 'monitoring', count: 1 }],
                     requiredConnections: [{ from: 'service', to: 'monitoring' }]
-                }
+                },
+                realWorldExample: 'Pyroscope, Datadog Continuous Profiler, pprof.'
             }
         ]
     },
@@ -1276,240 +1282,254 @@ const categories: QualityCategory[] = [
         lessons: [
             {
                 id: 'perf-cache',
-                title: 'In-Memory Caching',
+                title: 'Caching (News Portal)',
                 pattern: 'Cache',
                 tactic: 'Снижение задержек.',
-                description: 'Хранение часто запрашиваемых данных в быстрой оперативной памяти (Redis, Memcached) для снижения нагрузки на БД.',
+                description: 'Сценарий: Новостной портал. Горячая новость "Выборы 2024" открывается 100,000 раз в секунду. База данных умрет через 100мс. Ответ нужно отдать из RAM.',
                 keyIdea: 'Самый быстрый запрос тот, который не дошел до базы.',
                 dataFlow: [
-                    '1. Сервис получает запрос на чтение ID=123.',
-                    '2. Проверяет Кэш. Если есть (Cache Hit) — возвращает сразу.',
-                    '3. Если нет (Cache Miss) — идет в БД, сохраняет в Кэш и возвращает.',
+                    '1. Читатель запрашивает статью ID=555.',
+                    '2. API проверяет Redis. Если есть (Hit) — отдает за 2мс.',
+                    '3. Если нет (Miss) — идет в MySQL, кладет в Redis на 5 минут и отдает.',
                 ],
                 commonMistakes: [
-                    '❌ Cache Stampede (одновременный запрос протухшего ключа тысячами клиентов).',
-                    '❌ Хранение вечно (нужен TTL).',
-                    '❌ Рассинхрон с БД (нужна стратегия инвалидации).',
+                    '❌ Cache Stampede (все ломанулись в БД, когда кэш протух).',
+                    '❌ Кэширование персональных данных (User-Specific) в общем кэше.',
+                    '❌ Рассинхрон: в статье поправили опечатку, а в кэше старая версия.',
                 ],
                 instructions: [
-                    '1. Добавьте "Сервис" (Service).',
-                    '2. Добавьте "Кэш" (Cache).',
-                    '3. Соедините Сервис с Кэшем.'
+                    '1. Добавьте "Сервис" (News API).',
+                    '2. Добавьте "Кэш" (Redis).',
+                    '3. Добавьте "Базу данных" (MySQL).',
+                    '4. Соедините Сервис с Кэшем.',
+                    '5. Соедините Сервис с Базой данных.'
                 ],
                 validationParams: {
-                    requiredComponents: [{ type: 'service', count: 1 }, { type: 'cache', count: 1 }],
-                    requiredConnections: [{ from: 'service', to: 'cache' }]
-                }
+                    requiredComponents: [{ type: 'service', count: 1 }, { type: 'cache', count: 1 }, { type: 'database', count: 1 }],
+                    requiredConnections: [{ from: 'service', to: 'cache' }, { from: 'service', to: 'database' }]
+                },
+                realWorldExample: 'Redis, Memcached, Varnish.'
             },
             {
                 id: 'perf-db-index',
-                title: 'Search Index',
+                title: 'Search Index (E-commerce)',
                 pattern: 'Search Engine',
                 tactic: 'Быстрый поиск.',
-                description: 'Использование специализированного движка (Elasticsearch/Solr) для полнотекстового поиска и сложной фильтрации.',
+                description: 'Сценарий: Магазин электроники. Пользователь ищет "красный ноутбук дешевле 50к". SQL `LIKE` убьет базу. Нужен обратный индекс.',
                 keyIdea: 'База данных для хранения, Поисковик — для поиска.',
                 dataFlow: [
-                    '1. Сервис пишет данные в Основную БД.',
-                    '2. Per-commit hook или CDC реплицирует данные в Elasticsearch.',
-                    '3. Поисковые запросы от клиента идут напрямую в Search Engine.',
+                    '1. Админ добавляет товар в Postgres.',
+                    '2. CDC-процесс за 100мс реплицирует товар в Elastic.',
+                    '3. Клиент вводит "ноутбук" — API идет только в Elastic.',
                 ],
                 commonMistakes: [
-                    '❌ "Like %query%" в SQL базе на миллионах строк.',
-                    '❌ Синхронная запись в поиск (тормозит транзакции БД).',
-                    '❌ Split Brain (данные в поиске отстают от БД).',
+                    '❌ Поиск через `LIKE %query%` в основной БД (Full scan убийца).',
+                    '❌ Синхронная запись в Elastic внутри SQL транзакции (тормозит создание товара).',
+                    '❌ Отказ от переиндексации (данные разъехались).',
                 ],
                 instructions: [
-                    '1. Добавьте "Сервис" (Service).',
-                    '2. Добавьте "Поисковый движок" (Search Engine).',
-                    '3. Соедините Сервис с Поисковым движком.'
+                    '1. Добавьте "Сервис" (Store API).',
+                    '2. Добавьте "Базу данных" (Postgres).',
+                    '3. Добавьте "Поисковый движок" (Elasticsearch).',
+                    '4. Соедините Сервис с Поисковым движком.',
+                    '5. Соедините Сервис с Базой данных (для записи).'
                 ],
                 validationParams: {
-                    requiredComponents: [{ type: 'service', count: 1 }, { type: 'search-engine', count: 1 }],
-                    requiredConnections: [{ from: 'service', to: 'search-engine' }]
-                }
+                    requiredComponents: [{ type: 'service', count: 1 }, { type: 'search-engine', count: 1 }, { type: 'database', count: 1 }],
+                    requiredConnections: [{ from: 'service', to: 'search-engine' }, { from: 'service', to: 'database' }]
+                },
+                realWorldExample: 'Elasticsearch, Solr, Meilisearch, Algolia.'
             },
             {
                 id: 'perf-compression',
-                title: 'Compression / Minification',
+                title: 'Compression (Mobile Feed)',
                 pattern: 'CDN / Proxy',
                 tactic: 'Уменьшение объема данных.',
-                description: 'Автоматическое сжатие (Gzip/Brotli) статических ресурсов и ответов API для ускорения загрузки.',
+                description: 'Сценарий: Лента соцсети в метро (плохой интернет). JSON-ответы весят 2МБ, картинки — 5МБ. Нужно сжать всё, чтобы лента грузилась за 1с, а не 10с.',
                 keyIdea: 'Меньше байт летит по сети — быстрее ответ.',
                 dataFlow: [
-                    '1. Frontend запрашивает style.css.',
-                    '2. CDN видит заголовок "Accept-Encoding: gzip".',
-                    '3. Бэкенд/CDN жмет файл и отдает меньший размер.',
+                    '1. App просит ленту. Заголовок `Accept-Encoding: gzip, br`.',
+                    '2. Nginx на лету жмет JSON (текст сжимается в 10 раз).',
+                    '3. Картинки отдаются в формате WebP/AVIF через CDN.',
                 ],
                 commonMistakes: [
-                    '❌ Сжатие уже сжатых форматов (PNG/JPEG/Zip) — трата CPU.',
-                    '❌ Отсутствие кэширования сжатых копий.',
-                    '❌ BREACH атака (аккуратнее с секретами в сжатом контенте).',
+                    '❌ Сжатие уже сжатого (ZIP файлов) — зря греем CPU.',
+                    '❌ Отсутствие кэширования сжатых ответов (жмем одно и то же).',
+                    '❌ Использование Gzip там, где нужен Brotli (текст) или AVIF (фото).',
                 ],
                 instructions: [
-                    '1. Добавьте "Frontend".',
-                    '2. Добавьте "CDN".',
+                    '1. Добавьте "Frontend" (App).',
+                    '2. Добавьте "CDN" (Compression Proxy).',
                     '3. Соедините Frontend с CDN.'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'frontend', count: 1 }, { type: 'cdn', count: 1 }],
                     requiredConnections: [{ from: 'frontend', to: 'cdn' }]
-                }
+                },
+                realWorldExample: 'Nginx Gzip, Cloudflare Brotli, WebP images.'
             },
             {
                 id: 'perf-pool',
-                title: 'Connection Pooling',
+                title: 'Connection Pooling (Java Helper)',
                 pattern: 'Proxy / Pooler',
                 tactic: 'Переиспользование соединений.',
-                description: 'Использование промежуточного слоя (PgBouncer/HikariCP) для поддержания пула прогретых соединений к БД.',
+                description: 'Сценарий: Legacy Enterprise Java App. Создание соединения к Oracle занимает 0.5с (Handshake, SSL). Если открывать его на каждый запрос — система встанет.',
                 keyIdea: 'Handshake — это дорого. Держи трубу открытой.',
                 dataFlow: [
-                    '1. Сервис требует коннект к БД.',
-                    '2. Proxy дает ему уже готовое соединение из пула.',
-                    '3. После запроса соединение не закрывается, а возвращается в пул.',
+                    '1. App стартует и открывает 10 соединений к БД (Pool).',
+                    '2. Пришел запрос. Поток берет свободное соединение, делает SELECT.',
+                    '3. Возвращает соединение в пул, не закрывая TCP сокет.',
                 ],
                 commonMistakes: [
-                    '❌ Открытие нового коннекта на каждый HTTP запрос.',
-                    '❌ Пул слишком маленький (очередь на стороне аппа) или большой (DB OOM).',
-                    '❌ Prepared statements могут не работать через некоторые пулеры.',
+                    '❌ `new Connection()` на каждый запрос (Time Wait socket exhaustion).',
+                    '❌ Размер пула > количества ядер CPU БД (потоки БД будут драться за процессор).',
+                    '❌ Утечка соединений (забыл вернуть в пул — пул исчерпан).',
                 ],
                 instructions: [
-                    '1. Добавьте "Сервис" (Service).',
-                    '2. Добавьте "Прокси" (Proxy).',
-                    '3. Добавьте "Базу данных" (Database).',
+                    '1. Добавьте "Сервис" (Legacy App).',
+                    '2. Добавьте "Прокси" (Connection Pool / PgBouncer).',
+                    '3. Добавьте "Базу данных" (Oracle).',
                     '4. Соедините Сервис с Прокси.',
                     '5. Соедините Прокси с Базой данных.'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'service', count: 1 }, { type: 'proxy', count: 1 }, { type: 'database', count: 1 }],
                     requiredConnections: [{ from: 'service', to: 'proxy' }, { from: 'proxy', to: 'database' }]
-                }
+                },
+                realWorldExample: 'HikariCP, PgBouncer, Odyssey.'
             },
             {
                 id: 'perf-async',
-                title: 'Async Processing',
+                title: 'Async Jobs (PDF Reports)',
                 pattern: 'Background Job',
                 tactic: 'Вынос тяжелых задач.',
-                description: 'Вынос долгих операций (отправка email, генерация PDF) в фоновые процессы через очередь.',
+                description: 'Сценарий: Пользователь нажал "Скачать выписку за 5 лет". Генерация PDF занимает 2 минуты. HTTP запрос отвалится по таймауту через 30с. Делаем асинхронно.',
                 keyIdea: 'Отпусти пользователя быстро, доделай работу потом.',
                 dataFlow: [
-                    '1. API получает запрос "Сгенерируй отчет".',
-                    '2. API кладет задачу в RabbitMQ и возвращает "202 Accepted".',
-                    '3. Worker берет задачу и делает 5 минут.',
+                    '1. API принимает заказ, кладет задачу в RabbitMQ и отвечает "ОК, жди".',
+                    '2. Worker (фоновый процесс) берет задачу, генерит PDF.',
+                    '3. Отправляет готовый файл на Email пользователя.',
                 ],
                 commonMistakes: [
-                    '❌ Обработка тяжелых задач в потоке HTTP запроса.',
-                    '❌ Отсутствие DLQ (брошенные задачи блокируют очередь).',
-                    '❌ Потеря задач при рестарте (in-memory queues).',
+                    '❌ Генерация тяжелого отчета прямо в контроллере API.',
+                    '❌ Отсутствие Retry (если PDF упал - попробуй еще раз).',
+                    '❌ Нет Dead Letter Queue (битая задача вечно крутится в обработке).',
                 ],
                 instructions: [
                     '1. Добавьте "API Gateway".',
-                    '2. Добавьте "Очередь" (Queue).',
-                    '3. Добавьте "Пакетный обработчик" (Batch Processor).',
+                    '2. Добавьте "Очередь" (RabbitMQ).',
+                    '3. Добавьте "Пакетный обработчик" (Worker).',
                     '4. Соедините API Gateway с Очередью.',
                     '5. Соедините Очередь с Обработчиком.'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'api-gateway', count: 1 }, { type: 'queue', count: 1 }, { type: 'batch-processor', count: 1 }],
                     requiredConnections: [{ from: 'api-gateway', to: 'queue' }, { from: 'queue', to: 'batch-processor' }]
-                }
+                },
+                realWorldExample: 'RabbitMQ, Celery, Sidekiq, AWS SQS.'
             },
             {
                 id: 'perf-http2',
-                title: 'Efficient Protocols',
+                title: 'High-Perf Protocol (gRPC)',
                 pattern: 'gRPC / HTTP/2',
                 tactic: 'Бинарные протоколы.',
-                description: 'Использование бинарных протоколов (gRPC/Protobuf) вместо текстовых (REST/JSON) для внутренних коммуникаций.',
+                description: 'Сценарий: Микросервисы общаются друг с другом 10,000 раз в секунду. JSON парсинг сжирает 50% CPU. Переходим на бинарный gRPC — экономим железо в 2 раза.',
                 keyIdea: 'JSON удобен людям, Protobuf удобен машинам.',
                 dataFlow: [
-                    '1. Service A упаковывает объект в бинарный формат.',
-                    '2. Отправляет по мультиплексированному HTTP/2 соединению.',
-                    '3. Service B распаковывает (очень быстро благодаря строгой схеме).',
+                    '1. Service A сериализует объект в бинарный Protobuf (очень быстро).',
+                    '2. Шлет по HTTP/2 (одно соединение, много стримов).',
+                    '3. Service B десериализует по заранее известной схеме.',
                 ],
                 commonMistakes: [
-                    '❌ Использование XML/SOAP в новых проектах.',
-                    '❌ Отсутствие версионирования .proto файлов.',
-                    '❌ Применение gRPC для публичного API (сложно для фронтенда).',
+                    '❌ Использование XML в 2024 году (тяжело и медленно).',
+                    '❌ gRPC "наружу" в браузер (нужен gRPC Web прокси).',
+                    '❌ Потеря обратной совместимости в .proto файлах.',
                 ],
                 instructions: [
-                    '1. Добавьте первый "Сервис".',
-                    '2. Добавьте второй "Сервис".',
+                    '1. Добавьте первый "Сервис" (Client).',
+                    '2. Добавьте второй "Сервис" (Server).',
                     '3. Соедините их между собой.'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'service', count: 2 }],
-                    requiredConnections: [{ from: 'service', to: 'service' }] // Can't easily validate protocol type visually yet
-                }
+                    requiredConnections: [{ from: 'service', to: 'service' }]
+                },
+                realWorldExample: 'gRPC, Apache Thrift, Avro.'
             },
             {
                 id: 'perf-read-replica',
-                title: 'Read Replicas',
+                title: 'Read Replicas (Social Feed)',
                 pattern: 'CQRS Lite',
                 tactic: 'Масштабирование чтения.',
-                description: 'Разделение нагрузки: запись идет в Master, а “тяжелое” чтение распределяется по Read Replicas.',
+                description: 'Сценарий: Соцсеть. Пост пишут 1 раз, а читают миллион раз. Master БД захлебывается. Создаем 5 Read-реплик и отправляем читателей туда.',
                 keyIdea: 'Запись одна, читателей много.',
                 dataFlow: [
-                    '1. Приложение пишет в Master DB.',
-                    '2. Приложение читает из Replica 1, Replica 2.',
-                    '3. Данные между БД синхронизируются асинхронно.',
+                    '1. Автор пишет пост -> Master DB.',
+                    '2. Асинхронно пост летит в Replicas (lag < 1s).',
+                    '3. Читатели запрашивают ленту -> Load Balancer раскидывает по Replicas.',
                 ],
                 commonMistakes: [
-                    '❌ Чтение своих же записей сразу (Lag репликации даст старые данные).',
-                    '❌ Запись в Реплику (она Read-Only).',
-                    '❌ Балансировка только на одну реплику.',
+                    '❌ Читать свои данные из реплики (юзер запостил, обновил страницу — поста нет из-за лага).',
+                    '❌ Запись в Реплику (она Read-Only, упадет ошибка).',
+                    '❌ Все реплики в одной зоне доступности (упадет зона - упадет чтение).',
                 ],
                 instructions: [
-                    '1. Добавьте "Сервис".',
-                    '2. Добавьте 2 "Базы данных".',
-                    '3. Соедините Сервис с каждой из Баз данных.'
+                    '1. Добавьте "Сервис" (Feed API).',
+                    '2. Добавьте "Базу данных" (Master).',
+                    '3. Добавьте "Базу данных" (Replica 1).',
+                    '4. Добавьте "Базу данных" (Replica 2).',
+                    '5. Соедините Сервис со всеми Базами.'
                 ],
                 validationParams: {
-                    requiredComponents: [{ type: 'service', count: 1 }, { type: 'database', count: 2 }],
+                    requiredComponents: [{ type: 'service', count: 1 }, { type: 'database', count: 3 }],
                     requiredConnections: [{ from: 'service', to: 'database' }]
-                }
+                },
+                realWorldExample: 'PostgreSQL Streaming Replication, AWS Aurora Read Replicas.'
             },
             {
                 id: 'perf-cdn',
-                title: 'Static Content Offloading',
+                title: 'CDN (Game Updates)',
                 pattern: 'CDN',
                 tactic: 'Разгрузка сервера.',
-                description: 'Отдача тяжелого контента (видео, картинки, JS) с географически близких к пользователю Edge серверов.',
+                description: 'Сценарий: Вышел патч к игре на 50Гб. Миллион игроков качают его одновременно. Наш сервер сгорит. Раздаем через глобальную CDN.',
                 keyIdea: 'Speed of Light is slow. Сократи дистанцию.',
                 dataFlow: [
-                    '1. Пользователь из Австралии запрашивает image.jpg.',
-                    '2. Запрос идет на POP (Point of Presence) в Сиднее.',
-                    '3. Если там есть файл (Cache Hit), он отдается за 10мс.',
+                    '1. Игрок из Японии качает update.bin.',
+                    '2. Запрос попадает на Edge сервер в Токио.',
+                    '3. Файл отдается с диска Edge сервера, нагрузка на наш Origin = 0.',
                 ],
                 commonMistakes: [
-                    '❌ Кэширование динамического HTML.',
-                    '❌ Отсутствие Cache Busting (имя файла v1.jpg) при обновлении.',
-                    '❌ Игнорирование HTTP Headers (Cache-Control).',
+                    '❌ Отсутствие Cache-Control заголовков (CDN не будет кэшировать).',
+                    '❌ Кэширование приватных данных (токены/аккаунты) — утечка данных.',
+                    '❌ Cache invalidation (патч обновили, а игроки качают старый).',
                 ],
                 instructions: [
-                    '1. Добавьте "Клиент" (Client).',
+                    '1. Добавьте "Клиент" (Gamer).',
                     '2. Добавьте "CDN".',
                     '3. Соедините Клиент с CDN.'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'client', count: 1 }, { type: 'cdn', count: 1 }],
                     requiredConnections: [{ from: 'client', to: 'cdn' }]
-                }
+                },
+                realWorldExample: 'Akamai, Cloudflare, AWS CloudFront, Fastly.'
             },
             {
                 id: 'perf-scaling',
-                title: 'Auto-Scaling',
+                title: 'Auto-Scaling (Ticket Sale)',
                 pattern: 'Horizontal Scaling',
                 tactic: 'Добавление ресурсов.',
-                description: 'Автоматическое добавление новых экземпляров сервиса при росте нагрузки (CPU/RAM/RPS) и удаление при спаде.',
+                description: 'Сценарий: Старт продаж билетов на концерт. Трафик вырастает в 100 раз за 1 минуту. Система сама запускает 50 новых серверов.',
                 keyIdea: 'Плати только за то, что используешь.',
                 dataFlow: [
-                    '1. Cloud Watch видит CPU > 80%.',
-                    '2. Auto Scaling Group запускает новые VM.',
-                    '3. Load Balancer начинает слать трафик на новые ноды.',
+                    '1. CloudWatch видит: CPU Load > 70%.',
+                    '2. Auto-Scaling Group командует: +5 серверов.',
+                    '3. Load Balancer регистрирует новые ноды и шлет людей туда.',
                 ],
                 commonMistakes: [
-                    '❌ Scaling Storm (постоянный up/down из-за отсутствия cooldown).',
-                    '❌ Холодный старт (новые ноды не успевают запуститься при резком скачке).',
-                    '❌ База данных становится бутылочным горлышком при скейлинге аппа.',
+                    '❌ Медленный старт приложения (билеты кончатся раньше, чем Java запустится).',
+                    '❌ БД не резиновая (апп масштабируется, а база падает от коннектов).',
+                    '❌ Flapping (запуск-остановка) при пороговых значениях (69% -> 71%).',
                 ],
                 instructions: [
                     '1. Добавьте "Балансировщик" (Load Balancer).',
@@ -1519,24 +1539,25 @@ const categories: QualityCategory[] = [
                 validationParams: {
                     requiredComponents: [{ type: 'load-balancer', count: 1 }, { type: 'service', count: 3 }],
                     requiredConnections: [{ from: 'load-balancer', to: 'service' }]
-                }
+                },
+                realWorldExample: 'AWS Auto Scaling, K8s HPA.'
             },
             {
                 id: 'perf-nosql',
-                title: 'Polyglot Persistence',
+                title: 'Polyglot Persistence (Travel App)',
                 pattern: 'NoSQL Optimized',
                 tactic: 'Специализированные БД.',
-                description: 'Использование разных типов баз данных для разных задач (Redis для кэша, Mongo для документов, Neo4j для графов).',
+                description: 'Сценарий: Приложение для путешествий. Билеты (транзакции) храним надежно в SQL. Маршруты (графы) — в Neo4j. Сессии — в Redis. Логи — в Elastic.',
                 keyIdea: 'Выбери правильный инструмент для работы.',
                 dataFlow: [
-                    '1. Профиль пользователя хранится в RDBMS (SQL).',
-                    '2. Корзина покупок (SESSION) — в Redis.',
-                    '3. Каталог товаров (JSON) — в MongoDB.',
+                    '1. Покупка билета -> PostgreSQL (ACID).',
+                    '2. Поиск "как добраться из А в Б" -> Neo4j (Graph).',
+                    '3. История просмотров -> Cassandra (Write heavy).',
                 ],
                 commonMistakes: [
-                    '❌ Использование NoSQL, потому что "это модно" (теряем ACID).',
-                    '❌ Сложность поддержки зоопарка технологий.',
-                    '❌ Проблемы с согласованностью данных между разными БД.',
+                    '❌ Использование MongoDB для финансовых транзакций (раньше были проблемы с ACID).',
+                    '❌ "Зоопарк" технологий (нужна команда экспертов для поддержки 5 разных БД).',
+                    '❌ Сложность бэкапов и согласованности.',
                 ],
                 instructions: [
                     '1. Добавьте "Сервис".',
@@ -1546,8 +1567,9 @@ const categories: QualityCategory[] = [
                 validationParams: {
                     requiredComponents: [{ type: 'service', count: 1 }, { type: 'database', count: 2 }],
                     requiredConnections: [{ from: 'service', to: 'database' }]
-                }
-            }
+                },
+                realWorldExample: 'Uber (Schemaless + Postgres + Redis), Netflix.'
+            },
         ]
     },
     {
@@ -1558,20 +1580,20 @@ const categories: QualityCategory[] = [
         lessons: [
             {
                 id: 'mod-layers',
-                title: 'Layered Architecture',
+                title: 'Layered Arch (Enterprise ERP)',
                 pattern: 'Layers',
                 tactic: 'Разделение ответственности.',
-                description: 'Организация кода в горизонтальные слои (Presentation, Business, Data), где каждый слой зависит только от нижнего.',
+                description: 'Сценарий: Корпоративная ERP система. UI меняется часто, Бизнес-правила (налоги) — реже, База данных — почти никогда. Разделяем слои, чтобы изменения в UI не ломали расчет налогов.',
                 keyIdea: 'Изменения в UI не должны ломать БД, и наоборот.',
                 dataFlow: [
-                    '1. Frontend (Presentation) вызывает API Gateway.',
-                    '2. API Gateway вызывает Service (Business Logic).',
-                    '3. Service обращается к Database (Data Layer).',
+                    '1. UI (React) вызывает API Controller.',
+                    '2. Controller вызывает Service (Бизнес-логика).',
+                    '3. Service вызывает Repository (SQL запросы).',
                 ],
                 commonMistakes: [
-                    '❌ Пропуск слоев (Frontend ходит сразу в БД).',
-                    '❌ Циклические зависимости между слоями.',
-                    '❌ "God Class" сервисы, знающие обо всем.'
+                    '❌ Протечка абстракций (SQL сущности используются в UI).',
+                    '❌ Обход слоев (Controller лезет прямо в БД для скорости).',
+                    '❌ "God Class" сервисы на 5000 строк кода.',
                 ],
                 instructions: [
                     '1. Добавьте "Frontend".',
@@ -1587,24 +1609,25 @@ const categories: QualityCategory[] = [
                         { from: 'api-gateway', to: 'service' },
                         { from: 'service', to: 'database' }
                     ]
-                }
+                },
+                realWorldExample: 'Java Spring MVC, .NET Clean Architecture.'
             },
             {
                 id: 'mod-custom-node',
-                title: 'Microservices / Plugins',
+                title: 'Plugins (IDE)',
                 pattern: 'Microkernel',
                 tactic: 'Расширяемость.',
-                description: 'Ядро системы минимально, а функциональность добавляется через плагины или микросервисы.',
+                description: 'Сценарий: VS Code. Само ядро (редактор текста) весит мало. Поддержка Python, Go, Git реализована через плагины. Ядро не знает про Python.',
                 keyIdea: 'Добавляй фичи, не меняя ядро.',
                 dataFlow: [
-                    '1. Core System запускается.',
-                    '2. Загружает Plugin A и Plugin B.',
-                    '3. Делегирует выполнение специфичных задач плагинам.',
+                    '1. Ядро запускается и сканирует папку /plugins.',
+                    '2. Находит Plugin A (Python) и регистрирует его.',
+                    '3. При открытии .py файла Ядро отдает управление плагину.',
                 ],
                 commonMistakes: [
-                    '❌ Сложный API плагинов (никто не хочет писать под вас).',
-                    '❌ Отсутствие изоляции (плагин роняет ядро).',
-                    '❌ Версионная несовместимость.'
+                    '❌ Тесная связность (плагин лезет в кишки ядра).',
+                    '❌ Отсутствие изоляции (кривой плагин крашит весь редактор).',
+                    '❌ Сложный API для авторов плагинов.',
                 ],
                 instructions: [
                     '1. Добавьте "Систему" (Core).',
@@ -1614,24 +1637,25 @@ const categories: QualityCategory[] = [
                 validationParams: {
                     requiredComponents: [{ type: 'system', count: 1 }, { type: 'service', count: 2 }],
                     requiredConnections: [{ from: 'system', to: 'service' }]
-                }
+                },
+                realWorldExample: 'VS Code, Eclipse, WordPress, Chrome Extensions.'
             },
             {
                 id: 'mod-bff',
-                title: 'Backend for Frontend (BFF)',
+                title: 'BFF (Streaming Platform)',
                 pattern: 'BFF',
                 tactic: 'Адаптация API.',
-                description: 'Создание отдельного backend-слоя для каждого типа клиента (Web, Mobile) для оптимизации данных.',
+                description: 'Сценарий: Видеосервис. На SmartTV нужен XML и мало картинок (слабый проц). На iPhone нужен JSON и HD обложки. Делаем разные бэкенды для каждого фронта.',
                 keyIdea: 'Каждому клиенту — свой идеальный API.',
                 dataFlow: [
-                    '1. Web Client вызывает Web BFF (полный набор полей).',
-                    '2. Mobile Client вызывает Mobile BFF (компактный JSON).',
-                    '3. Оба BFF вызывают один и тот же Downstream Service.',
+                    '1. TV App вызывает TV-BFF (дай список фильмов XML).',
+                    '2. iPhone App вызывает Mobile-BFF (дай список фильмов JSON).',
+                    '3. Оба BFF идут в единый Core Service, который просто хранит данные.',
                 ],
                 commonMistakes: [
-                    '❌ Дублирование бизнес-логики в BFF (BFF должен быть тупым).',
-                    '❌ BFF превращается в "Super Gateway".',
-                    '❌ Отсутствие кодогенерации клиентов по Spec.'
+                    '❌ Дублирование бизнес-логики в BFF (они должны только форматировать).',
+                    '❌ BFF превращается в "супер-прокси", который ничего не делает.',
+                    '❌ Зоопарк BFF (слишком много вариантов на каждый чих).',
                 ],
                 instructions: [
                     '1. Добавьте "Frontend" (Web).',
@@ -1649,24 +1673,25 @@ const categories: QualityCategory[] = [
                         { from: 'client', to: 'bff' },
                         { from: 'bff', to: 'service' }
                     ]
-                }
+                },
+                realWorldExample: 'Netflix (API Adapter per device), Soundcloud.'
             },
             {
                 id: 'mod-adapter',
-                title: 'Adapter',
+                title: 'Adapter (Legacy Banking)',
                 pattern: 'Wrapper',
                 tactic: 'Совместимость интерфейсов.',
-                description: 'Промежуточный компонент, который преобразует интерфейс одной системы (часто Legacy) в формат, ожидаемый клиентом.',
+                description: 'Сценарий: Новый модный React Frontend должен работать со старой банковской системой на COBOL (1980 год). Адаптер превращает REST JSON запросы в вызовы мейнфрейма.',
                 keyIdea: 'Делает несовместимое совместимым.',
                 dataFlow: [
-                    '1. Современный Сервис вызывает Адаптер (JSON/REST).',
-                    '2. Адаптер конвертирует вызов в SOAP/XML.',
-                    '3. Адаптер вызывает Legacy Систему.',
+                    '1. Frontend шлет `POST /transfer` (JSON).',
+                    '2. Адаптер парсит JSON и формирует EBCDIC файл.',
+                    '3. Адаптер отправляет файл в Мейнфрейм по FTP.',
                 ],
                 commonMistakes: [
-                    '❌ Утечка абстракций (Legacy ошибки просачиваются наружу).',
-                    '❌ Адаптер выполняет бизнес-логику (он должен только транслировать).',
-                    '❌ Прямой вызов Legacy в обход адаптера.'
+                    '❌ Размытие границ (бизнес-логика переползает в адаптер).',
+                    '❌ Адаптер падает от ошибок легаси системы (нужен Circuit Breaker).',
+                    '❌ Попытка переписать все легаси сразу вместо адаптации.',
                 ],
                 instructions: [
                     '1. Добавьте "Сервис" (Client).',
@@ -1678,37 +1703,39 @@ const categories: QualityCategory[] = [
                 validationParams: {
                     requiredComponents: [{ type: 'service', count: 1 }, { type: 'adapter', count: 1 }, { type: 'external-system', count: 1 }],
                     requiredConnections: [{ from: 'service', to: 'adapter' }, { from: 'adapter', to: 'external-system' }]
-                }
+                },
+                realWorldExample: 'JCA Adapters, SOAP to REST Gateways.'
             },
             {
                 id: 'mod-facade',
-                title: 'Facade',
+                title: 'Facade (Smart Home)',
                 pattern: 'Facade',
                 tactic: 'Скрытие сложности.',
-                description: 'Компонент, предоставляющий упрощенный интерфейс к сложной подсистеме или группе компонентов.',
+                description: 'Сценарий: Умный дом. Чтобы включить режим "Кино", нужно: опустить шторы, погасить свет, включить ТВ, включить колонки. Фасад делает это одной командой.',
                 keyIdea: 'Сделай сложное простым для потребителя.',
                 dataFlow: [
-                    '1. Клиент вызывает метод Фасада (напр. "initSystem").',
-                    '2. Фасад вызывает Сервис А, Сервис Б и Сервис В.',
-                    '3. Фасад агрегирует результат и отдает Клиенту.',
+                    '1. Пользователь нажимает "Movie Mode".',
+                    '2. Фасад шлет команды: Light.off(), Blinds.close(), TV.on().',
+                    '3. Пользователь счастлив, не зная деталей API лампочек.',
                 ],
                 commonMistakes: [
-                    '❌ Фасад становится "God Object" (знает слишком много).',
-                    '❌ Фасад содержит бизнес-логику (должен только делегировать).',
-                    '❌ Клиенты обходят Фасад и зависят от подсистем напрямую.'
+                    '❌ Фасад становится "Богом", который знает всё про всех.',
+                    '❌ Жесткая привязка (добавление новой лампочки требует переписывания Фасада).',
+                    '❌ Клиенты обходят фасад (теряется смысл упрощения).',
                 ],
                 instructions: [
                     '1. Добавьте "Клиент".',
                     '2. Добавьте "Фасад".',
-                    '3. Добавьте 3 компонента "Подсистема" (Service).',
+                    '3. Добавьте 3 компонента "Подсистема" (Devices).',
                     '4. Соедините Клиента с Фасадом.',
                     '5. Соедините Фасад с каждым Сервисом.'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'client', count: 1 }, { type: 'facade', count: 1 }, { type: 'service', count: 3 }],
                     requiredConnections: [{ from: 'client', to: 'facade' }, { from: 'facade', to: 'service' }]
-                }
-            }
+                },
+                realWorldExample: 'GraphQL Aggregation, API Gateways (implements Facade pattern).'
+            },
         ]
     },
     {
@@ -1719,26 +1746,26 @@ const categories: QualityCategory[] = [
         lessons: [
             {
                 id: 'deploy-cicd',
-                title: 'CI/CD Pipeline',
+                title: 'CI/CD (Bank App)',
                 pattern: 'Delivery Pipeline',
                 tactic: 'Автоматизация поставки.',
-                description: 'Полная автоматизация процесса сборки, тестирования и развертывания кода.',
-                keyIdea: 'От коммита до прода — без рук.',
+                description: 'Сценарий: Банковское приложение. Нельзя просто так залить код в прод. Нужны автотесты, SAST сканеры безопасности, апрув от менеджера и деплой в защищенный контур.',
+                keyIdea: 'От коммита до прода — без рук (вернее, без ручных ошибок).',
                 dataFlow: [
-                    '1. Разработчик пушит код в VCS (Git).',
-                    '2. CI/CD Pipeline запускает тесты и сборку.',
-                    '3. При успехе Pipeline деплоит артефакт в Систему.',
+                    '1. Разработчик пушит код в Master.',
+                    '2. CI запускает Unit тесты и SonarQube (Quality Gate).',
+                    '3. CD деплоит в Prod только если Quality Gate = Pass.',
                 ],
                 commonMistakes: [
-                    '❌ Ручные шаги внутри пайплайна (Approve gate допустим, ручной копипаст — нет).',
-                    '❌ Тестирование не тех артефактов, что идут в прод (Rebuild vs Promote).',
-                    '❌ Отсутствие возможности отката (Rollback).'
+                    '❌ Ручной деплой через FTP или `scp` (привет, 2005 год).',
+                    '❌ "У меня локально работает" (нет идентичности сред).',
+                    '❌ Хранение секретов (ключей API) прямо в коде, который виден в CI логах.',
                 ],
                 instructions: [
                     '1. Добавьте "Разработчика" (Developer).',
-                    '2. Добавьте "VCS" (Git).',
-                    '3. Добавьте "CI/CD пайплайн".',
-                    '4. Добавьте "Систему" (Prod).',
+                    '2. Добавьте "VCS" (Gitlab/GitHub).',
+                    '3. Добавьте "CI/CD пайплайн" (Jenkins).',
+                    '4. Добавьте "Систему" (Production).',
                     '5. Соедините по цепочке: Dev -> VCS -> Pipeline -> System.'
                 ],
                 validationParams: {
@@ -1748,52 +1775,54 @@ const categories: QualityCategory[] = [
                         { from: 'vcs', to: 'ci-cd-pipeline' },
                         { from: 'ci-cd-pipeline', to: 'system' }
                     ]
-                }
+                },
+                realWorldExample: 'GitLab CI, GitHub Actions, Jenkins, CircleCI.'
             },
             {
                 id: 'deploy-bluegreen',
-                title: 'Blue-Green Deployment',
+                title: 'Blue-Green (Payment)',
                 pattern: 'Blue-Green',
                 tactic: 'Нулевой даунтайм.',
-                description: 'Наличие двух идентичных окружений. Одно (Blue) обслуживает трафик, другое (Green) обновляется. Переключение мгновенное.',
+                description: 'Сценарий: Платежный шлюз. 1 секунда простоя = потеря $1000. Обновляемся так: поднимаем новую версию рядом, проверяем, переключаем рубильник. Старую гасим только если все ОК.',
                 keyIdea: 'Мгновенный свитч и легкий откат.',
                 dataFlow: [
-                    '1. Load Balancer шлет 100% трафика на Blue (v1).',
-                    '2. Деплоим v2 на Green. Гоняем тесты.',
-                    '3. Load Balancer переключает 100% трафика на Green (v2).',
+                    '1. Load Balancer шлет 100% трафика на Blue (Active).',
+                    '2. DevOps деплоит Green (Passive) и гоняет тесты.',
+                    '3. Одной командой LB переключается на Green.',
                 ],
                 commonMistakes: [
-                    '❌ Общая база данных без обратной совместимости схем.',
-                    '❌ Обрывание активных сессий при переключении (нужен Draining).',
-                    '❌ Экономия на резервном контуре (Green слабее Blue).'
+                    '❌ База данных меняется несовместимым образом (Blue ломается при накатке миграций для Green).',
+                    '❌ Забыли про Cron-джобы (они могут запуститься дважды).',
+                    '❌ Экономия (Green слабее Blue, и падает под нагрузкой).',
                 ],
                 instructions: [
                     '1. Добавьте "Балансировщик".',
-                    '2. Добавьте "Сервис" (назовите Blue).',
-                    '3. Добавьте "Сервис" (назовите Green).',
+                    '2. Добавьте "Сервис" (Blue v1).',
+                    '3. Добавьте "Сервис" (Green v2).',
                     '4. Соедините Балансировщик с обоими Сервисами.'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'load-balancer', count: 1 }, { type: 'service', count: 2 }],
                     requiredConnections: [{ from: 'load-balancer', to: 'service' }]
-                }
+                },
+                realWorldExample: 'AWS CodeDeploy, Kubernetes Services switch.'
             },
             {
                 id: 'deploy-canary',
-                title: 'Canary Release',
+                title: 'Canary (Social Feature)',
                 pattern: 'Canary',
                 tactic: 'Постепенная раскатка.',
-                description: 'Выкатка новой версии на малый процент пользователей (канарейка) для проверки на реальном трафике.',
+                description: 'Сценарий: Новый дизайн ленты новостей. Вдруг пользователям не зайдет? Включаем только для 5% сотрудников офиса. Если нет багов — для 10%, потом 50%, потом 100%.',
                 keyIdea: 'Тестируй на живых (но по чуть-чуть).',
                 dataFlow: [
-                    '1. LB шлет 95% трафика на Stable Service.',
-                    '2. LB шлет 5% трафика на Canary Service (vNext).',
-                    '3. Мониторинг сравнивает метрики ошибок. Если OK — увеличиваем %.',
+                    '1. 99% юзеров видят Stable версию.',
+                    '2. 1% (Canary) видят новую версию.',
+                    '3. Если Error Rate у канарейки растет — автоматический откат.',
                 ],
                 commonMistakes: [
-                    '❌ "Липкие" сессии (Sticky Sessions) мешают честному распределению.',
-                    '❌ Канарейка не репрезентативна (только внутренние юзеры).',
-                    '❌ Ручной анализ метрик вместо автоматического (Kayenta).'
+                    '❌ Выбор канарейки (только сотрудники с мощными Mac, а у реальных юзеров тормозит).',
+                    '❌ Sticky Sessions (юзер прыгает между старой и новой версией).',
+                    '❌ Ручной мониторинг (человек спит, а канарейка лежит).',
                 ],
                 instructions: [
                     '1. Добавьте "Балансировщик".',
@@ -1808,24 +1837,25 @@ const categories: QualityCategory[] = [
                         { from: 'load-balancer', to: 'service' },
                         { from: 'service', to: 'monitoring' }
                     ]
-                }
+                },
+                realWorldExample: 'Spinnaker, Argo Rollouts, Istio.'
             },
             {
                 id: 'deploy-flags',
-                title: 'Feature Flags',
+                title: 'Feature Flags (Dark Mode)',
                 pattern: 'Feature Toggles',
                 tactic: 'Разделение деплоя и релиза.',
-                description: 'Использование конфигурации для включения/выключения фич в рантайме без передеплоя кода.',
+                description: 'Сценарий: Релиз "Темной темы" назначен на 12:00. Код уже залит неделю назад, но скрыт за `if (feature.enabled)`. В 12:00 маркетолог жмет кнопку в админке.',
                 keyIdea: 'Код уже там, но он спит.',
                 dataFlow: [
-                    '1. Сервис получает запрос.',
-                    '2. Сервис спрашивает Feature Flag Service: "Включена ли фича X для юзера Y?".',
-                    '3. Если да — выполняется новый код, если нет — старый.',
+                    '1. Frontend запрашивает: `GET /flags`.',
+                    '2. Flag Service отвечает: `{ dark_mode: true }`.',
+                    '3. Frontend перекрашивается в черный.',
                 ],
                 commonMistakes: [
-                    '❌ Технический долг (бесконечное накопление старых флагов).',
-                    '❌ Случайное включение dev-флага в проде.',
-                    '❌ Флаг как часть конфигурации файла (требует рестарта), а не сервис.'
+                    '❌ Растянутый `if/else` по всему коду (сложно поддерживать).',
+                    '❌ Вечные флаги (фича в проде 2 года, а флаг все еще есть).',
+                    '❌ Флаг в конфиг-файле (требует редеплоя для включения).',
                 ],
                 instructions: [
                     '1. Добавьте "Сервис".',
@@ -1835,8 +1865,9 @@ const categories: QualityCategory[] = [
                 validationParams: {
                     requiredComponents: [{ type: 'service', count: 1 }, { type: 'feature-flag', count: 1 }],
                     requiredConnections: [{ from: 'service', to: 'feature-flag' }]
-                }
-            }
+                },
+                realWorldExample: 'LaunchDarkly, Unleash, Split.io.'
+            },
         ]
     },
     {
@@ -1847,60 +1878,64 @@ const categories: QualityCategory[] = [
         lessons: [
             {
                 id: 'cons-saga',
-                title: 'Saga Pattern (Orchestration)',
+                title: 'Saga (Travel Booking)',
                 pattern: 'Saga',
                 tactic: 'Компенсирующие транзакции.',
-                description: 'Управление распределенной транзакцией через последовательный вызов локальных транзакций сервисов. В случае ошибки — запуск отмены (компенсации).',
+                description: 'Сценарий: Бронирование отпуска. Самолет забронировали, Отель забронировали, а Машина недоступна. Нужно отмениь Отель и Самолет, чтобы вернуть деньги.',
                 keyIdea: 'Нет глобального rollback, есть "извини, отменяем".',
                 dataFlow: [
-                    '1. Оркестратор говорит "Сервис А, зарезервируй товар". (Done)',
-                    '2. Оркестратор говорит "Сервис Б, спиши деньги". (Fail)',
-                    '3. Оркестратор говорит "Сервис А, отмени резерв" (Compensate).',
+                    '1. Оркест: "Авиакомпания, бронируй!" -> OK.',
+                    '2. Оркест: "Отель, бронируй!" -> OK.',
+                    '3. Оркест: "Машина, бронируй!" -> FAIL.',
+                    '4. Оркест: "Отель, отмена!", "Авиа, отмена!" (Compensate).',
                 ],
                 commonMistakes: [
-                    '❌ Отсутствие идемпотентности (повторный вызов отмены ломает все).',
-                    '❌ Смешивание логики саги и бизнес-логики сервиса.',
-                    '❌ Наблюдаемость промежуточных (грязных) состояний.'
+                    '❌ Операции не идемпотентны (повторная отмена снимает деньги дважды).',
+                    '❌ Синхронные ожидания (Сага может идти часами).',
+                    '❌ Потеря состояния Саги (где мы остановились?).',
                 ],
                 instructions: [
-                    '1. Добавьте "Saga Orchestrator".',
-                    '2. Добавьте 3 компонента "Сервис".',
+                    '1. Добавьте "Saga Orchestrator" (Booking).',
+                    '2. Добавьте 3 компонента "Сервис" (Flight, Hotel, Car).',
                     '3. Соедините Оркестратор с каждым из Сервисов (двусторонне).',
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'saga', count: 1 }, { type: 'service', count: 3 }],
                     requiredConnections: [{ from: 'saga', to: 'service' }]
-                }
+                },
+                realWorldExample: 'Temporal.io, Camunda, MassTransit.'
             },
             {
                 id: 'cons-cdc',
-                title: 'Change Data Capture (CDC)',
+                title: 'CDC (Search Indexer)',
                 pattern: 'CDC / Outbox',
                 tactic: 'Надежная публикация событий.',
-                description: 'Захват изменений данных прямо из лога транзакций базы данных для отправки в шину событий.',
+                description: 'Сценарий: Данные в SQL базе обновляются часто. Нужно обновлять поисковый индекс в Elastic. Писать код в сервисе (Dual Write) — ненадежно. Читаем прямо лог БД (Write Ahead Log).',
                 keyIdea: 'База данных — единственный источник правды.',
                 dataFlow: [
-                    '1. Сервис пишет в DB.',
-                    '2. CDC-коннектор (Debezium) читает Transaction Log базы.',
-                    '3. Событие изменения гарантированно летит в Kafka.',
+                    '1. App делает `INSERT INTO Users`.',
+                    '2. Debezium читает бинарный лог Postgres.',
+                    '3. Генерирует событие в Kafka: `{op: "c", after: {id: 1, name: "Ion"}}`.',
+                    '4. Indexer читает Kafka и пишет в Elastic.',
                 ],
                 commonMistakes: [
-                    '❌ Dual Write (писать в БД и в Кафку из кода — будет рассинхрон).',
-                    '❌ Раскрытие внутренней структуры БД в публичных событиях.',
-                    '❌ Отставание репликации CDC.'
+                    '❌ Локальные транзакции (сначала записал в Кафку, потом база упала).',
+                    '❌ Стыковка схем (поменяли колонку в БД — Debezium сломался).',
+                    '❌ Безопасность (в лог попали пароли).',
                 ],
                 instructions: [
                     '1. Добавьте "Базу данных".',
-                    '2. Добавьте компонент "CDC".',
-                    '3. Добавьте "Очередь" (или Event Bus).',
+                    '2. Добавьте компонент "CDC" (Debezium).',
+                    '3. Добавьте "Очередь" (Kafka).',
                     '4. Соедините БД с CDC.',
                     '5. Соедините CDC с Очередью.'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'database', count: 1 }, { type: 'cdc', count: 1 }, { type: 'queue', count: 1 }],
                     requiredConnections: [{ from: 'database', to: 'cdc' }, { from: 'cdc', to: 'queue' }]
-                }
-            }
+                },
+                realWorldExample: 'Debezium, Kafka Connect, AWS DMS.'
+            },
         ]
     },
     {
@@ -1911,61 +1946,64 @@ const categories: QualityCategory[] = [
         lessons: [
             {
                 id: 'interop-esb',
-                title: 'Enterprise Service Bus',
+                title: 'ESB (Legacy Telecom)',
                 pattern: 'ESB',
                 tactic: 'Оркестрация и трансформация.',
-                description: 'Централизованная шина для маршрутизации, трансформации протоколов и сообщений между сервисами.',
+                description: 'Сценарий: Телеком оператор. Биллинг (XML) должен говорить с CRM (SOAP) и Активацией SIM (Telnet). Прямые связи — это хаос. Ставим Шину.',
                 keyIdea: 'Умная труба, глупые терминалы (SOA era).',
                 dataFlow: [
-                    '1. Сервис А шлет XML.',
-                    '2. ESB трансформирует XML в JSON, обогащает данными.',
-                    '3. ESB вызывает Сервис Б.',
+                    '1. CRM шлет команду "Создай абонента" (SOAP).',
+                    '2. ESB конвертит SOAP -> proprietary binary format.',
+                    '3. ESB вызывает старый коммутатор ZTE.',
                 ],
                 commonMistakes: [
-                    '❌ Бутылочное горлышко (вся логика в ESB).',
-                    '❌ Сложность тестирования правил ESB.',
-                    '❌ Единая точка отказа.'
+                    '❌ Вся бизнес-логика уехала в ESB (теперь это монолит-распределитель).',
+                    '❌ Единая точка отказа (упала шина — встал весь завод).',
+                    '❌ Трудно дебажить и версионировать.',
                 ],
                 instructions: [
-                    '1. Добавьте "Сервис" (Source).',
-                    '2. Добавьте "ESB".',
-                    '3. Добавьте "Сервис" (Target).',
+                    '1. Добавьте "Сервис" (CRM).',
+                    '2. Добавьте "ESB" (BizTalk/Mule).',
+                    '3. Добавьте "Сервис" (Billing).',
                     '4. Соедините Source с ESB.',
                     '5. Соедините ESB с Target.'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'service', count: 2 }, { type: 'esb', count: 1 }],
                     requiredConnections: [{ from: 'service', to: 'esb' }, { from: 'esb', to: 'service' }]
-                }
+                },
+                realWorldExample: 'MuleSoft, Tibco, BizTalk, WSO2.'
             },
             {
                 id: 'interop-acl',
-                title: 'Anti-Corruption Layer (ACL)',
+                title: 'ACL (Corp Acquisition)',
                 pattern: 'ACL',
                 tactic: 'Изоляция домена.',
-                description: 'Слой-транслятор, защищающий модель данных новой системы от "загрязнения" концепциями легаси системы.',
-                keyIdea: 'Не позволяй легаси диктовать свои правила новой системе.',
+                description: 'Сценарий: Большая Корпорация купила Стартап. У них разные форматы User ID. Чтобы не переписывать код Стартапа, ставим ACL, который мапит ID-шники на лету.',
+                keyIdea: 'Не позволяй чужому хаосу проникнуть в твой порядок.',
                 dataFlow: [
-                    '1. Новый домен вызывает интерфейс ACL.',
-                    '2. ACL транслирует запрос в термины старой системы.',
-                    '3. Ответ транслируется обратно в чистую модель.',
+                    '1. Corp System запрашивает юзера GUID-123.',
+                    '2. ACL переводит GUID-123 -> INT-555.',
+                    '3. Startup System отдает данные по INT-555.',
                 ],
                 commonMistakes: [
-                    '❌ Просачивание типов данных Legacy через ACL.',
-                    '❌ Отсутствие ACL при интеграции с внешней SaaS (Vendor Lock-in).',
+                    '❌ Просачивание "грязной" модели в чистую (Leakage).',
+                    '❌ Отсутствие кэширования в ACL (постоянная трансляция нагружает CPU).',
+                    '❌ Попытка сделать ACL двусторонним "магическим" синхронизатором.',
                 ],
                 instructions: [
-                    '1. Добавьте "Бизнес-домен" (New Context).',
+                    '1. Добавьте "Бизнес-домен" (New Corp).',
                     '2. Добавьте "Facade Service" (ACL).',
-                    '3. Добавьте "Внешнюю систему" (Legacy/SaaS).',
+                    '3. Добавьте "Внешнюю систему" (Bought Startup).',
                     '4. Соедините Бизнес-домен с ACL.',
                     '5. Соедините ACL с Внешней системой.'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'business-domain', count: 1 }, { type: 'facade', count: 1 }, { type: 'external-system', count: 1 }],
                     requiredConnections: [{ from: 'business-domain', to: 'facade' }, { from: 'facade', to: 'external-system' }]
-                }
-            }
+                },
+                realWorldExample: 'Domain-Driven Design (Eric Evans) patterns.'
+            },
         ]
     },
     {
@@ -1976,24 +2014,24 @@ const categories: QualityCategory[] = [
         lessons: [
             {
                 id: 'test-contract',
-                title: 'Consumer-Driven Contracts',
+                title: 'Contract Tests (Public API)',
                 pattern: 'Contract Testing',
                 tactic: 'Верификация контрактов.',
-                description: 'Потребители API фиксируют свои ожидания в виде контрактов (Pact). Provider API обязан проходить тесты на соответствие этим контрактам.',
+                description: 'Сценарий: Вы разрабатываете Public Weather API. Тысячи клиентов используют его. Если вы измените поле `temp` на `temperature` без предупреждения — все сломаются. Контракты (Pact) это предотвратят.',
                 keyIdea: 'Не ламай клієнтів зворотною несумісністю. Контракт належить Consumer.',
                 dataFlow: [
-                    '1. Consumer публикует контракт в Broker.',
-                    '2. Provider запускает provider-verification тесты (генерируются из контракта).',
-                    '3. Если Provider нарушил контракт — деплой блокируется.',
+                    '1. Клиент (Consumer) пишет тест: "Ожидаю поле temp: number".',
+                    '2. Этот "контракт" загружается на Pact Broker.',
+                    '3. Ваш CI (Provider) скачивает контракт и проверяет, что API ему соответствует.',
                 ],
                 commonMistakes: [
-                    '❌ Тестирование реализации вместо поведения.',
-                    '❌ Отсутствие брокера контрактов.',
-                    '❌ Попытка использовать End-to-End тесты для всего.'
+                    '❌ Тестирование реализации вместо API.',
+                    '❌ Игнорирование проверки контрактов перед деплоем.',
+                    '❌ Использование E2E тестов там, где достаточно контрактных (медленно и хрупко).',
                 ],
                 instructions: [
                     '1. Добавьте "Сервис" (Consumer).',
-                    '2. Добавьте "Contract Testing" (Broker).',
+                    '2. Добавьте "Contract Testing" (Pact Broker).',
                     '3. Добавьте "Сервис" (Provider).',
                     '4. Соедините Consumer с Broker.',
                     '5. Соедините Broker с Provider.'
@@ -2001,27 +2039,28 @@ const categories: QualityCategory[] = [
                 validationParams: {
                     requiredComponents: [{ type: 'service', count: 2 }, { type: 'contract-testing', count: 1 }],
                     requiredConnections: [{ from: 'service', to: 'contract-testing' }, { from: 'contract-testing', to: 'service' }]
-                }
+                },
+                realWorldExample: 'Pact, Spring Cloud Contract.'
             },
             {
                 id: 'test-chaos',
-                title: 'Chaos Engineering',
+                title: 'Chaos Monkey (Netflix)',
                 pattern: 'Chaos Monkey',
                 tactic: 'Внедрение сбоев.',
-                description: 'Преднамеренное введение неисправностей (отключение серверов, задержки сети) в продакшене для проверки устойчивости системы.',
-                keyIdea: 'Ломай систему сам, пока это не сделали пользователи.',
+                description: 'Сценарий: Netflix специально выключает сервера в рабочее время, чтобы убедиться, что система самовосстанавливается, а пользователи не замечают сбоя.',
+                keyIdea: 'Ломай систему сам, пока это не сделали хакеры или природа.',
                 dataFlow: [
-                    '1. Chaos Agent выбирает жертву (Сервис).',
-                    '2. Вносит Latency или убивает процесс.',
-                    '3. Мониторинг проверяет, выжила ли система (Graceful degradation).',
+                    '1. Chaos Agent случайно убивает процесс "Service A".',
+                    '2. Мониторинг фиксирует скачок ошибок?',
+                    '3. Система должна автоматически перенаправить трафик на живые ноды.',
                 ],
                 commonMistakes: [
-                    '❌ Запуск хаоса без хорошего мониторинга (не поймете, что случилось).',
-                    '❌ Начинать сразу с прода (начните с Test env).',
-                    '❌ Отсутствие кнопки "Stop All" (Panic button).'
+                    '❌ Запуск хаоса в пятницу вечером (плохая идея).',
+                    '❌ Тестирование без бэкапов.',
+                    '❌ Отсутствие способа мгновенно остановить эксперимент при реальных проблемах.',
                 ],
                 instructions: [
-                    '1. Добавьте "Chaos Testing" (Chaos Monkey).',
+                    '1. Добавьте "Chaos Testing" (Simian Army).',
                     '2. Добавьте "Систему" (Target).',
                     '3. Добавьте "Мониторинг".',
                     '4. Соедините Chaos Testing с Системой.',
@@ -2030,8 +2069,9 @@ const categories: QualityCategory[] = [
                 validationParams: {
                     requiredComponents: [{ type: 'chaos-testing', count: 1 }, { type: 'system', count: 1 }, { type: 'monitoring', count: 1 }],
                     requiredConnections: [{ from: 'chaos-testing', to: 'system' }]
-                }
-            }
+                },
+                realWorldExample: 'Netflix Simian Army, Gremlin, Chaos Mesh.'
+            },
         ]
     },
     {
@@ -2042,24 +2082,24 @@ const categories: QualityCategory[] = [
         lessons: [
             {
                 id: 'func-domain-model',
-                title: 'Rich Domain Model',
+                title: 'Rich Domain Model (E-shop)',
                 pattern: 'DDD (Domain-Driven Design)',
                 tactic: 'Инкапсуляция бизнес-правил.',
-                description: 'Бизнес-логика живет внутри сущностей (Rich Model), а не в сервисах (Anemic Model). Гарантирует, что данные всегда валидны.',
+                description: 'Сценарий: Оформление заказа. Нельзя добавить товар, если его нет на складе. Нельзя применить просроченный купон. Эта логика должна быть внутри класса Order, а не размазана по сервисам.',
                 keyIdea: 'Объект сам отвечает за свое состояние.',
                 dataFlow: [
-                    '1. API вызывает метод сущности Order.addItem().',
-                    '2. Сущность Order проверяет лимиты и правила.',
-                    '3. Сущность генерирует Domain Event "ItemAdded".',
+                    '1. API вызывает метод сущности `Order.addItem(item)`.',
+                    '2. Сущность Order внутри себя проверяет `item.stock > 0`.',
+                    '3. Если ОК — уменьшает сток и генерирует событие `ItemAdded`.',
                 ],
                 commonMistakes: [
-                    '❌ Anemic Model (сущности — просто мешки геттеров/сеттеров).',
-                    '❌ Размывание логики по сервисам и контроллерам.',
-                    '❌ Отсутствие инвариантов (Entity может быть создана невалидной).'
+                    '❌ Anemic Model (сущности — просто мешки геттеров/сеттеров/DTO).',
+                    '❌ Размазывание бизнес-правил по Service Layer (Transaction Script).',
+                    '❌ Возможность создать Order в невалидном состоянии (без id или user).',
                 ],
                 instructions: [
                     '1. Добавьте "API слой" (Controller).',
-                    '2. Добавьте "Доменную Модель" (Rich Entity).',
+                    '2. Добавьте "Доменную Модель" (Rich Order Entity).',
                     '3. Добавьте "Базу данных".',
                     '4. Соедините API с Моделью (вызов метода).',
                     '5. Соедините Модель с БД (Persistence).'
@@ -2067,37 +2107,39 @@ const categories: QualityCategory[] = [
                 validationParams: {
                     requiredComponents: [{ type: 'controller', count: 1 }, { type: 'domain-model', count: 1 }, { type: 'database', count: 1 }],
                     requiredConnections: [{ from: 'controller', to: 'domain-model' }, { from: 'domain-model', to: 'database' }]
-                }
+                },
+                realWorldExample: 'JPA/Hibernate @Entity with methods, Aggregates in DDD.'
             },
             {
                 id: 'func-fsm',
-                title: 'Finite State Machine',
+                title: 'FSM (Delivery Drone)',
                 pattern: 'State Machine',
                 tactic: 'Формализация переходов.',
-                description: 'Явное управление жизненным циклом объекта (Заказ: New -> Paid -> Shipped) через машину состояний, запрещающую некорректные переходы.',
-                keyIdea: 'Нельзя отправить заказ, который не оплачен.',
+                description: 'Сценарий: Дрон-доставщик. Он не может перейти из состояния "Charging" сразу в "Delivering", минуя "Ready". Машина состояний жестко контролирует этот граф.',
+                keyIdea: 'Запрещенные переходы невозможны физически.',
                 dataFlow: [
-                    '1. Сервис получает команду "Ship Order".',
-                    '2. State Machine проверяет текущий статус (Paid).',
-                    '3. Если переход разрешен — меняет статус на Shipped.',
+                    '1. Диспетчер шлет команду "Fly".',
+                    '2. FSM проверяет: CurrentState == Ready? Battery > 80%?',
+                    '3. Если да — NewState = Flying. Иначе — Error.',
                 ],
                 commonMistakes: [
-                    '❌ Изменение статусов строками в коде (order.status = "shipped").',
-                    '❌ Разбросанная логика переходов (if/else ад).',
-                    '❌ Отсутствие истории переходов (Audit Log).'
+                    '❌ Изменение статусов напрямую в БД (`UPDATE orders SET status="shipped"`).',
+                    '❌ Hardcoded `if/else` логика, разбросанная по коду.',
+                    '❌ Отсутствие лога переходов (Audit Trail) — кто перевел дрон в "Crash"?',
                 ],
                 instructions: [
-                    '1. Добавьте "Сервис Заказов".',
+                    '1. Добавьте "Control Center".',
                     '2. Добавьте "State Machine" (Logic).',
-                    '3. Добавьте "Базу данных".',
-                    '4. Соедините Сервис с State Machine.',
-                    '5. Соедините State Machine с БД.'
+                    '3. Добавьте "Hardware" (Drone).',
+                    '4. Соедините Control Center с State Machine.',
+                    '5. Соедините State Machine с Hardware.'
                 ],
                 validationParams: {
                     requiredComponents: [{ type: 'service', count: 1 }, { type: 'state-machine', count: 1 }, { type: 'database', count: 1 }],
                     requiredConnections: [{ from: 'service', to: 'state-machine' }, { from: 'state-machine', to: 'database' }]
-                }
-            }
+                },
+                realWorldExample: 'Spring Statemachine, XState, Tinder (Game Loop).'
+            },
         ]
     },
     {
@@ -2108,23 +2150,23 @@ const categories: QualityCategory[] = [
         lessons: [
             {
                 id: 'use-command',
-                title: 'Command Pattern (Undo/Redo)',
+                title: 'Command (Text Editor)',
                 pattern: 'Command',
                 tactic: 'Отмена действий.',
-                description: 'Инкапсуляция всех действий пользователя в объекты-команды, что позволяет легко реализовать отмену (Undo) и повтор (Redo).',
+                description: 'Сценарий: Google Docs. Вы случайно удалили абзац. Нажимаете Ctrl+Z. Система должна отменить действие. Для этого "Удаление" должно быть объектом, а не просто функцией.',
                 keyIdea: 'Каждое действие можно "проиграть" назад.',
                 dataFlow: [
-                    '1. Пользователь жмет "Удалить". UI создает Command object.',
-                    '2. Command выполняется и сохраняется в History Stack.',
-                    '3. При нажатии Undo — берем последнюю команду и зовем undo().',
+                    '1. User нажал "Delete". Создался объект `DeleteCommand(text, pos)`.',
+                    '2. Команда выполнилась удалила текст.',
+                    '3. Команда легла в стек истории. При Ctrl+Z она выполнит `undo()`.',
                 ],
                 commonMistakes: [
-                    '❌ Разрушающие действия без возможности отмены.',
-                    '❌ Хранение только состояния (State) вместо дельты изменений.',
-                    '❌ Потеря контекста при рестарте приложения.'
+                    '❌ Необратимые действия (отправка email) в Undo-стеке.',
+                    '❌ Undo отменяет не последнее действие, а что-то другое (Race Condition).',
+                    '❌ Стек истории бесконечно растет и "ест" память (нужен лимит 50).',
                 ],
                 instructions: [
-                    '1. Добавьте "UI" (Frontend).',
+                    '1. Добавьте "UI" (Editor).',
                     '2. Добавьте "Command Handler".',
                     '3. Добавьте "History Stack".',
                     '4. Соедините UI с Command Handler.',
@@ -2133,24 +2175,25 @@ const categories: QualityCategory[] = [
                 validationParams: {
                     requiredComponents: [{ type: 'frontend', count: 1 }, { type: 'command-handler', count: 1 }, { type: 'history-stack', count: 1 }],
                     requiredConnections: [{ from: 'frontend', to: 'command-handler' }, { from: 'command-handler', to: 'history-stack' }]
-                }
+                },
+                realWorldExample: 'Redux (Time Travel), CQRS Commands.'
             },
             {
                 id: 'use-i18n',
-                title: 'Internationalization (I18N)',
+                title: 'I18N (Global Netflix)',
                 pattern: 'Localization Service',
                 tactic: 'Адаптация под пользователя.',
-                description: 'Архитектура, позволяющая легко адаптировать интерфейс под разные языки и регионы без изменения кода.',
+                description: 'Сценарий: Netflix запускается в Японии. Цены в Yen, текст справа-налево (или вертикально), дата YYYY-MM-DD. Хардкод строк в коде сделает запуск невозможным.',
                 keyIdea: 'Код — отдельно, тексты — отдельно.',
                 dataFlow: [
-                    '1. Client запрашивает страницу (Header: Accept-Language: uk-UA).',
-                    '2. Сервис смотрит в Dictionary Service за переводами.',
-                    '3. Отдает контент на нужном языке.',
+                    '1. App грузится. User Locale = "ja-JP".',
+                    '2. App тянет JSON словарь для Японии.',
+                    '3. Вместо "Buy" рендерится "購入" (Kounyuu).',
                 ],
                 commonMistakes: [
-                    '❌ Хардкод строк в коде.',
-                    '❌ Конкатенация строк в коде ("Hello " + name), ломающая грамматику.',
-                    '❌ Форматирование дат/чисел без учета локали.'
+                    '❌ Конкатенация: "Hello " + name (в некоторых языках имя идет первым).',
+                    '❌ Использование картинок с текстом (придется перерисовывать под каждый язык).',
+                    '❌ Забыли про Pluralization (1 file, 2 files, 5 files - в русском сложнее: 1 файл, 2 файла, 5 файлов).',
                 ],
                 instructions: [
                     '1. Добавьте "Клиент" (Frontend).',
@@ -2162,8 +2205,9 @@ const categories: QualityCategory[] = [
                 validationParams: {
                     requiredComponents: [{ type: 'frontend', count: 1 }, { type: 'backend', count: 1 }, { type: 'dictionary-db', count: 1 }],
                     requiredConnections: [{ from: 'frontend', to: 'backend' }, { from: 'backend', to: 'dictionary-db' }]
-                }
-            }
+                },
+                realWorldExample: 'i18next, react-intl, GNU gettext.'
+            },
         ]
     },
     {
@@ -2174,20 +2218,20 @@ const categories: QualityCategory[] = [
         lessons: [
             {
                 id: 'port-containers',
-                title: 'Containerization',
-                pattern: 'Containers (Docker)',
+                title: 'Docker (Microservices)',
+                pattern: 'Containers',
                 tactic: 'Упаковка зависимостей.',
-                description: 'Упаковка приложения и всех его зависимостей в единый образ (Container Image), гарантирующий одинаковую работу везде.',
-                keyIdea: 'Работает на моей машине = Работает в проде.',
+                description: 'Сценарий: "На моем компе работает, а на сервере нет" — классика. Docker упаковывает приложение вместе с Linux-библиотеками в "черный ящик", который работает одинаково везде.',
+                keyIdea: 'Грузовой контейнер стандарта ISO 668.',
                 dataFlow: [
-                    '1. Разработчик пишет Dockerfile.',
-                    '2. CI строит Image и кладет в Registry.',
-                    '3. Orchestrator (K8s) скачивает и запускает контейнер.',
+                    '1. Dev пишет Dockerfile (Инструкция сборки).',
+                    '2. CI собирает Image (неизменяемый слепок системы).',
+                    '3. Kubernetes запускает Image на любом сервере.',
                 ],
                 commonMistakes: [
-                    '❌ Хранение данных (State) внутри контейнера (теряются при рестарте).',
-                    '❌ "Толстые" образы (нужен Multi-stage build).',
-                    '❌ Запуск от pооt (безопасность).'
+                    '❌ Хранение логов или БД внутри контейнера (они эфемерны, удалятся при рестарте).',
+                    '❌ "Fat Container" (Ubuntu + Vim + SSH + App = 2GB). Нужен Alpine.',
+                    '❌ Запуск от Root (если хакнут контейнер — хакнут хост).',
                 ],
                 instructions: [
                     '1. Добавьте "Registry" (Docker Hub).',
@@ -2199,24 +2243,25 @@ const categories: QualityCategory[] = [
                 validationParams: {
                     requiredComponents: [{ type: 'registry', count: 1 }, { type: 'orchestrator', count: 1 }, { type: 'container', count: 1 }],
                     requiredConnections: [{ from: 'registry', to: 'orchestrator' }, { from: 'orchestrator', to: 'container' }]
-                }
+                },
+                realWorldExample: 'Docker, Kubernetes, Podman.'
             },
             {
                 id: 'port-hexagonal',
-                title: 'Hexagonal Architecture',
+                title: 'Hexagonal (Banking Core)',
                 pattern: 'Ports & Adapters',
                 tactic: 'Изоляция ядра от инфраструктуры.',
-                description: 'Бизнес-логика (Ядро) не зависит от БД или UI. Взаимодействие идет через Порты (интерфейсы) и Адаптеры (реализации).',
-                keyIdea: 'Замени БД или Фреймворк, не трогая бизнес-логику.',
+                description: 'Сценарий: Банковское ядро. Сегодня мы храним данные в Oracle, завтра в Postgres. Сегодня API REST, завтра gRPC. Бизнес-логика (расчет кредита) не должна знать об этом.',
+                keyIdea: 'Бизнес-логика в центре, инфраструктура — сбоку.',
                 dataFlow: [
-                    '1. Driver Adapter (Controller) вызывает Порт (Input Port).',
-                    '2. Core выполняет логику.',
-                    '3. Core вызывает Порт (Output Port), реализованный Driven Adapter-ом (DB).',
+                    '1. REST Controller (Adapter) вызывает Interface `ICreditService` (Port).',
+                    '2. `CreditService` (Core) считает процент.',
+                    '3. `CreditService` вызывает `ISaveRepository` (Port), не зная, что там Postgres.',
                 ],
                 commonMistakes: [
-                    '❌ Использование ORM сущностей в доменном слое.',
-                    '❌ Просачивание HTTP/JSON в ядро.',
-                    '❌ Циклическая зависимость (Ядро зависит от БД).'
+                    '❌ Использование аннотаций `@Table`, `@Controller` внутри Domain Core.',
+                    '❌ Просачивание DTO из контроллера в ядро.',
+                    '❌ Смешивание логики валидации HTTP и бизнес-валидации.',
                 ],
                 instructions: [
                     '1. Добавьте "Web Adapter" (Driver).',
@@ -2228,8 +2273,9 @@ const categories: QualityCategory[] = [
                 validationParams: {
                     requiredComponents: [{ type: 'web-adapter', count: 1 }, { type: 'core-domain', count: 1 }, { type: 'db-adapter', count: 1 }],
                     requiredConnections: [{ from: 'web-adapter', to: 'core-domain' }, { from: 'core-domain', to: 'db-adapter' }]
-                }
-            }
+                },
+                realWorldExample: 'Alistair Cockburn\'s Hexagonal Arch, Onion Arch.'
+            },
         ]
     },
     {
@@ -2240,21 +2286,20 @@ const categories: QualityCategory[] = [
         lessons: [
             {
                 id: 'plan-roadmap',
-                title: 'Создание Дорожной Карты',
+                title: 'Roadmap (MVP Launch)',
                 pattern: 'Roadmap',
                 tactic: 'Визуализация сроков.',
-                description: 'Построение дорожной карты проекта с использованием фаз, задач и вех для наглядного отображения плана работ.',
-                keyIdea: 'Разбивай большое на этапы.',
+                description: 'Сценарий: Запуск стартапа. Нельзя сделать всё сразу. Делим на фазы: MVP (только суть), V1 (фичи), V2 (красота). Визуализируем, кто кого блокирует.',
+                keyIdea: 'Слон слишком большой, ешь его по частям.',
                 dataFlow: [
-                    '1. Проект делится на Фазы (Phases) или Релизы.',
-                    '2. Внутри фаз определяются Задачи (Tasks).',
-                    '3. Ключевые достижения отмечаются Вехами (Milestones).',
-                    '4. Связи показывают порядок выполнения (Dependencies).',
+                    '1. Фаза 1: MVP (Login + Feed). Deadline: 1 month.',
+                    '2. Задачи: Backend API, React Frontend.',
+                    '3. Milestone: "First 100 users".',
                 ],
                 commonMistakes: [
-                    '❌ Слишком мелкие задачи (микроменеджмент).',
-                    '❌ Отсутствие зависимостей (непонятен критический путь).',
-                    '❌ Нереалистичные сроки вех.',
+                    '❌ "Водопад" под маской Agile (план на год вперед с точностью до дня).',
+                    '❌ Отсутствие буфера на риски (в баги уйдет 30% времени).',
+                    '❌ Забытые зависимости (Frontend готов, а Backend нет API).',
                 ],
                 instructions: [
                     '1. Добавьте компонент "Phase / Release" из категории Management.',
@@ -2269,8 +2314,9 @@ const categories: QualityCategory[] = [
                         { type: 'roadmap-milestone', count: 1 }
                     ],
                     requiredConnections: [{ from: 'roadmap-task', to: 'roadmap-milestone' }]
-                }
-            }
+                },
+                realWorldExample: 'Jira Roadmap, Gantt Charts, Linear.'
+            },
         ]
     }
 ]
