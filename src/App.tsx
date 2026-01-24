@@ -29,6 +29,7 @@ import NoteNode from './components/NoteNode'
 import TextNode from './components/TextNode'
 import GhostNode from './components/GhostNode'
 import AnimatedEdge from './components/AnimatedEdge'
+import SearchPanel from './components/SearchPanel'
 import StatisticsPanel from './components/StatisticsPanel'
 import SearchEngineConfigPanel from './components/SearchEngineConfigPanel'
 import ConfigurationManagementConfigPanel from './components/ConfigurationManagementConfigPanel'
@@ -495,6 +496,8 @@ function App() {
   const edgesToPreserveRef = useRef<Edge[]>([]) // Ref для хранения edges, которые нужно сохранить при удалении узлов
   const [canUndo, setCanUndo] = useState(false)
   const [canRedo, setCanRedo] = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
+  const [showPalette, setShowPalette] = useState(false)
   const draggingChildrenRef = useRef<Map<string, string[]>>(new Map())
   const dragStartPositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map())
 
@@ -840,6 +843,29 @@ function App() {
   const onSelectionDragStop = useCallback(() => {
     draggingChildrenRef.current.clear()
   }, [])
+
+  const handleSelectNodeForSearch = useCallback((nodeId: string) => {
+    const node = nodes.find(n => n.id === nodeId);
+    if (node && reactFlowInstanceRef.current) {
+      const currentZoom = reactFlowInstanceRef.current.getZoom();
+
+      // Вычисляем центр узла (с учетом того, что узел может иметь разные размеры)
+      const centerX = node.position.x + (node.width || 200) / 2;
+      const centerY = node.position.y + (node.height || 120) / 2;
+
+      reactFlowInstanceRef.current.setCenter(
+        centerX,
+        centerY,
+        { zoom: Math.max(currentZoom, 1.0), duration: 1000 }
+      );
+
+      // Выделяем узел и сбрасываем выделение с остальных
+      setNodes(nds => nds.map(n => ({
+        ...n,
+        selected: n.id === nodeId
+      })));
+    }
+  }, [nodes, setNodes]);
 
   // Флаг для отслеживания загрузки архитектуры из файла
   const isFileLoadRef = useRef(false)
@@ -1413,6 +1439,12 @@ function App() {
         (isCtrl && isShift && (key === 'z' || key === 'я' || code === 'KeyZ'))) {
         event.preventDefault()
         handleRedo()
+      }
+
+      // Ctrl + F = Search
+      if (isCtrl && (key === 'f' || key === 'а' || code === 'KeyF')) {
+        event.preventDefault()
+        setShowSearch(true)
       }
 
       // Пробел для панорамирования
@@ -5567,10 +5599,13 @@ function App() {
         onNewTab={handleNewTab}
         onTabRename={handleTabRename}
       />
-      <ComponentPalette
-        onComponentClick={handleAddComponentClick}
-        onRecommendationClick={() => setShowRecommendationPanel(true)}
-      />
+      {showPalette && (
+        <ComponentPalette
+          onComponentClick={handleAddComponentClick}
+          onRecommendationClick={() => setShowRecommendationPanel(true)}
+          onClose={() => setShowPalette(false)}
+        />
+      )}
       {showRecommendationPanel && (
         <RecommendationPanel
           onClose={() => setShowRecommendationPanel(false)}
@@ -5656,6 +5691,7 @@ function App() {
         onExportPNG={handleExportPNG}
 
         onSaveLayout={handleSaveLayout}
+        onTogglePalette={() => setShowPalette(!showPalette)}
         workspaces={workspaces}
         activeWorkspaceId={activeWorkspaceId}
       />
@@ -6566,6 +6602,15 @@ function App() {
           <TrackingReportPanel
             nodes={nodes}
             onClose={() => setShowTrackingReport(false)}
+          />
+        )}
+
+        {showSearch && (
+          <SearchPanel
+            nodes={nodes}
+            onSelectNode={handleSelectNodeForSearch}
+            onAddComponent={addComponent}
+            onClose={() => setShowSearch(false)}
           />
         )}
       </div >

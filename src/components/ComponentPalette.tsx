@@ -263,6 +263,7 @@ import {
 interface ComponentPaletteProps {
   onComponentClick: (type: ComponentType, label?: string) => void
   onRecommendationClick?: () => void
+  onClose?: () => void
 }
 
 type ComponentCategory = 'all' | 'infrastructure' | 'data' | 'security' | 'development' | 'monitoring' | 'integration' | 'communication' | 'text' | 'ai' | 'roles' | 'management' | 'misc' | 'aws' | 'gcp' | 'azure' | 'oracle' | 'branded'
@@ -275,7 +276,7 @@ interface Component {
   category: ComponentCategory
 }
 
-const components: Component[] = [
+export const components: Component[] = [
   // Инфраструктура
   { type: 'server', label: 'Сервер', icon: <Server size={24} />, color: '#339af0', category: 'infrastructure' },
   { type: 'container', label: 'Контейнер', icon: <Package size={24} />, color: '#51cf66', category: 'infrastructure' },
@@ -776,7 +777,7 @@ const categoryLabels: Record<ComponentCategory, string> = {
   branded: 'Технологии (Бренды)',
 }
 
-export default function ComponentPalette({ onComponentClick, onRecommendationClick }: ComponentPaletteProps) {
+export default function ComponentPalette({ onComponentClick, onRecommendationClick, onClose }: ComponentPaletteProps) {
   const [position, setPosition] = useState({ x: 20, y: 20 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
@@ -785,11 +786,25 @@ export default function ComponentPalette({ onComponentClick, onRecommendationCli
   const [selectedCategory, setSelectedCategory] = useState<ComponentCategory>('all')
   const paletteRef = useRef<HTMLDivElement>(null)
 
+  // Функция нормализации для игнорирования различий между RU и UA раскладками
+  const normalize = (str: string) => {
+    return str.toLowerCase()
+      .replace(/[иііїы]/g, 'и')
+      .replace(/[еєэё]/g, 'е')
+      .trim();
+  };
+
   // Фильтрация компонентов
   const filteredComponents = components.filter(component => {
-    const matchesSearch = searchQuery === '' ||
-      component.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      component.type.toLowerCase().includes(searchQuery.toLowerCase())
+    if (searchQuery === '') {
+      return selectedCategory === 'all' || component.category === selectedCategory
+    }
+
+    const q = normalize(searchQuery)
+    const label = normalize(component.label)
+    const type = normalize(component.type)
+
+    const matchesSearch = label.includes(q) || type.includes(q)
     const matchesCategory = selectedCategory === 'all' || component.category === selectedCategory
     return matchesSearch && matchesCategory
   })
@@ -874,300 +889,271 @@ export default function ComponentPalette({ onComponentClick, onRecommendationCli
 
   return (
     <div
-      ref={paletteRef}
       style={{
-        position: 'absolute',
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        width: '520px',
-        backgroundColor: '#1e1e1e',
-        border: '2px solid #444',
-        borderRadius: '12px',
-        padding: isCollapsed ? '12px 16px' : '16px',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-        zIndex: 10,
-        maxHeight: isCollapsed ? 'auto' : 'calc(100vh - 40px)',
-        overflowY: isCollapsed ? 'visible' : 'auto',
-        cursor: isDragging ? 'grabbing' : 'default',
-        transition: 'padding 0.3s ease',
+        position: 'fixed',
+        left: 0,
+        top: 0,
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        backdropFilter: 'blur(10px)',
+        zIndex: 2000,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        animation: 'paletteFadeIn 0.3s ease-out',
       }}
+      onClick={onClose}
     >
+      <style>{`
+        @keyframes paletteFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes paletteSlideUp {
+          from { opacity: 0; transform: translateY(20px) scale(0.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
+
       <div
+        ref={paletteRef}
+        onClick={(e) => e.stopPropagation()}
         style={{
+          width: '900px',
+          maxWidth: '95vw',
+          height: '80vh',
+          backgroundColor: '#1a1a1a',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: '24px',
+          padding: '32px',
+          boxShadow: '0 32px 64px -12px rgba(0, 0, 0, 0.7)',
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: isCollapsed ? '0' : '12px',
-          paddingBottom: isCollapsed ? '0' : '10px',
-          borderBottom: isCollapsed ? 'none' : '2px solid #444',
+          flexDirection: 'column',
+          animation: 'paletteSlideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)',
         }}
       >
-        <h2
-          onMouseDown={handleMouseDown}
+        <div
           style={{
-            fontSize: '16px',
-            fontWeight: 'bold',
-            color: '#fff',
-            cursor: 'grab',
-            userSelect: 'none',
-            margin: 0,
-            flex: 1,
-          }}
-          onMouseEnter={(e) => {
-            if (!isDragging) {
-              e.currentTarget.style.cursor = 'grab'
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!isDragging) {
-              e.currentTarget.style.cursor = 'default'
-            }
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '24px',
+            paddingBottom: '20px',
+            borderBottom: '1px solid rgba(255,255,255,0.05)',
           }}
         >
-          {isDragging ? '🖐 Перетаскивание...' : '☰ Компоненты'}
-        </h2>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            onClick={onRecommendationClick}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#fff',
-              cursor: 'pointer',
-              padding: '4px 8px',
-              borderRadius: '4px',
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '12px',
+              backgroundColor: 'rgba(77, 171, 247, 0.1)',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'background-color 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#333'
-              e.currentTarget.style.color = '#ffd43b'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent'
-              e.currentTarget.style.color = '#fff'
-            }}
-            title="Ассистент по выбору технологий"
-          >
-            <Lightbulb size={20} />
-          </button>
-          <button
-            onClick={toggleCollapse}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#fff',
-              cursor: 'pointer',
-              padding: '4px 8px',
-              borderRadius: '4px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'background-color 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#333'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent'
-            }}
-            title={isCollapsed ? 'Развернуть' : 'Свернуть'}
-          >
-            {isCollapsed ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
-          </button>
-        </div>
-      </div>
-      {!isCollapsed && (
-        <>
-          {/* Поиск */}
-          <div style={{ marginBottom: '12px', position: 'relative' }}>
-            <Search
-              size={16}
+              justifyContent: 'center'
+            }}>
+              <Layout color="#4dabf7" size={24} />
+            </div>
+            <div>
+              <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#fff', margin: 0 }}>Палитра компонентов</h2>
+              <p style={{ fontSize: '13px', color: '#666', margin: '4px 0 0 0' }}>Выберите элемент для добавления в архитектуру</p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            {onRecommendationClick && (
+              <button
+                onClick={onRecommendationClick}
+                style={{
+                  background: 'rgba(255, 212, 59, 0.1)',
+                  border: 'none',
+                  color: '#ffd43b',
+                  cursor: 'pointer',
+                  padding: '8px 16px',
+                  borderRadius: '12px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 212, 59, 0.2)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 212, 59, 0.1)'}
+              >
+                <Lightbulb size={16} /> Рекомендации
+              </button>
+            )}
+            <button
+              onClick={onClose}
               style={{
-                position: 'absolute',
-                left: '12px',
-                top: '50%',
-                transform: 'translateY(-50%)',
+                width: '40px',
+                height: '40px',
+                borderRadius: '12px',
+                backgroundColor: 'rgba(255,255,255,0.05)',
+                border: 'none',
                 color: '#888',
-                pointerEvents: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s'
               }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 68, 68, 0.1)'
+                e.currentTarget.style.color = '#ff6b6b'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'
+                e.currentTarget.style.color = '#888'
+              }}
+            >
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+
+        {/* Поиск и категории */}
+        <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
+          <div style={{ position: 'relative', flex: 1 }}>
+            <Search
+              size={18}
+              color="#555"
+              style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }}
             />
             <input
               type="text"
-              placeholder="Поиск компонентов..."
+              placeholder="Быстрый поиск по названию или типу..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
                 width: '100%',
-                padding: '8px 12px 8px 36px',
-                backgroundColor: '#1e1e1e',
-                border: '1px solid #555',
-                borderRadius: '6px',
+                backgroundColor: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.05)',
+                borderRadius: '16px',
+                padding: '16px 16px 16px 48px',
                 color: '#fff',
-                fontSize: '14px',
+                fontSize: '16px',
                 outline: 'none',
+                transition: 'all 0.2s',
+                boxSizing: 'border-box'
               }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#4dabf7'
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#555'
-              }}
+              onFocus={(e) => e.target.style.borderColor = '#4dabf7'}
+              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.05)'}
             />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                style={{
-                  position: 'absolute',
-                  right: '8px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#888',
-                  cursor: 'pointer',
-                  padding: '4px',
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#fff'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#888'
-                }}
-              >
-                <X size={16} />
-              </button>
-            )}
           </div>
-
-          {/* Категории */}
-          <div style={{ marginBottom: '12px', display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-            {(Object.keys(categoryLabels) as ComponentCategory[]).map((category) => (
-              <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                style={{
-                  padding: '6px 12px',
-                  backgroundColor: selectedCategory === category ? '#4dabf7' : '#2d2d2d',
-                  color: '#fff',
-                  border: `1px solid ${selectedCategory === category ? '#4dabf7' : '#555'}`,
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  fontWeight: selectedCategory === category ? '600' : '400',
-                  transition: 'all 0.2s',
-                  whiteSpace: 'nowrap',
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedCategory !== category) {
-                    e.currentTarget.style.backgroundColor = '#333'
-                    e.currentTarget.style.borderColor = '#666'
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedCategory !== category) {
-                    e.currentTarget.style.backgroundColor = '#2d2d2d'
-                    e.currentTarget.style.borderColor = '#555'
-                  }
-                }}
-              >
-                {categoryLabels[category]}
-              </button>
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value as ComponentCategory)}
+            style={{
+              backgroundColor: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.05)',
+              borderRadius: '16px',
+              padding: '0 20px',
+              color: '#fff',
+              fontSize: '14px',
+              outline: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            {Object.entries(categoryLabels).map(([id, label]) => (
+              <option key={id} value={id} style={{ backgroundColor: '#1a1a1a' }}>{label}</option>
             ))}
-          </div>
+          </select>
+        </div>
 
-          {/* Список компонентов */}
-          {filteredComponents.length === 0 ? (
-            <div style={{
-              padding: '20px',
-              textAlign: 'center',
-              color: '#888',
-              fontSize: '14px'
-            }}>
-              Компоненты не найдены
-            </div>
-          ) : (
+        {/* Сетка компонентов */}
+        <div
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+            gap: '12px',
+            paddingRight: '8px'
+          }}
+          className="custom-scrollbar"
+        >
+          <style>{`
+            .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+            .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+          `}</style>
+
+          {filteredComponents.map((component, idx) => (
             <div
+              key={`${component.type}-${idx}`}
+              onClick={() => {
+                onComponentClick(component.type, component.label)
+                if (onClose) onClose()
+              }}
+              className="palette-item"
               style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(5, 1fr)',
-                gap: '8px',
+                backgroundColor: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.05)',
+                borderRadius: '18px',
+                padding: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '12px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                textAlign: 'center',
               }}
             >
-              {filteredComponents.map((component, index) => (
-                <div
-                  key={`${component.type}-${component.label}-${index}`}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, component.type, component.label)}
-                  onClick={() => onComponentClick(component.type, component.label)}
-                  style={{
-                    padding: '8px',
-                    backgroundColor: '#2d2d2d',
-                    border: `2px solid ${component.color}40`,
-                    borderRadius: '8px',
-                    cursor: 'grab',
-                    transition: 'all 0.2s',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '4px',
-                    textAlign: 'center',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = component.color
-                    e.currentTarget.style.backgroundColor = '#333'
-                    e.currentTarget.style.transform = 'translateY(-2px)'
-                    e.currentTarget.style.boxShadow = `0 4px 12px ${component.color}30`
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = `${component.color}40`
-                    e.currentTarget.style.backgroundColor = '#2d2d2d'
-                    e.currentTarget.style.transform = 'translateY(0)'
-                    e.currentTarget.style.boxShadow = 'none'
-                  }}
-                  onMouseDown={(e) => {
-                    e.currentTarget.style.cursor = 'grabbing'
-                  }}
-                  onMouseUp={(e) => {
-                    e.currentTarget.style.cursor = 'grab'
-                  }}
-                >
-                  <div
-                    style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '6px',
-                      background: `linear-gradient(135deg, ${component.color}20, ${component.color}10)`,
-                      border: `2px solid ${component.color}40`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: component.color,
-                      marginBottom: '2px',
-                    }}
-                  >
-                    {React.cloneElement(component.icon as React.ReactElement, { size: 18 })}
-                  </div>
-                  <span
-                    style={{
-                      fontSize: '10px',
-                      fontWeight: '500',
-                      color: '#fff',
-                      lineHeight: '1.1',
-                    }}
-                  >
-                    {component.label}
-                  </span>
-                </div>
-              ))}
+              <div style={{
+                width: '52px',
+                height: '52px',
+                borderRadius: '14px',
+                background: `linear-gradient(135deg, ${component.color}15, ${component.color}08)`,
+                border: `1.5px solid ${component.color}30`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: component.color,
+                transition: 'all 0.3s ease',
+              }}>
+                {React.cloneElement(component.icon as React.ReactElement, { size: 28 })}
+              </div>
+              <span style={{ fontSize: '13px', fontWeight: 600, color: '#eee', lineHeight: 1.2 }}>
+                {component.label}
+              </span>
+
+              <style>{`
+                .palette-item:hover {
+                  background-color: rgba(255,255,255,0.06);
+                  border-color: rgba(255,255,255,0.15);
+                  transform: translateY(-4px);
+                  box-shadow: 0 12px 24px -8px rgba(0,0,0,0.5);
+                }
+                .palette-item:hover > div {
+                  transform: scale(1.1);
+                  border-color: ${component.color}80;
+                  background-color: ${component.color}25;
+                }
+              `}</style>
             </div>
-          )}
-        </>
-      )}
+          ))}
+        </div>
+
+        <div style={{
+          marginTop: '20px',
+          paddingTop: '16px',
+          borderTop: '1px solid rgba(255,255,255,0.05)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          color: '#444',
+          fontSize: '11px'
+        }}>
+          <div>Всего компонентов: {filteredComponents.length}</div>
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <span><kbd style={{ background: '#333', padding: '2px 4px', borderRadius: '4px' }}>ESC</kbd> Закрыть</span>
+            <span><kbd style={{ background: '#333', padding: '2px 4px', borderRadius: '4px' }}>ENTER</kbd> Добавить</span>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

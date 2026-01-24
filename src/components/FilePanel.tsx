@@ -8,6 +8,7 @@ interface FilePanelProps {
   onExportDrawIO: () => void
   onExportPNG?: () => void
   onSaveLayout?: (targetWorkspaceIds?: string[]) => void
+  onTogglePalette?: () => void
   workspaces: { id: string; name: string }[]
   activeWorkspaceId: string
 }
@@ -18,6 +19,7 @@ export default function FilePanel({
   onExportDrawIO,
   onExportPNG,
   onSaveLayout,
+  onTogglePalette,
   workspaces,
   activeWorkspaceId
 }: FilePanelProps) {
@@ -212,6 +214,25 @@ export default function FilePanel({
             >
               📂 Загрузить
             </button>
+
+            {onTogglePalette && (
+              <button
+                onClick={() => {
+                  onTogglePalette()
+                  setIsOpen(false)
+                }}
+                style={menuItemStyle}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#ff922b'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent'
+                }}
+                title="Открыть библиотеку компонентов"
+              >
+                <Layout size={14} /> 🧱 Компоненты
+              </button>
+            )}
 
             <button
               onClick={() => {
