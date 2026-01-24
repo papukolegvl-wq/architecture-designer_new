@@ -23,19 +23,6 @@ function SystemNode({ id, data, selected, onLinkClick, onLinkConfigClick, onColo
   const isSimple = zoom < 0.4
   const isMedium = zoom < 0.7
 
-  // Устанавливаем z-index: -1 для системы, чтобы компоненты внутри были доступны
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setNodes((nds) => {
-        const node = nds.find((n) => n.id === id)
-        if (node && (!node.style || node.style.zIndex !== -1)) {
-          return nds.map((n) => (n.id === id ? { ...n, style: { ...n.style, zIndex: -1 } } : n))
-        }
-        return nds
-      })
-    }, 0)
-    return () => clearTimeout(timeout)
-  }, [id, setNodes])
 
   // Функция для обновления размера системы
   const updateSystemSize = React.useCallback(() => {

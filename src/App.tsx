@@ -783,17 +783,25 @@ function App() {
       }
 
       const { w: pW, h: pH } = getSafeDim(parentNode, isSystem ? 600 : isContainer ? 300 : 200, isSystem ? 400 : isContainer ? 200 : 110)
-      const isLarge = pW > 250 || pH > 150
 
-      if (isSystem || isContainer || parentData.isExpanded || isLarge) {
+      // Критическое изменение: ограничиваем "способность" быть родителем.
+      // Компонент может двигать детей ТОЛЬКО если он большой (Система/Контейнер)
+      // или если он был вручную расширен до больших размеров.
+      // Обычные маленькие компоненты, стоящие рядом, больше не будут захватывать друг друга.
+      const isLargeEnoughToBeParent = pW >= 250 || pH >= 150
+
+      if ((isSystem || isContainer || parentData.isExpanded) && isLargeEnoughToBeParent) {
         const parentPos = parentNode.position
 
         const children = allNodes.filter(child => {
           if (child.id === parentNode.id || child.selected) return false
 
-          // Для новых компонентов используем минимальный охват (10x10) для проверки центра.
-          // Это гарантирует, что мы найдем центр даже если узел еще не «расправился» в DOM.
+          // Получаем размеры ребенка для проверки вхождения центра
           const { w: cW, h: cH } = getSafeDim(child, 10, 10)
+
+          // Проверяем, что ребенок СУЩЕСТВЕННО меньше родителя (чтобы избежать захвата равных по размеру соседей)
+          if (cW >= pW * 0.9 && cH >= pH * 0.9) return false
+
           const cCenterX = child.position.x + cW / 2
           const cCenterY = child.position.y + cH / 2
 
@@ -1429,32 +1437,45 @@ function App() {
   }, [handleUndo, handleRedo, isSpacePressed])
 
   // Автоматическая коррекция z-index для больших узлов (контейнеров)
-  // Это обеспечивает доступность связей под ними для выделения и клика
+  // Унифицированное управление z-index для обеспечения интерактивности вложенных элементов
   useEffect(() => {
-    const largeNodesToFix = nodes.filter(node => {
-      const isLarge = (node.width && node.width > 300) || (node.height && node.height > 200)
-      const isExpanded = (node.data as any)?.isExpanded
-      const needsFix = (isLarge || isExpanded) && node.style?.zIndex !== -1
-      return needsFix
-    })
+    const getNodeZIndex = (node: Node): number => {
+      const data = node.data as ComponentData;
+      if (data?.isGhost) return -100;
 
-    if (largeNodesToFix.length > 0) {
+      const nodeType = node.type;
+      const dataType = data?.type;
+      const isExpanded = data?.isExpanded;
+      const isLarge = (node.width && node.width > 250) || (node.height && node.height > 150) || (node.style?.width && parseFloat(String(node.style.width)) > 250);
+
+      // Системы и домены на самом заднем плане
+      if (nodeType === 'system' || nodeType === 'business-domain' || dataType === 'system') return -10;
+
+      // Контейнеры и развернутые компоненты чуть выше систем, но ниже обычных узлов
+      if (nodeType === 'group' || nodeType === 'container' || dataType === 'container' || dataType === 'cluster' || dataType === 'vpc' || isExpanded || isLarge) return -5;
+
+      // Заметки и текст выше всех
+      if (nodeType === 'note' || nodeType === 'text') return 50;
+
+      // Обычные компоненты на стандартном уровне (0)
+      return 0;
+    };
+
+    const needsUpdate = nodes.some(node => node.style?.zIndex !== getNodeZIndex(node));
+
+    if (needsUpdate) {
       setNodes(nds => nds.map(node => {
-        const isLarge = (node.width && node.width > 300) || (node.height && node.height > 200)
-        const isExpanded = (node.data as any)?.isExpanded
-        if ((isLarge || isExpanded) && node.style?.zIndex !== -1) {
+        const targetZIndex = getNodeZIndex(node);
+        if (node.style?.zIndex !== targetZIndex) {
           return {
             ...node,
-            style: {
-              ...node.style,
-              zIndex: -1
-            }
-          }
+            style: { ...node.style, zIndex: targetZIndex }
+          };
         }
-        return node
-      }))
+        return node;
+      }));
     }
-  }, [nodes, setNodes])
+  }, [nodes, setNodes]);
 
   // Слушаем запросы на удаление и обновление данных узлов
   useEffect(() => {
@@ -5081,9 +5102,13 @@ function App() {
           if (node.id === nodeId) {
             // Check if the node is large enough to be considered a container
             // If so, push it to the background (zIndex: -1) to allow child interactions
-            const isLarge = (width && width > 280) || (height && height > 180)
             const isExpanded = (node.data as ComponentData).isExpanded
-            const newZIndex = (isLarge || isExpanded) ? -1 : undefined
+            const isLarge = (width && width > 250) || (height && height > 150)
+            const type = node.type || (node.data as ComponentData).type
+
+            let newZIndex = 0
+            if (type === 'system' || type === 'business-domain') newZIndex = -10
+            else if (type === 'container' || type === 'cluster' || isExpanded || isLarge) newZIndex = -5
 
             return {
               ...node,
