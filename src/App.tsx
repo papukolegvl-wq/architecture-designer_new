@@ -496,6 +496,7 @@ function App() {
   const [canUndo, setCanUndo] = useState(false)
   const [canRedo, setCanRedo] = useState(false)
   const draggingChildrenRef = useRef<Map<string, string[]>>(new Map())
+  const dragStartPositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map())
 
   // Вспомогательная функция для обновления стрелок при перемещении узлов
   const updateEdgesOnMovement = useCallback((nodeMovements: Array<{ nodeId: string; deltaX: number; deltaY: number }>, movingNodeIdsSet: Set<string>) => {
@@ -581,81 +582,61 @@ function App() {
         return true
       })
 
-      // 2. Коллектор перемещений для обновления связей (стрелок)
-      const movements: Array<{ nodeId: string; deltaX: number; deltaY: number }> = []
-      const movingIdsSet = new Set<string>()
+      // 2. Применяем основные изменения через основной обработчик ReactFlow
+      onNodesChange(filteredChanges)
 
-      // 3. Основное обновление узлов
-      setNodes((nds) => {
-        // Применяем стандартные изменения
-        let nextNodes = applyNodeChanges(filteredChanges, nds)
+      // 3. Синхронизируем перемещение дочерних элементов (Absolute Offset Strategy)
+      const positionChanges = changes.filter((c: any) => c.type === 'position' && c.dragging) as any[]
 
-        // Обрабатываем перемещение детей и групп
-        const positionChanges = changes.filter((c: any) => c.type === 'position' && c.dragging) as any[]
+      if (positionChanges.length > 0) {
+        const movements: Array<{ nodeId: string; deltaX: number; deltaY: number }> = []
+        const movingIdsSet = new Set<string>(positionChanges.map(c => c.id))
 
-        if (positionChanges.length > 0) {
-          const processedChildren = new Set<string>()
+        setNodes((nds) => {
+          let nextNodes = [...nds]
 
           positionChanges.forEach((change) => {
-            const oldNode = nds.find(n => n.id === change.id)
             const newNode = nextNodes.find(n => n.id === change.id)
+            const parentStartPos = dragStartPositionsRef.current.get(change.id)
 
-            if (oldNode && newNode && (change.position || change.positionAbsolute)) {
-              const dx = newNode.position.x - oldNode.position.x
-              const dy = newNode.position.y - oldNode.position.y
+            if (newNode && parentStartPos) {
+              // Суммарный сдвиг родителя от точки начала перетаскивания
+              const totalDX = newNode.position.x - parentStartPos.x
+              const totalDY = newNode.position.y - parentStartPos.y
 
-              if (dx !== 0 || dy !== 0) {
-                movements.push({ nodeId: newNode.id, deltaX: dx, deltaY: dy })
-                movingIdsSet.add(newNode.id)
+              movements.push({ nodeId: newNode.id, deltaX: totalDX, deltaY: totalDY })
 
-                const data = oldNode.data as ComponentData
-                const groupId = data?.groupId
-                const childIds = draggingChildrenRef.current.get(newNode.id) || []
+              const childIds = draggingChildrenRef.current.get(newNode.id) || []
+              if (childIds.length > 0) {
+                nextNodes = nextNodes.map(n => {
+                  // Если этот узел и так перемещается самой ReactFlow, пропускаем
+                  if (movingIdsSet.has(n.id)) return n
 
-                if (groupId || childIds.length > 0) {
-                  nextNodes = nextNodes.map(n => {
-                    // Не трогаем тех, кто и так уже в списке positionChanges (их ReactFlow сам двигает)
-                    if (positionChanges.some(pc => pc.id === n.id)) return n
-
-                    let moved = false
-                    let nx = n.position.x
-                    let ny = n.position.y
-
-                    // Логическая группа (соседние элементы)
-                    if (groupId && (n.data as ComponentData)?.groupId === groupId && n.id !== newNode.id) {
-                      nx += dx
-                      ny += dy
-                      moved = true
+                  if (childIds.includes(n.id)) {
+                    const childStartPos = dragStartPositionsRef.current.get(n.id)
+                    if (childStartPos) {
+                      return {
+                        ...n,
+                        position: {
+                          x: childStartPos.x + totalDX,
+                          y: childStartPos.y + totalDY
+                        }
+                      }
                     }
-                    // Пространственные дети
-                    else if (childIds.includes(n.id) && !processedChildren.has(n.id)) {
-                      nx += dx
-                      ny += dy
-                      moved = true
-                      processedChildren.add(n.id)
-                    }
-
-                    if (moved) {
-                      movements.push({ nodeId: n.id, deltaX: dx, deltaY: dy })
-                      return { ...n, position: { x: nx, y: ny } }
-                    }
-                    return n
-                  })
-                }
+                  }
+                  return n
+                })
               }
             }
           })
-        }
+          return nextNodes
+        })
 
-        return nextNodes
-      })
-
-      // 4. Обновляем стрелки на основе итоговых перемещений
-      if (movements.length > 0) {
+        // Обновляем связи для всех затронутых узлов
         updateEdgesOnMovement(movements, movingIdsSet)
       }
 
-      // 5. Обработка ghost-узлов
+      // 4. Пост-обработка: превращение удаленных узлов в ghost
       if (nodesToGhost.length > 0) {
         setNodes((nds) =>
           nds.map((n) => {
@@ -670,8 +651,8 @@ function App() {
                   ...n.data,
                   isGhost: true,
                   originalData: { ...n.data, type: n.type, width: n.width, height: n.height },
-                  label: n.data.label,
-                },
+                  label: n.data.label
+                }
               }
             }
             return n
@@ -770,17 +751,18 @@ function App() {
     if (activeWorkspace?.isLocked) return
 
     const allNodes = nodesRef.current
-    // Если перетаскивается выделение, обрабатываем все выделенные узлы
     const selectedNodes = allNodes.filter(n => n.selected)
     const nodesToHandle = selectedNodes.length > 0 ? selectedNodes : [node]
 
     nodesToHandle.forEach(parentNode => {
       const parentData = parentNode.data as ComponentData
-      // Проверка на принадлежность к контейнерным типам
+
+      // 1. Запоминаем стартовую позицию родителя
+      dragStartPositionsRef.current.set(parentNode.id, { ...parentNode.position })
+
       const isSystem = parentNode.type === 'system' ||
         parentNode.type === 'business-domain' ||
         parentData.type === 'system' ||
-        parentData.type === 'business-domain' ||
         parentData.type === 'external-system' ||
         parentData.type === 'external-component' ||
         parentData.type === 'cluster'
@@ -788,46 +770,44 @@ function App() {
       const isContainer = parentNode.type === 'container' ||
         parentNode.type === 'group' ||
         parentData.type === 'container' ||
-        parentData.type === 'group' ||
-        parentData.type === 'cluster' ||
         parentData.type === 'vpc' ||
         parentData.type === 'subnet' ||
         parentData.type === 'server' ||
         parentData.type === 'web-server' ||
         parentData.type === 'orchestrator'
 
-      // Проверка по размеру или состоянию расширения
-      const isExpanded = parentData.isExpanded === true
-      const isLarge = (parentNode.width && parentNode.width > 250) ||
-        (parentNode.height && parentNode.height > 150) ||
-        (parentNode.style?.width && Number(parentNode.style.width) > 250)
+      const getSafeDim = (n: Node, defaultW: number, defaultH: number) => {
+        const w = n.width || (n.style?.width ? parseFloat(String(n.style.width)) : 0) || defaultW
+        const h = n.height || (n.style?.height ? parseFloat(String(n.style.height)) : 0) || defaultH
+        return { w, h }
+      }
 
-      if (isSystem || isContainer || isExpanded || isLarge) {
+      const { w: pW, h: pH } = getSafeDim(parentNode, isSystem ? 600 : isContainer ? 300 : 200, isSystem ? 400 : isContainer ? 200 : 110)
+      const isLarge = pW > 250 || pH > 150
+
+      if (isSystem || isContainer || parentData.isExpanded || isLarge) {
         const parentPos = parentNode.position
 
-        // Пытаемся получить актуальные размеры
-        // @ts-ignore - access to internal state if possible, or fallback
-        const parentWidth = parentNode.width || parentNode.style?.width || (isSystem ? 600 : isContainer ? 300 : 200)
-        // @ts-ignore
-        const parentHeight = parentNode.height || parentNode.style?.height || (isSystem ? 400 : isContainer ? 200 : 110)
-
         const children = allNodes.filter(child => {
-          if (child.id === parentNode.id) return false
-          if (child.selected) return false // Сами переместятся через ReactFlow
+          if (child.id === parentNode.id || child.selected) return false
 
-          // Проверяем координаты центра ребенка
-          const cWidth = child.width || (child.type === 'system' ? 600 : 200)
-          const cHeight = child.height || (child.type === 'system' ? 400 : 120)
+          // Для новых компонентов используем минимальный охват (10x10) для проверки центра.
+          // Это гарантирует, что мы найдем центр даже если узел еще не «расправился» в DOM.
+          const { w: cW, h: cH } = getSafeDim(child, 10, 10)
+          const cCenterX = child.position.x + cW / 2
+          const cCenterY = child.position.y + cH / 2
 
-          const cCenterX = child.position.x + Number(cWidth) / 2
-          const cCenterY = child.position.y + Number(cHeight) / 2
-
-          return (
-            cCenterX >= parentPos.x &&
+          const isInside = cCenterX >= parentPos.x &&
             cCenterY >= parentPos.y &&
-            cCenterX <= parentPos.x + Number(parentWidth) &&
-            cCenterY <= parentPos.y + Number(parentHeight)
-          )
+            cCenterX <= parentPos.x + pW &&
+            cCenterY <= parentPos.y + pH
+
+          if (isInside) {
+            // 2. Запоминаем стартовую позицию каждого найденного ребенка
+            dragStartPositionsRef.current.set(child.id, { ...child.position })
+            return true
+          }
+          return false
         }).map(c => c.id)
 
         if (children.length > 0) {
@@ -846,6 +826,7 @@ function App() {
 
   const onNodeDragStop = useCallback(() => {
     draggingChildrenRef.current.clear()
+    dragStartPositionsRef.current.clear()
   }, [])
 
   const onSelectionDragStop = useCallback(() => {
