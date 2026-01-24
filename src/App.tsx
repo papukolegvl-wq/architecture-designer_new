@@ -15,6 +15,8 @@ import ReactFlow, {
   ReactFlowInstance,
   PanOnScrollMode, // Import PanOnScrollMode
   SelectionMode,
+  applyNodeChanges,
+  NodeChange,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 import ComponentPalette from './components/ComponentPalette'
@@ -495,171 +497,165 @@ function App() {
   const [canRedo, setCanRedo] = useState(false)
   const draggingChildrenRef = useRef<Map<string, string[]>>(new Map())
 
-  // Обертка для onNodesChange, чтобы отправлять события об изменениях и сохранять историю
-  const onNodesChangeWithEvents = useCallback(
-    (changes: any) => {
-      // Обрабатываем перемещение компонентов в группе и обновляем контрольные точки стрелок
-      const positionChanges = changes.filter((change: any) => change.type === 'position' && change.dragging)
-      if (positionChanges.length > 0) {
-        const nodeMovements: Array<{ nodeId: string; deltaX: number; deltaY: number }> = []
-        const movingNodeIdsSet = new Set(positionChanges.map((c: any) => c.id))
+  // Вспомогательная функция для обновления стрелок при перемещении узлов
+  const updateEdgesOnMovement = useCallback((nodeMovements: Array<{ nodeId: string; deltaX: number; deltaY: number }>, movingNodeIdsSet: Set<string>) => {
+    const groupIds = new Set<string>()
+    nodeMovements.forEach(m => {
+      const node = nodesRef.current.find(n => n.id === m.nodeId)
+      const nodeData = node?.data as ComponentData
+      if (nodeData?.groupId) groupIds.add(nodeData.groupId)
+    })
 
-        setNodes((nds) => {
-          const updatedNodes = nds.map((n: Node) => ({ ...n, position: { ...n.position } }))
-          let hasMovement = false
+    setEdges((eds) =>
+      eds.map((edge) => {
+        const edgeData = edge.data as any
+        const edgeGroupId = edgeData?.groupId
+        const sourceMovement = nodeMovements.find(m => m.nodeId === edge.source)
+        const targetMovement = nodeMovements.find(m => m.nodeId === edge.target)
+        const sourceIsMoving = movingNodeIdsSet.has(edge.source)
+        const targetIsMoving = movingNodeIdsSet.has(edge.target)
 
-          positionChanges.forEach((change: any) => {
-            const nodeIndex = updatedNodes.findIndex((n: Node) => n.id === change.id)
-            if (nodeIndex !== -1) {
-              const node = updatedNodes[nodeIndex]
-              const data = node.data as ComponentData
-              const groupId = data?.groupId
+        const shouldUpdateEdge = sourceMovement || targetMovement || (edgeGroupId && groupIds.has(edgeGroupId))
 
-              const oldNode = nds.find((n: Node) => n.id === change.id)
-              if (oldNode && change.position) {
-                const deltaX = change.position.x - oldNode.position.x
-                const deltaY = change.position.y - oldNode.position.y
+        if (shouldUpdateEdge) {
+          if (edgeData?.waypointX !== undefined && edgeData?.waypointY !== undefined) {
+            let newWaypointX = edgeData.waypointX
+            let newWaypointY = edgeData.waypointY
+            if (sourceMovement && targetMovement) {
+              newWaypointX += (sourceMovement.deltaX + targetMovement.deltaX) / 2
+              newWaypointY += (sourceMovement.deltaY + targetMovement.deltaY) / 2
+            } else if (sourceMovement) {
+              newWaypointX += sourceMovement.deltaX
+              newWaypointY += sourceMovement.deltaY
+            } else if (targetMovement) {
+              newWaypointX += targetMovement.deltaX
+              newWaypointY += targetMovement.deltaY
+            }
+            return { ...edge, data: { ...edgeData, waypointX: newWaypointX, waypointY: newWaypointY } }
+          }
 
-                if (deltaX !== 0 || deltaY !== 0) {
-                  nodeMovements.push({ nodeId: change.id, deltaX, deltaY })
-                  updatedNodes[nodeIndex].position = change.position
-                  hasMovement = true
-
-                  // 1. Move siblings if in a group (logical grouping)
-                  if (groupId) {
-                    updatedNodes.forEach((n: Node, index: number) => {
-                      const nData = n.data as ComponentData
-                      // Only move siblings that ARE NOT already being dragged explicitly
-                      if (nData?.groupId === groupId && n.id !== change.id && !movingNodeIdsSet.has(n.id)) {
-                        updatedNodes[index].position = {
-                          x: updatedNodes[index].position.x + deltaX,
-                          y: updatedNodes[index].position.y + deltaY,
-                        }
-                        nodeMovements.push({ nodeId: n.id, deltaX, deltaY })
-                      }
-                    })
-                  }
-
-                  // 2. Move children (spatial grouping) captured at drag start
-                  const childIds = draggingChildrenRef.current.get(change.id) || []
-                  if (childIds.length > 0) {
-                    childIds.forEach(childId => {
-                      // Only move children that ARE NOT already being dragged explicitly
-                      if (!movingNodeIdsSet.has(childId)) {
-                        const childIndex = updatedNodes.findIndex((n: Node) => n.id === childId)
-                        if (childIndex !== -1) {
-                          updatedNodes[childIndex] = {
-                            ...updatedNodes[childIndex],
-                            position: {
-                              x: updatedNodes[childIndex].position.x + deltaX,
-                              y: updatedNodes[childIndex].position.y + deltaY
-                            }
-                          }
-                          nodeMovements.push({ nodeId: childId, deltaX, deltaY })
-                        }
-                      }
-                    })
-                  }
-                }
+          if (edgeData?.waypoints && Array.isArray(edgeData.waypoints) && edgeData.waypoints.length > 0) {
+            let deltaX = 0, deltaY = 0
+            if (sourceMovement && targetMovement) {
+              deltaX = (sourceMovement.deltaX + targetMovement.deltaX) / 2
+              deltaY = (sourceMovement.deltaY + targetMovement.deltaY) / 2
+            } else if (sourceMovement) {
+              deltaX = sourceMovement.deltaX; deltaY = sourceMovement.deltaY
+            } else if (targetMovement) {
+              deltaX = targetMovement.deltaX; deltaY = targetMovement.deltaY
+            }
+            return {
+              ...edge,
+              data: {
+                ...edgeData,
+                waypoints: edgeData.waypoints.map((wp: any) => ({
+                  ...wp,
+                  x: wp.x + deltaX,
+                  y: wp.y + deltaY,
+                }))
               }
             }
-          })
-          return hasMovement ? updatedNodes : nds
-        })
-
-        if (nodeMovements.length > 0) {
-          const groupIds = new Set<string>()
-          nodeMovements.forEach(m => {
-            const node = nodes.find(n => n.id === m.nodeId)
-            const nodeData = node?.data as ComponentData
-            if (nodeData?.groupId) groupIds.add(nodeData.groupId)
-          })
-
-          setEdges((eds) =>
-            eds.map((edge) => {
-              const edgeData = edge.data as any
-              const edgeGroupId = edgeData?.groupId
-              const sourceMovement = nodeMovements.find(m => m.nodeId === edge.source)
-              const targetMovement = nodeMovements.find(m => m.nodeId === edge.target)
-              const sourceIsMoving = movingNodeIdsSet.has(edge.source)
-              const targetIsMoving = movingNodeIdsSet.has(edge.target)
-              const bothNodesMoving = sourceIsMoving && targetIsMoving
-
-              const shouldUpdateEdge = sourceMovement || targetMovement || (edgeGroupId && groupIds.has(edgeGroupId)) || bothNodesMoving
-
-              if (shouldUpdateEdge) {
-                if (edgeData?.waypointX !== undefined && edgeData?.waypointY !== undefined) {
-                  let newWaypointX = edgeData.waypointX
-                  let newWaypointY = edgeData.waypointY
-                  if (sourceMovement && targetMovement) {
-                    newWaypointX += (sourceMovement.deltaX + targetMovement.deltaX) / 2
-                    newWaypointY += (sourceMovement.deltaY + targetMovement.deltaY) / 2
-                  } else if (sourceMovement) {
-                    newWaypointX += sourceMovement.deltaX
-                    newWaypointY += sourceMovement.deltaY
-                  } else if (targetMovement) {
-                    newWaypointX += targetMovement.deltaX
-                    newWaypointY += targetMovement.deltaY
-                  } else if (edgeGroupId && groupIds.has(edgeGroupId)) {
-                    newWaypointX += nodeMovements.reduce((sum, m) => sum + m.deltaX, 0) / nodeMovements.length
-                    newWaypointY += nodeMovements.reduce((sum, m) => sum + m.deltaY, 0) / nodeMovements.length
-                  }
-                  return { ...edge, data: { ...edgeData, waypointX: newWaypointX, waypointY: newWaypointY } }
-                }
-
-                if (edgeData?.waypoints && Array.isArray(edgeData.waypoints) && edgeData.waypoints.length > 0) {
-                  let deltaX = 0, deltaY = 0
-                  if (sourceMovement && targetMovement) {
-                    deltaX = (sourceMovement.deltaX + targetMovement.deltaX) / 2
-                    deltaY = (sourceMovement.deltaY + targetMovement.deltaY) / 2
-                  } else if (sourceMovement) {
-                    deltaX = sourceMovement.deltaX; deltaY = sourceMovement.deltaY
-                  } else if (targetMovement) {
-                    deltaX = targetMovement.deltaX; deltaY = targetMovement.deltaY
-                  } else if (edgeGroupId && groupIds.has(edgeGroupId)) {
-                    deltaX = nodeMovements.reduce((sum, m) => sum + m.deltaX, 0) / nodeMovements.length
-                    deltaY = nodeMovements.reduce((sum, m) => sum + m.deltaY, 0) / nodeMovements.length
-                  }
-                  return {
-                    ...edge,
-                    data: {
-                      ...edgeData,
-                      waypoints: edgeData.waypoints.map((wp: any) => ({
-                        ...wp,
-                        x: wp.x + deltaX,
-                        y: wp.y + deltaY,
-                      }))
-                    }
-                  }
-                }
-              }
-              return edge
-            })
-          )
+          }
         }
-      }
+        return edge
+      })
+    )
+  }, [setEdges])
 
-      // Обработка удаления узлов: если у узла есть связи, превращаем его в "ghost", а не удаляем
+  // Обертка для onNodesChange, чтобы отправлять события об изменениях и сохранять историю
+  const onNodesChangeWithEvents = useCallback(
+    (changes: NodeChange[]) => {
+      // 1. Предварительная фильтрация для логики ghost-узлов
       const nodesToGhost: Node[] = []
       const filteredChanges = changes.filter((change: any) => {
         if (change.type === 'remove') {
-          const node = nodes.find(n => n.id === change.id)
+          const node = nodesRef.current.find(n => n.id === change.id)
           if (node) {
-            // Проверяем наличие связей
-            const hasEdges = edges.some(edge => edge.source === node.id || edge.target === node.id)
-            // Не превращаем в ghost заметки и текст, а также те, что уже ghost (для окончательного удаления)
+            const hasEdges = edgesRef.current.some(edge => edge.source === node.id || edge.target === node.id)
             if (hasEdges && !node.data.isGhost && node.type !== 'note' && node.type !== 'text') {
               nodesToGhost.push(node)
-              return false // Пропускаем удаление из списка изменений
+              return false
             }
           }
         }
         return true
       })
 
-      onNodesChange(filteredChanges)
+      // 2. Коллектор перемещений для обновления связей (стрелок)
+      const movements: Array<{ nodeId: string; deltaX: number; deltaY: number }> = []
+      const movingIdsSet = new Set<string>()
 
-      // Превращаем выбранные узлы в ghost-placeholder
+      // 3. Основное обновление узлов
+      setNodes((nds) => {
+        // Применяем стандартные изменения
+        let nextNodes = applyNodeChanges(filteredChanges, nds)
+
+        // Обрабатываем перемещение детей и групп
+        const positionChanges = changes.filter((c: any) => c.type === 'position' && c.dragging) as any[]
+
+        if (positionChanges.length > 0) {
+          const processedChildren = new Set<string>()
+
+          positionChanges.forEach((change) => {
+            const oldNode = nds.find(n => n.id === change.id)
+            const newNode = nextNodes.find(n => n.id === change.id)
+
+            if (oldNode && newNode && (change.position || change.positionAbsolute)) {
+              const dx = newNode.position.x - oldNode.position.x
+              const dy = newNode.position.y - oldNode.position.y
+
+              if (dx !== 0 || dy !== 0) {
+                movements.push({ nodeId: newNode.id, deltaX: dx, deltaY: dy })
+                movingIdsSet.add(newNode.id)
+
+                const data = oldNode.data as ComponentData
+                const groupId = data?.groupId
+                const childIds = draggingChildrenRef.current.get(newNode.id) || []
+
+                if (groupId || childIds.length > 0) {
+                  nextNodes = nextNodes.map(n => {
+                    // Не трогаем тех, кто и так уже в списке positionChanges (их ReactFlow сам двигает)
+                    if (positionChanges.some(pc => pc.id === n.id)) return n
+
+                    let moved = false
+                    let nx = n.position.x
+                    let ny = n.position.y
+
+                    // Логическая группа (соседние элементы)
+                    if (groupId && (n.data as ComponentData)?.groupId === groupId && n.id !== newNode.id) {
+                      nx += dx
+                      ny += dy
+                      moved = true
+                    }
+                    // Пространственные дети
+                    else if (childIds.includes(n.id) && !processedChildren.has(n.id)) {
+                      nx += dx
+                      ny += dy
+                      moved = true
+                      processedChildren.add(n.id)
+                    }
+
+                    if (moved) {
+                      movements.push({ nodeId: n.id, deltaX: dx, deltaY: dy })
+                      return { ...n, position: { x: nx, y: ny } }
+                    }
+                    return n
+                  })
+                }
+              }
+            }
+          })
+        }
+
+        return nextNodes
+      })
+
+      // 4. Обновляем стрелки на основе итоговых перемещений
+      if (movements.length > 0) {
+        updateEdgesOnMovement(movements, movingIdsSet)
+      }
+
+      // 5. Обработка ghost-узлов
       if (nodesToGhost.length > 0) {
         setNodes((nds) =>
           nds.map((n) => {
@@ -681,25 +677,24 @@ function App() {
             return n
           })
         )
+      }
+
+      // 6. Управление историей и событиями
+      const isRemove = filteredChanges.some((c: any) => c.type === 'remove')
+      const isAdd = filteredChanges.some((c: any) => c.type === 'add')
+      const isDragStop = filteredChanges.some((c: any) => c.type === 'position' && c.dragging === false)
+
+      if (isRemove || isAdd || isDragStop) {
         historyUpdateTypeRef.current = 'immediate'
       }
 
-      if (!isHistoryActionRef.current) {
-        const isRemove = filteredChanges.some((c: any) => c.type === 'remove')
-        const isAdd = filteredChanges.some((c: any) => c.type === 'add')
-        const isDragStop = filteredChanges.some((c: any) => c.type === 'position' && c.dragging === false)
-        if (isRemove || isAdd || isDragStop) historyUpdateTypeRef.current = 'immediate'
-        else historyUpdateTypeRef.current = 'standard'
-      }
-
       const hasRemovedNodes = filteredChanges.some((change: any) => change.type === 'remove')
-
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('nodeschange'))
         if (hasRemovedNodes) window.dispatchEvent(new CustomEvent('nodesremove'))
       }, 50)
     },
-    [onNodesChange, nodes, edges, setCanUndo, setCanRedo, setNodes]
+    [setNodes, updateEdgesOnMovement]
   )
 
   const onEdgesChangeWithHistory = useCallback(
@@ -781,46 +776,57 @@ function App() {
 
     nodesToHandle.forEach(parentNode => {
       const parentData = parentNode.data as ComponentData
-      const isSystem = parentNode.type === 'system' || parentNode.type === 'business-domain'
-      const isContainer = parentNode.type === 'container' || parentNode.type === 'group' || parentData.type === 'cluster' || parentData.type === 'vpc' || parentData.type === 'subnet'
-      const isExpandedCustom = parentNode.type === 'custom' && parentData.isExpanded
-      const isLargeCustom = parentNode.type === 'custom' && ((parentNode.width && parentNode.width > 300) || (parentNode.height && parentNode.height > 200))
+      // Проверка на принадлежность к контейнерным типам
+      const isSystem = parentNode.type === 'system' ||
+        parentNode.type === 'business-domain' ||
+        parentData.type === 'system' ||
+        parentData.type === 'business-domain' ||
+        parentData.type === 'external-system' ||
+        parentData.type === 'external-component' ||
+        parentData.type === 'cluster'
 
-      if (isSystem || isContainer || isExpandedCustom || isLargeCustom) {
+      const isContainer = parentNode.type === 'container' ||
+        parentNode.type === 'group' ||
+        parentData.type === 'container' ||
+        parentData.type === 'group' ||
+        parentData.type === 'cluster' ||
+        parentData.type === 'vpc' ||
+        parentData.type === 'subnet' ||
+        parentData.type === 'server' ||
+        parentData.type === 'web-server' ||
+        parentData.type === 'orchestrator'
+
+      // Проверка по размеру или состоянию расширения
+      const isExpanded = parentData.isExpanded === true
+      const isLarge = (parentNode.width && parentNode.width > 250) ||
+        (parentNode.height && parentNode.height > 150) ||
+        (parentNode.style?.width && Number(parentNode.style.width) > 250)
+
+      if (isSystem || isContainer || isExpanded || isLarge) {
         const parentPos = parentNode.position
-        const parentWidth = parentNode.width || (isSystem ? 600 : isContainer ? 300 : 200)
-        const parentHeight = parentNode.height || (isSystem ? 400 : isContainer ? 200 : 110)
+
+        // Пытаемся получить актуальные размеры
+        // @ts-ignore - access to internal state if possible, or fallback
+        const parentWidth = parentNode.width || parentNode.style?.width || (isSystem ? 600 : isContainer ? 300 : 200)
+        // @ts-ignore
+        const parentHeight = parentNode.height || parentNode.style?.height || (isSystem ? 400 : isContainer ? 200 : 110)
 
         const children = allNodes.filter(child => {
           if (child.id === parentNode.id) return false
+          if (child.selected) return false // Сами переместятся через ReactFlow
 
-          // Проверяем, не выделен ли ребенок (если выделен, ReactFlow переместит его сам)
-          if (child.selected) return false
-
+          // Проверяем координаты центра ребенка
           const cWidth = child.width || (child.type === 'system' ? 600 : 200)
           const cHeight = child.height || (child.type === 'system' ? 400 : 120)
 
-          // Критерий вложенности: площадь ребенка должна быть меньше площади родителя
-          // Это предотвращает взаимный захват узлов одинакового размера при наложении
-          const parentArea = parentWidth * parentHeight
-          const childArea = cWidth * cHeight
-
-          if (childArea >= parentArea * 0.8) {
-            // Исключение: в систему можно вкладывать другие крупные компоненты, 
-            // но два "Системных" узла не должны захватывать друг друга
-            if (parentNode.type === child.type) return false
-            // Если это не система, то просто блокируем захват равных по размеру
-            if (!isSystem) return false
-          }
-
-          const cCenterX = child.position.x + cWidth / 2
-          const cCenterY = child.position.y + cHeight / 2
+          const cCenterX = child.position.x + Number(cWidth) / 2
+          const cCenterY = child.position.y + Number(cHeight) / 2
 
           return (
             cCenterX >= parentPos.x &&
             cCenterY >= parentPos.y &&
-            cCenterX <= parentPos.x + parentWidth &&
-            cCenterY <= parentPos.y + parentHeight
+            cCenterX <= parentPos.x + Number(parentWidth) &&
+            cCenterY <= parentPos.y + Number(parentHeight)
           )
         }).map(c => c.id)
 
@@ -5093,9 +5099,10 @@ function App() {
         nds.map((node) => {
           if (node.id === nodeId) {
             // Check if the node is large enough to be considered a container
-            // If so, push it to the background (zIndex: -1) to allow edge interactions
-            const isLarge = (width && width > 300) || (height && height > 200)
-            const newZIndex = isLarge ? -1 : undefined
+            // If so, push it to the background (zIndex: -1) to allow child interactions
+            const isLarge = (width && width > 280) || (height && height > 180)
+            const isExpanded = (node.data as ComponentData).isExpanded
+            const newZIndex = (isLarge || isExpanded) ? -1 : undefined
 
             return {
               ...node,
@@ -6573,7 +6580,7 @@ function validateConnectionType(
 
 
 function getComponentLabel(type: ComponentType): string {
-  const labels: Record<ComponentType, string> = {
+  const labels: Partial<Record<ComponentType, string>> = {
     frontend: 'Клиентское приложение',
     service: 'Сервис',
     'mobile-app': 'Мобильное приложение',
