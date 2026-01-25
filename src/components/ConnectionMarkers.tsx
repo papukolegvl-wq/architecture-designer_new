@@ -256,7 +256,7 @@ const ConnectionMarkers: React.FC = () => {
                     markerUnits="userSpaceOnUse"
                     viewBox="0 0 15 15"
                 >
-                    <path d="M0,0 L0,15 L15,7.5 z" fill={selectedColor} stroke={selectedColor} strokeWidth="0.5" />
+                    <path d="M0,0 L0,15 L15,7.5 z" fill="context-stroke" stroke="context-stroke" strokeWidth="0.5" />
                 </marker>
                 <marker
                     id="arrowhead-start-dynamic-selected"
@@ -268,7 +268,7 @@ const ConnectionMarkers: React.FC = () => {
                     markerUnits="userSpaceOnUse"
                     viewBox="0 0 15 15"
                 >
-                    <path d="M15,0 L15,15 L0,7.5 z" fill={selectedColor} stroke={selectedColor} strokeWidth="0.5" />
+                    <path d="M15,0 L15,15 L0,7.5 z" fill="context-stroke" stroke="context-stroke" strokeWidth="0.5" />
                 </marker>
             </defs>
         </svg>

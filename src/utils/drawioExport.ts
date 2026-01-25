@@ -160,124 +160,53 @@ const c4Shapes: Record<string, { shape: string; color: string; description?: str
 }
 
 function deduplicateEdges(edges: Edge[], nodes: Node[]): { uniqueEdges: Edge[], removedCount: number } {
-  // Use a Map to keep the LAST edge for each physical connection path
-  // This matches ReactFlow's rendering (last edge is on top)
-  // We ignore connectionType and label for the uniqueness check to prevent "ghost" edges 
-  // that are hidden behind others from appearing in the export
+  // Use a Map to keep unique edges based on a strict key
+  // We want to allow multiple edges between the same nodes IF they are different types or directions
   const edgeMap = new Map<string, Edge>();
   const totalCount = edges.length;
 
   edges.forEach(edge => {
     if (edge.hidden) return;
 
-    // Key based strictly on Source and Target IDs (trimmed and sorted)
-    // We treat A->B and B->A as the same "connection path" for the sake of aggressive cleanup.
-    // This catches duplicates regardless of defined direction or handle IDs.
     const sId = String(edge.source).trim();
     const tId = String(edge.target).trim();
 
-    // Resolve visible labels for uniqueness key
-    // This handles the case where multiple "Stat" nodes might exist (ghosts/duplicates with different IDs)
-    // forcing connections to merge based on their Visual Identity (Label).
+    // Filter out self-loops if needed (optional, but good for clean diagrams)
+    if (sId === tId) return;
+
+
+
+    // Filter out edges connecting to missing nodes (integrity check)
     const sNode = nodes.find(n => n.id === sId);
     const tNode = nodes.find(n => n.id === tId);
 
-    // Filter out edges connecting to missing nodes (integrity check)
-    // This removes "zombie" edges pointing to deleted/non-existent nodes
     if (!sNode || !tNode) {
       console.warn(`[Export] Dropping orphan edge ${edge.id} (Source: ${sId}, Target: ${tId}) - Node missing`);
       return;
     }
 
-    const resolveLabel = (n: Node | undefined, id: string) => {
-      if (!n) return id;
-      const lbl = n.data?.label;
-      if (lbl && typeof lbl === 'string' && lbl.trim().length > 0) return lbl.trim();
-      return id;
-    };
+    // STRICT KEY GENERATION
+    // 1. Source -> Target (Direction matters!)
+    // 2. Connection Type (Distinct types allowed in parallel)
+    // 3. Label (Different labels = different logical connections)
 
-    const sKey = resolveLabel(sNode, sId);
-    const tKey = resolveLabel(tNode, tId);
+    const type = edge.data?.connectionType || 'default';
+    const label = (typeof edge.label === 'string' ? edge.label :
+      (edge.data?.dataDescription || edge.data?.description || '')).trim();
 
-    // Key based on Visual Labels
-    const key = [sKey, tKey].sort().join('|');
+    // Key format: "SourceID->TargetID|Type|Label"
+    // This allows:
+    // - A->B (REST)
+    // - A->B (Async)
+    // - B->A (REST) -- distinct from A->B
+    // - A->B (REST) "User Data" -- distinct from A->B (REST) "Logs"
+    const key = `${sId}->${tId}|${type}|${label}`;
 
-    // Debug helper: Identify participating nodes (using original IDs for context in logs)
-    const sLabel = String(sNode?.data?.label || sId);
-    const tLabel = String(tNode?.data?.label || tId);
-
-    // Debug debugging
-    const isStatRelated = (sKey.includes('Stat') || tKey.includes('Stat')) && (sKey.includes('Partners') || tKey.includes('Partners'));
-
-    if (isStatRelated) {
-      console.log(`[DEDUPE DEBUG] Found edge: ${edge.id}`);
-      console.log(`  Source: ${sKey} (ID: ${sId})`);
-      console.log(`  Target: ${tKey} (ID: ${tId})`);
-      console.log(`  Type: ${edge.data?.connectionType}`);
-      console.log(`  Key: ${key}`);
-
-      // --- NUCLEAR OPTION FOR GHOST EDGE ---
-      // If it looks like the ghost edge (Async/Brown), KILL IT unconditionally.
-      // The user wants strictly the Solid (REST) line.
-      // 'async' = dashed brown/yellow. 'rest' = solid blue/grey.
-      const type = edge.data?.connectionType || 'default';
-      if (type === 'async' || type === 'async-bidirectional') {
-        console.log(`[DEDUPE NUCLEAR] DESTROYING GHOST EDGE ${edge.id} (Stat <-> Partners, Async)`);
-        return; // DROP IT. Do not add to map.
-      }
-    }
-
-    if (isStatRelated) {
-      console.log(`[DEDUPE DEBUG] Analyzing connection between ${sLabel} (${sId}) and ${tLabel} (${tId})`);
-      console.log(`[DEDUPE DEBUG] Edge ID: ${edge.id}, Type: ${edge.data?.connectionType}, Handle: ${edge.sourceHandle}->${edge.targetHandle}`);
-      console.log(`[DEDUPE DEBUG] Generated Key: ${key}`);
-    }
-
-    const getEdgePriority = (e: Edge): number => {
-      let score = 0;
-      const type = e.data?.connectionType || 'default';
-
-      // Base Priority based on Style
-      // Priority 2: Sync/Solid (High importance)
-      if (['rest', 'grpc', 'database-connection', 'method-call', 'default'].includes(type)) score = 2;
-      // Priority 1: Async/Dashed (Medium importance)
-      else if (['async', 'async-bidirectional', 'inheritance'].includes(type)) score = 1;
-      // Priority 0: Weak/Background
-      else score = 0;
-
-      // Bonus Priority for Custom Content
-      // If the edge has a specific custom label or description, it is MUCH more important than a generic line.
-      const hasLabel = (typeof e.label === 'string' && e.label.trim().length > 0);
-      const hasDescription = (typeof e.data?.dataDescription === 'string' && e.data.dataDescription.trim().length > 0) ||
-        (typeof e.data?.description === 'string' && e.data.description.trim().length > 0);
-
-      if (hasLabel || hasDescription) {
-        score += 10;
-      }
-
-      return score;
-    };
-
+    // If exact duplicate exists, keep the one with more info or latest one
     if (edgeMap.has(key)) {
-      const existing = edgeMap.get(key)!;
-      const existingPriority = getEdgePriority(existing);
-      const newPriority = getEdgePriority(edge);
-
-      if (isStatRelated) console.log(`[DEDUPE DEBUG] CONFLICT! Existing priority: ${existingPriority}, New priority: ${newPriority}`);
-
-      // If new edge has higher priority, replace the old one.
-      // If priorities are EQUAL, prefer the NEW one (last one wins) - this is standard "overwrite" behavior
-      // which is usually better as later edges (higher Z-index) are what the user sees.
-      if (newPriority >= existingPriority) {
-        if (isStatRelated) console.log(`[DEDUPE DEBUG] REPLACING existing with new (Upgrade/Update)`);
-        // console.log(`[Export] Replacing lower priority edge (${existing.data?.connectionType}) with (${edge.data?.connectionType}) for ${key}`);
-        edgeMap.set(key, edge);
-      } else {
-        if (isStatRelated) console.log(`[DEDUPE DEBUG] IGNORING new (Lower priority)`);
-        // console.log(`[Export] Skipping duplicative/lower priority edge (${edge.data?.connectionType}) for ${key}. Kept (${existing.data?.connectionType})`);
-      }
+      // Ideally we just keep the latest one (overwrite)
+      edgeMap.set(key, edge);
     } else {
-      if (isStatRelated) console.log(`[DEDUPE DEBUG] ADDING new (Unique key)`);
       edgeMap.set(key, edge);
     }
   });
@@ -286,7 +215,7 @@ function deduplicateEdges(edges: Edge[], nodes: Node[]): { uniqueEdges: Edge[], 
   const removedCount = totalCount - uniqueEdges.length;
 
   if (removedCount > 0) {
-    console.log(`Deduplication: Removed ${removedCount} overlapping/hidden edges.`);
+    console.log(`Deduplication: Removed ${removedCount} exact duplicate or hidden edges.`);
   }
 
   return { uniqueEdges, removedCount };
@@ -678,6 +607,13 @@ function generateDiagramContent(nodes: Node[], inputEdges: Edge[]): string {
       edgeStyle += 'dashed=1;dashPattern=8 4;';
     } else if (edge.data?.connectionType === 'inheritance') {
       edgeStyle += 'dashed=1;dashPattern=5 5;';
+    }
+
+    if (
+      edge.data?.connectionType === 'async-bidirectional' ||
+      edge.data?.connectionType === 'bidirectional'
+    ) {
+      edgeStyle += 'startArrow=block;';
     }
 
     let edgeLabel = ''

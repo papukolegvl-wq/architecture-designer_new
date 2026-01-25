@@ -27,24 +27,53 @@ const sqlVendors: Array<{ value: DatabaseVendor; label: string }> = [
   { value: 'mysql', label: 'MySQL' },
   { value: 'oracle', label: 'Oracle' },
   { value: 'sql-server', label: 'SQL Server' },
+  { value: 'mariadb', label: 'MariaDB' },
+  { value: 'sqlite', label: 'SQLite' },
+  { value: 'cockroachdb', label: 'CockroachDB' },
+  { value: 'tidb', label: 'TiDB' },
+  { value: 'duckdb', label: 'DuckDB' },
+  { value: 'mariadb', label: 'MariaDB' },
+  { value: 'sqlite', label: 'SQLite' },
+  { value: 'cockroachdb', label: 'CockroachDB' },
+  { value: 'tidb', label: 'TiDB' },
+  { value: 'duckdb', label: 'DuckDB' },
 ]
 
 const nosqlVendors: Record<NoSQLType, Array<{ value: DatabaseVendor; label: string }>> = {
   document: [
     { value: 'mongodb', label: 'MongoDB' },
+    { value: 'couchdb', label: 'CouchDB' },
+    { value: 'ravendb', label: 'RavenDB' },
+    { value: 'firebase', label: 'Firebase Realtime DB' },
   ],
   column: [
     { value: 'cassandra', label: 'Cassandra' },
+    { value: 'scylladb', label: 'ScyllaDB' },
+    { value: 'hbase', label: 'HBase' },
+    { value: 'bigtable', label: 'BigTable' },
+    { value: 'clickhouse', label: 'ClickHouse' },
+    { value: 'apache-druid', label: 'Apache Druid' },
+    { value: 'pinot', label: 'Apache Pinot' },
   ],
   'key-value': [
     { value: 'redis', label: 'Redis' },
     { value: 'dynamodb', label: 'DynamoDB' },
+    { value: 'riak', label: 'Riak' },
+    { value: 'memcached', label: 'Memcached' },
+    { value: 'aerospike', label: 'Aerospike' },
   ],
   graph: [
     { value: 'neo4j', label: 'Neo4j' },
+    { value: 'arangodb', label: 'ArangoDB' },
+    { value: 'neptune', label: 'Amazon Neptune' },
+    { value: 'orientdb', label: 'OrientDB' },
+    { value: 'janusgraph', label: 'JanusGraph' },
   ],
   'time-series': [
     { value: 'influxdb', label: 'InfluxDB' },
+    { value: 'timescaledb', label: 'TimescaleDB' },
+    { value: 'prometheus', label: 'Prometheus' },
+    { value: 'victoriametrics', label: 'VictoriaMetrics' },
   ],
 }
 

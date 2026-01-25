@@ -2211,7 +2211,7 @@ function App() {
           stroke: getColor(connectionType),
           strokeWidth: connectionType === 'inheritance' ? 3 : 5,
           strokeDasharray:
-            connectionType === 'async' || connectionType === 'database-replication'
+            connectionType === 'async' || connectionType === 'async-bidirectional' || connectionType === 'database-replication'
               ? '8,4'
               : connectionType === 'inheritance'
                 ? '5,5'
@@ -2346,7 +2346,7 @@ function App() {
           stroke: getColor(connectionType),
           strokeWidth: connectionType === 'inheritance' ? 3 : 5,
           strokeDasharray:
-            connectionType === 'async' || connectionType === 'database-replication'
+            connectionType === 'async' || connectionType === 'async-bidirectional' || connectionType === 'database-replication'
               ? '8,4'
               : connectionType === 'inheritance'
                 ? '5,5'

@@ -215,7 +215,7 @@ function AnimatedEdge({
       default:
         return '#4dabf7'
     }
-  }, [data?.connectionType])
+  }, [data?.connectionType, data?.customColor])
 
   // Мемоизируем стиль линии
   const edgeStyle = React.useMemo(() => {
@@ -230,10 +230,10 @@ function AnimatedEdge({
       ? '#4dabf7'
       : (isAsyncBidirectional && !data?.customColor ? '#ffd43b' : edgeColor)
     return {
+      ...style,
       stroke: strokeColor,
       strokeWidth: selected ? 3 : 2,
-      strokeDasharray: isAsync ? '8 4' : undefined, // Пунктирная линия для асинхронных соединений
-      ...style,
+      strokeDasharray: isAsync ? '8 4' : style?.strokeDasharray,
     }
   }, [selected, edgeColor, style, data?.connectionType])
 
