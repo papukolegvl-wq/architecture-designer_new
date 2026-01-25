@@ -1560,13 +1560,17 @@ function App() {
         const centerX = window.innerWidth / 2 - 250 // Учитываем ширину палитры
         const centerY = window.innerHeight / 2
 
+        // Добавляем небольшой случайный сдвиг, чтобы компоненты не накладывались друг на друга при повторном добавлении
+        const jitterX = (Math.random() - 0.5) * 40
+        const jitterY = (Math.random() - 0.5) * 40
+
         finalPosition = reactFlowInstance.screenToFlowPosition({
-          x: centerX,
-          y: centerY,
+          x: centerX + jitterX,
+          y: centerY + jitterY,
         })
       } else if (!finalPosition) {
         // Если ReactFlow еще не инициализирован, используем дефолтные координаты
-        finalPosition = { x: 400, y: 300 }
+        finalPosition = { x: 400 + Math.random() * 20, y: 300 + Math.random() * 20 }
       }
 
       const isSystemType = type === 'system' || type === 'external-system' || type === 'business-domain' || type === 'vpc' || type === 'subnet' || type === 'external-component' || type === 'cluster'
@@ -1600,7 +1604,7 @@ function App() {
       }
 
       const newNode: Node = {
-        id: `${type}-${Date.now()}`,
+        id: `${type}-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
         type: isSystemType ? (type === 'business-domain' ? 'business-domain' : 'system')
           : isContainerType ? 'container'
             : isGroupType ? 'group'

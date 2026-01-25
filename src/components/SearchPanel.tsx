@@ -70,8 +70,13 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ nodes, onSelectNode, onAddCom
                 color: c.color
             }));
 
-        // Объединяем результаты: сначала узлы, потом палитра
-        const allResults = [...nodeResults, ...paletteResults].slice(0, 10);
+        // Объединяем результаты: ПРИОРИТЕТ палитре (новым компонентам), чтобы не путать с существующими
+        // Сначала идут совпадения по палитре, потом существующие узлы
+        const allResults = [
+            ...paletteResults.slice(0, 5),
+            ...nodeResults.slice(0, 5)
+        ].slice(0, 10);
+
         setResults(allResults);
         setSelectedIndex(0);
     }, [query, nodes]);
@@ -81,7 +86,7 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ nodes, onSelectNode, onAddCom
             console.log('Navigating to node:', result.id);
             onSelectNode(result.id);
         } else {
-            console.log('Adding component type:', result.componentType);
+            console.log('Adding component type:', result.componentType, 'with label:', result.label);
             if (typeof onAddComponent === 'function') {
                 onAddComponent(result.componentType, undefined, result.label);
             } else {
@@ -187,56 +192,74 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ nodes, onSelectNode, onAddCom
 
             {results.length > 0 && (
                 <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.05)', marginTop: '8px', maxHeight: '400px', overflowY: 'auto' }}>
-                    {results.map((result, index) => (
-                        <div
-                            key={result.type === 'node' ? result.id : result.componentType}
-                            ref={index === selectedIndex ? selectedRef : null}
-                            className={`search-result-item ${index === selectedIndex ? 'selected' : ''}`}
-                            onClick={() => handleSelect(result)}
-                            style={{
-                                padding: '12px',
-                                borderRadius: '8px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '12px',
-                                margin: '4px 0'
-                            }}
-                        >
-                            <div style={{
-                                width: '32px',
-                                height: '32px',
-                                borderRadius: '8px',
-                                background: index === selectedIndex ? 'rgba(77, 171, 247, 0.2)' : 'rgba(255,255,255,0.05)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                transition: 'all 0.2s',
-                                color: result.type === 'palette' ? result.color : '#fff'
-                            }}>
-                                {result.type === 'node' ? (
-                                    (result.nodeType === 'system' || result.nodeType === 'business-domain' ?
-                                        <Layers size={16} /> : <Box size={16} />)
-                                ) : (
-                                    result.icon
-                                )}
-                            </div>
-                            <div style={{ flex: 1 }}>
-                                <div style={{ color: '#fff', fontSize: '14px', fontWeight: 600 }}>{result.label}</div>
-                                <div style={{ color: '#888', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                    {result.type === 'node' ? `Перейти к ${result.nodeType}` : `Добавить новый компонент`}
-                                </div>
-                            </div>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                                {index === selectedIndex && (
-                                    <div style={{ fontSize: '9px', color: '#4dabf7', background: 'rgba(77, 171, 247, 0.1)', padding: '2px 6px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        {result.type === 'node' ? <MousePointer2 size={10} /> : <Plus size={10} />}
-                                        {result.type === 'node' ? 'Найти' : 'Добавить'}
+                    {results.map((result, index) => {
+                        const showHeader = index === 0 || (result.type !== results[index - 1].type);
+                        const headerTitle = result.type === 'palette' ? 'Добавить новый компонент' : 'Найти на карте';
+
+                        return (
+                            <React.Fragment key={result.type === 'node' ? `node-${result.id}` : `palette-${result.componentType}-${result.label}`}>
+                                {showHeader && (
+                                    <div style={{
+                                        padding: '12px 12px 4px 12px',
+                                        fontSize: '10px',
+                                        color: '#555',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '1px',
+                                        fontWeight: 600
+                                    }}>
+                                        {headerTitle}
                                     </div>
                                 )}
-                            </div>
-                        </div>
-                    ))}
+                                <div
+                                    ref={index === selectedIndex ? selectedRef : null}
+                                    className={`search-result-item ${index === selectedIndex ? 'selected' : ''}`}
+                                    onClick={() => handleSelect(result)}
+                                    style={{
+                                        padding: '12px',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '12px',
+                                        margin: '4px 8px'
+                                    }}
+                                >
+                                    <div style={{
+                                        width: '32px',
+                                        height: '32px',
+                                        borderRadius: '8px',
+                                        background: index === selectedIndex ? 'rgba(77, 171, 247, 0.2)' : 'rgba(255,255,255,0.05)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        transition: 'all 0.2s',
+                                        color: result.type === 'palette' ? result.color : '#fff'
+                                    }}>
+                                        {result.type === 'node' ? (
+                                            (result.nodeType === 'system' || result.nodeType === 'business-domain' ?
+                                                <Layers size={16} /> : <Box size={16} />)
+                                        ) : (
+                                            result.icon
+                                        )}
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ color: '#fff', fontSize: '14px', fontWeight: 600 }}>{result.label}</div>
+                                        <div style={{ color: '#888', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                            {result.type === 'node' ? `На карте (ID: ${result.id.slice(0, 8)}...)` : `Шаблон: ${result.componentType}`}
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        {index === selectedIndex && (
+                                            <div style={{ fontSize: '9px', color: '#4dabf7', background: 'rgba(77, 171, 247, 0.1)', padding: '2px 6px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                {result.type === 'node' ? <MousePointer2 size={10} /> : <Plus size={10} />}
+                                                {result.type === 'node' ? 'Найти' : 'Добавить'}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </React.Fragment>
+                        );
+                    })}
                 </div>
             )}
 
