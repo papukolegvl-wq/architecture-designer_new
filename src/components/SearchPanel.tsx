@@ -128,9 +128,8 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ nodes, onSelectNode, onAddCom
         <div
             style={{
                 position: 'fixed',
-                top: '20%',
-                left: '50%',
-                transform: 'translateX(-50%)',
+                top: '80px',
+                right: '40px',
                 width: '500px',
                 backgroundColor: 'rgba(25, 25, 25, 0.85)',
                 backdropFilter: 'blur(20px)',
@@ -146,8 +145,8 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ nodes, onSelectNode, onAddCom
         >
             <style>{`
         @keyframes searchFadeIn {
-          from { opacity: 0; transform: translate(-50%, -20px); }
-          to { opacity: 1; transform: translate(-50%, 0); }
+          from { opacity: 0; transform: translateY(-20px); }
+          to { opacity: 1; transform: translateY(0); }
         }
         .search-result-item {
           transition: all 0.2s;
