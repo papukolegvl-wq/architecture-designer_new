@@ -370,6 +370,21 @@ interface CustomNodeProps extends NodeProps<ComponentData> {
 }
 
 function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfigClick, onCommentClick, onStatusChange, onColorChange }: CustomNodeProps) {
+  // Reactive Dark Mode check
+  const [isDarkMode, setIsDarkMode] = useState(!document.documentElement.classList.contains('light-theme'));
+
+  useEffect(() => {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'class') {
+          setIsDarkMode(!document.documentElement.classList.contains('light-theme'));
+        }
+      });
+    });
+    observer.observe(document.documentElement, { attributes: true });
+    return () => observer.disconnect();
+  }, []);
+
   const { getNodes } = useReactFlow()
   const icon = componentIcons[data.type] || <Server size={32} />
   const color = data.customColor || componentColors[data.type] || '#4dabf7'
@@ -532,7 +547,6 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
     }
   }
 
-  const isDarkMode = !document.documentElement.classList.contains('light-theme');
   const isGhost = data.isGhost;
   const statusColor = data.status === 'new'
     ? '#40c057'
@@ -1116,8 +1130,7 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
 
   const borderWidth = isExisting ? '4px' : (isNew || isRefinement ? '4px' : '2px')
 
-  // Для новых компонентов добавляем очень яркую подсветку
-  // Для новых компонентов добавляем очень яркую подсветку
+  // Shadow logic
   const boxShadow = isNew
     ? selected
       ? `0 8px 40px ${color}70, 0 0 0 3px ${color}40, 0 0 30px #40c05780, 0 0 60px #40c05740, 0 0 90px #40c05720`
@@ -1132,12 +1145,28 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
           : '0 4px 12px rgba(0,0,0,0.4)'
         : selected
           ? `0 8px 24px ${color}50, 0 0 0 2px ${color}30`
-          : '0 4px 12px rgba(0,0,0,0.4)'
+          : isDarkMode
+            ? '0 4px 12px rgba(0,0,0,0.4)'
+            : `0 15px 35px -5px ${color}60, 0 5px 15px -5px ${color}30` // Much stronger shadow for light mode
 
-  // Для новых компонентов добавляем более яркую зеленую подсветку фона
-  // Для новых компонентов добавляем более яркую зеленую подсветку фона
-  // Используем практически прозрачный фон (0.2 opacity) для всех компонентов, чтобы были видны связи под ними
-  const backgroundColor = isNew ? 'rgba(26, 46, 26, 0.2)' : isRefinement ? 'rgba(46, 41, 26, 0.2)' : isExisting ? 'rgba(26, 34, 46, 0.2)' : 'rgba(45, 45, 45, 0.2)'
+  // Background color logic
+  // Light mode: use almost opaque whitish background or very light tint
+  // Dark mode: use transparent dark
+  // Background color logic
+  // Light mode: use a clearer tint of the component color (10%) instead of almost white
+  // Dark mode: use transparent dark (original logic)
+  const backgroundColor = isDarkMode
+    ? (isNew ? 'rgba(26, 46, 26, 0.4)' : isRefinement ? 'rgba(46, 41, 26, 0.4)' : isExisting ? 'rgba(26, 34, 46, 0.4)' : 'rgba(45, 45, 45, 0.4)')
+    : (data.isExpanded ? `${color}30` : `${color}20`); // Richer background tint in light mode
+
+  const textColor = isDarkMode ? '#fff' : '#111'; // Even darker text in light mode for contrast
+  const contentColor = isDarkMode ? '#fff' : '#1e1e1e';
+  const mutedContentColor = isDarkMode ? '#ccc' : '#555';
+  const listBackgroundColor = isDarkMode ? '#2d2d2d' : 'rgba(0,0,0,0.05)';
+
+  const actionButtonBg = isDarkMode ? 'rgba(0,0,0,0.6)' : '#ffffff';
+  const actionButtonBorder = isDarkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)';
+  const actionButtonShadow = isDarkMode ? 'none' : '0 2px 4px rgba(0,0,0,0.15)';
 
   const subtitle = getSubtitle()
 
@@ -1149,18 +1178,21 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
         boxSizing: 'border-box',
         padding: isSimple ? '8px' : '16px 20px',
         borderRadius: '12px',
-        background: data.isExpanded ? `${color}20` : (isSimple ? color : backgroundColor),
-        border: `${borderWidth} ${actualBorderStyle} ${selected ? color : isSimple ? 'transparent' : borderColor}`,
-        color: '#fff',
+        background: data.isExpanded ? `${color}10` : (isSimple ? color : (isDarkMode ? backgroundColor : '#ffffff')),
+        // В светлой теме всегда используем цветную рамку, а не transparent, чтобы компонент был виден
+        border: `${borderWidth} ${actualBorderStyle} ${selected ? color : (isSimple ? 'transparent' : (isDarkMode ? borderColor : color))}`,
+        color: isSimple ? '#fff' : textColor,
         minWidth: isSimple ? '60px' : '200px',
         minHeight: isSimple ? '60px' : '110px',
-        boxShadow: boxShadow,
+        // Stronger shadow in light mode to make it "pop"
+        boxShadow: isDarkMode ? '0 4px 6px rgba(0,0,0,0.3)' : `0 2px 10px rgba(0,0,0,0.05), 0 0 0 1px ${color}40`,
         transition: 'background 0.3s, border 0.3s, box-shadow 0.3s, opacity 0.3s',
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: isSimple ? 'center' : 'flex-start',
+        // В светлой теме также обеспечиваем видимость левой границы
         borderLeft: isSimple ? `none` : `${borderWidth} solid ${color}`,
         overflow: 'visible',
         opacity: isGhost ? 0 : 1,
@@ -1216,19 +1248,23 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
               }
             }}
             style={{
-              background: 'rgba(0,0,0,0.5)',
-              border: 'none',
-              borderRadius: '4px',
-              color: data.status === 'new' ? '#40c057' : data.status === 'existing' ? '#339af0' : data.status === 'refinement' ? '#fab005' : '#888',
-              padding: '4px',
+              background: actionButtonBg,
+              border: actionButtonBorder,
+              boxShadow: actionButtonShadow,
+              borderRadius: '6px',
+              color: data.status === 'new' ? '#40c057' : data.status === 'existing' ? '#339af0' : data.status === 'refinement' ? '#fab005' : (isDarkMode ? '#888' : '#555'),
+              padding: '6px',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              transition: 'all 0.2s',
             }}
             title={`Статус: ${data.status === 'new' ? 'Новый' : data.status === 'existing' ? 'Существующий' : data.status === 'refinement' ? 'Требует доработки' : 'По умолчанию'}`}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
-            {data.status === 'new' ? <Sparkles size={12} /> : data.status === 'existing' ? <CheckCircle size={12} /> : data.status === 'refinement' ? <AlertTriangle size={12} /> : <Settings size={12} />}
+            {data.status === 'new' ? <Sparkles size={14} /> : data.status === 'existing' ? <CheckCircle size={14} /> : data.status === 'refinement' ? <AlertTriangle size={14} /> : <Settings size={14} />}
           </button>
 
           {/* Link buttons */}
@@ -1239,19 +1275,23 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
                 if (onLinkClick) onLinkClick(data.link!)
               }}
               style={{
-                background: 'rgba(0,0,0,0.5)',
-                border: 'none',
-                borderRadius: '4px',
+                background: actionButtonBg,
+                border: actionButtonBorder,
+                boxShadow: actionButtonShadow,
+                borderRadius: '6px',
                 color: '#51cf66',
-                padding: '4px',
+                padding: '6px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                transition: 'all 0.2s',
               }}
               title="Перейти по ссылке"
+              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
             >
-              <LinkIcon size={12} />
+              <LinkIcon size={14} />
             </button>
           )}
 
@@ -1261,19 +1301,23 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
               if (onLinkConfigClick) onLinkConfigClick(id)
             }}
             style={{
-              background: 'rgba(0,0,0,0.5)',
-              border: 'none',
-              borderRadius: '4px',
-              color: data.link ? '#51cf66' : '#888',
-              padding: '4px',
+              background: actionButtonBg,
+              border: actionButtonBorder,
+              boxShadow: actionButtonShadow,
+              borderRadius: '6px',
+              color: data.link ? '#51cf66' : (isDarkMode ? '#888' : '#555'),
+              padding: '6px',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              transition: 'all 0.2s',
             }}
             title={data.link ? 'Изменить ссылку' : 'Добавить ссылку'}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
-            <Link2 size={12} />
+            <Link2 size={14} />
           </button>
 
           {/* Color picker button */}
@@ -1284,19 +1328,23 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
                 setShowColorPicker(!showColorPicker)
               }}
               style={{
-                background: 'rgba(0,0,0,0.5)',
-                border: 'none',
-                borderRadius: '4px',
-                color: data.customColor || '#888',
-                padding: '4px',
+                background: actionButtonBg,
+                border: actionButtonBorder,
+                boxShadow: actionButtonShadow,
+                borderRadius: '6px',
+                color: data.customColor || (isDarkMode ? '#888' : '#555'),
+                padding: '6px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                transition: 'all 0.2s',
               }}
               title="Изменить цвет"
+              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
             >
-              <Palette size={12} />
+              <Palette size={14} />
             </button>
 
             {/* Color picker dropdown */}
@@ -1393,19 +1441,23 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
           <button
             onClick={handleInfoClick}
             style={{
-              background: 'rgba(0,0,0,0.5)',
-              border: 'none',
-              borderRadius: '4px',
+              background: actionButtonBg,
+              border: actionButtonBorder,
+              boxShadow: actionButtonShadow,
+              borderRadius: '6px',
               color: color,
-              padding: '4px',
+              padding: '6px',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              transition: 'all 0.2s',
             }}
             title="Инфо"
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
-            <Info size={12} />
+            <Info size={14} />
           </button>
         </div>
       )}
@@ -1616,7 +1668,8 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
           style={{
             width: '100%',
             height: '100%',
-            backgroundColor: data.isExpanded ? 'transparent' : (isSimple ? 'transparent' : 'rgba(30, 30, 30, 0.2)'),
+            backgroundColor: data.isExpanded ? 'transparent' : (isSimple ? 'transparent' : (isDarkMode ? 'rgba(30, 30, 30, 0.2)' : 'rgba(255, 255, 255, 0.4)')),
+            backdropFilter: isDarkMode ? 'none' : 'blur(4px)',
             border: isSimple ? 'none' : `2px solid ${statusColor}`,
             borderRadius: data.isExpanded ? '12px' : (data.type === 'database' || data.type === 'data-warehouse' ? '12px 12px 12px 12px' : '12px'),
             display: 'flex',
@@ -1654,7 +1707,7 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
               }}
             >
               {React.cloneElement(icon as React.ReactElement, { size: 18, color: color })}
-              <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#fff', opacity: 0.8 }}>
+              <span style={{ fontSize: '12px', fontWeight: 'bold', color: contentColor, opacity: 0.8 }}>
                 {label} (Контейнер)
               </span>
             </div>
@@ -1704,7 +1757,7 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
                       border: `1px solid ${color}`,
                       borderRadius: '4px',
                       padding: '2px 8px',
-                      color: '#fff',
+                      color: contentColor,
                       fontSize: isMedium ? '12px' : '16px',
                       fontWeight: 'bold',
                       textAlign: (nodeWidth > 220 && !data.isExpanded) ? 'left' : 'center',
@@ -1728,14 +1781,18 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
                 ) : (
                   <div
                     style={{
-                      color: '#fff',
-                      fontSize: isMedium ? '12px' : '16px',
-                      fontWeight: 'bold',
+                      color: contentColor,
+                      fontSize: isMedium ? '13px' : '18px',
+                      fontWeight: '700',
+                      letterSpacing: '-0.02em',
+                      textShadow: isDarkMode ? '0 2px 4px rgba(0,0,0,0.5)' : '0 1px 0 rgba(255,255,255,0.8)',
+                      fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                       wordBreak: 'break-word',
                       overflowWrap: 'break-word',
                       whiteSpace: 'pre-wrap',
                       overflow: 'visible',
                       textOverflow: 'clip',
+                      lineHeight: '1.2',
                     }}
                     title={label}
                   >
@@ -1748,14 +1805,15 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
               {!isMedium && subtitle && (
                 <div
                   style={{
-                    fontSize: '10px',
+                    fontSize: '11px',
                     textTransform: 'uppercase',
-                    letterSpacing: '1px',
-                    color: `${color}cc`,
-                    backgroundColor: `${color}15`,
+                    letterSpacing: '0.5px',
+                    color: isDarkMode ? `${color}b0` : `${color}`, // Muted text in dark mode (was ee)
+                    backgroundColor: isDarkMode ? `${color}10` : `${color}15`, // Reduced background opacity
+                    border: isDarkMode ? `1px solid ${color}20` : `1px solid ${color}30`,
                     padding: '2px 8px',
                     borderRadius: '10px',
-                    fontWeight: '600',
+                    fontWeight: '700',
                     marginTop: '4px',
                     display: 'inline-block'
                   }}
@@ -1773,14 +1831,14 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
                 style={{
                   width: isMedium ? '40px' : '56px',
                   height: isMedium ? '40px' : '56px',
-                  borderRadius: '14px',
-                  background: `linear-gradient(135deg, ${color}30 0%, ${color}15 100%)`,
-                  border: `1px solid ${color}40`,
+                  borderRadius: '12px',
+                  background: `${color}15`,
+                  border: `1px solid ${color}30`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: color,
-                  boxShadow: `0 4px 12px rgba(0,0,0,0.2)`,
+                  boxShadow: 'none',
                   position: 'relative',
                   flexShrink: 0,
                   order: (nodeWidth > 220 && !data.isExpanded) ? 1 : -1,
@@ -1839,10 +1897,10 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
                     value={item.activity}
                     onChange={(e) => handleTrackingItemUpdate(item.id, 'activity', e.target.value)}
                     style={{
-                      background: 'rgba(0,0,0,0.2)',
-                      border: '1px solid rgba(255,255,255,0.1)',
+                      background: listBackgroundColor,
+                      border: `1px solid ${color}30`,
                       borderRadius: '4px',
-                      color: '#fff',
+                      color: contentColor,
                       padding: '4px',
                       fontSize: '16px',
                       fontWeight: 'bold',
@@ -1856,10 +1914,10 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
                     value={item.time}
                     onChange={(e) => handleTrackingItemUpdate(item.id, 'time', e.target.value)}
                     style={{
-                      background: 'rgba(0,0,0,0.2)',
-                      border: '1px solid rgba(255,255,255,0.1)',
+                      background: listBackgroundColor,
+                      border: `1px solid ${color}30`,
                       borderRadius: '4px',
-                      color: '#fff',
+                      color: contentColor,
                       padding: '4px',
                       fontSize: '16px',
                       fontWeight: 'bold',
@@ -1967,7 +2025,7 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
                           justifyContent: 'space-between',
                           alignItems: 'center',
                           padding: '4px 6px',
-                          backgroundColor: '#2d2d2d',
+                          backgroundColor: listBackgroundColor,
                           borderRadius: '4px',
                           marginBottom: '2px',
                           border: `1px solid ${color}20`,
@@ -2026,7 +2084,7 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
                           {column.foreignKey && <Link2 size={10} style={{ color: '#4dabf7', flexShrink: 0 }} />}
                           <span
                             style={{
-                              color: '#fff',
+                              color: contentColor,
                               fontWeight: '500',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
@@ -2075,10 +2133,10 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
                         key={index}
                         style={{
                           fontSize: '10px',
-                          color: '#ccc',
+                          color: mutedContentColor,
                           textAlign: 'left',
                           padding: '4px 8px',
-                          backgroundColor: '#2d2d2d',
+                          backgroundColor: listBackgroundColor,
                           borderRadius: '4px',
                           border: `1px solid ${color}20`,
                           wordBreak: 'break-word',
@@ -2092,7 +2150,7 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
                           {method.returnType || 'void'}
                         </span>
                         {' '}
-                        <span style={{ color: '#fff', fontWeight: '500' }}>
+                        <span style={{ color: contentColor, fontWeight: '500' }}>
                           {method.name || `метод${index + 1}`}
                         </span>
                       </div>
