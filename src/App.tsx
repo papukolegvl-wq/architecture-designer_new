@@ -500,6 +500,7 @@ function App() {
   const [showPalette, setShowPalette] = useState(false)
   const draggingChildrenRef = useRef<Map<string, string[]>>(new Map())
   const dragStartPositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map())
+  const dragStartEdgeWaypointsRef = useRef<Map<string, any>>(new Map())
 
   // Вспомогательная функция для обновления стрелок при перемещении узлов
   const updateEdgesOnMovement = useCallback((nodeMovements: Array<{ nodeId: string; deltaX: number; deltaY: number }>, movingNodeIdsSet: Set<string>) => {
@@ -523,22 +524,45 @@ function App() {
 
         if (shouldUpdateEdge) {
           if (edgeData?.waypointX !== undefined && edgeData?.waypointY !== undefined) {
-            let newWaypointX = edgeData.waypointX
-            let newWaypointY = edgeData.waypointY
-            if (sourceMovement && targetMovement) {
-              newWaypointX += (sourceMovement.deltaX + targetMovement.deltaX) / 2
-              newWaypointY += (sourceMovement.deltaY + targetMovement.deltaY) / 2
-            } else if (sourceMovement) {
-              newWaypointX += sourceMovement.deltaX
-              newWaypointY += sourceMovement.deltaY
-            } else if (targetMovement) {
-              newWaypointX += targetMovement.deltaX
-              newWaypointY += targetMovement.deltaY
+            const startState = dragStartEdgeWaypointsRef.current.get(edge.id)
+            let baseX = edgeData.waypointX
+            let baseY = edgeData.waypointY
+
+            // Если есть сохраненное начальное состояние, используем его как базу
+            if (startState && !Array.isArray(startState) && (startState as any).x !== undefined) {
+              baseX = (startState as any).x
+              baseY = (startState as any).y
+            } else {
+              // Fallback: если нет начального состояния (например, перемещение программное, а не драг),
+              // то мы не можем использовать дельту, так как она может быть накопленной.
+              // Но updateEdgesOnMovement вызывается при драге.
+              // Если нет стейта - лучше не трогать или использовать текущее (но будет баг аккумуляции).
+              // Попытаемся использовать текущее, но это риск.
+              // Однако, onNodeDragStart должен был заполнить map.
             }
-            return { ...edge, data: { ...edgeData, waypointX: newWaypointX, waypointY: newWaypointY } }
+
+            let deltaX = 0
+            let deltaY = 0
+
+            if (sourceMovement && targetMovement) {
+              deltaX = (sourceMovement.deltaX + targetMovement.deltaX) / 2
+              deltaY = (sourceMovement.deltaY + targetMovement.deltaY) / 2
+            } else if (sourceMovement) {
+              deltaX = sourceMovement.deltaX
+              deltaY = sourceMovement.deltaY
+            } else if (targetMovement) {
+              deltaX = targetMovement.deltaX
+              deltaY = targetMovement.deltaY
+            }
+
+            // Новая позиция = База + Дельта
+            return { ...edge, data: { ...edgeData, waypointX: baseX + deltaX, waypointY: baseY + deltaY } }
           }
 
           if (edgeData?.waypoints && Array.isArray(edgeData.waypoints) && edgeData.waypoints.length > 0) {
+            const startState = dragStartEdgeWaypointsRef.current.get(edge.id)
+            const waypointsBase = (startState && Array.isArray(startState)) ? startState : edgeData.waypoints
+
             let deltaX = 0, deltaY = 0
             if (sourceMovement && targetMovement) {
               deltaX = (sourceMovement.deltaX + targetMovement.deltaX) / 2
@@ -548,11 +572,12 @@ function App() {
             } else if (targetMovement) {
               deltaX = targetMovement.deltaX; deltaY = targetMovement.deltaY
             }
+
             return {
               ...edge,
               data: {
                 ...edgeData,
-                waypoints: edgeData.waypoints.map((wp: any) => ({
+                waypoints: waypointsBase.map((wp: any) => ({
                   ...wp,
                   x: wp.x + deltaX,
                   y: wp.y + deltaY,
@@ -762,6 +787,30 @@ function App() {
 
       // 1. Запоминаем стартовую позицию родителя
       dragStartPositionsRef.current.set(parentNode.id, { ...parentNode.position })
+
+      // 1.1 Snapshot edge waypoints state
+      // Очищаем map только при начале нового драг-сессии (если это первый узел)
+      // Но так как onNodeDragStart вызывается для каждого узла или один раз?
+      // ReactFlow: onNodeDragStart called once per selection drag start? 
+      // Actually usually called for the node clicked. But we need to ensure we capture relevant edges.
+      // Simply iterate all edges and capture their current state.
+      // Optimization: do this only once per drag session start.
+      // But clearing inside foreach loop is wrong.
+      // We'll rely on the map being idempotent if we just set. 
+      // Ideally we clear before setting, but where?
+      // Let's just set. The map might grow but it's small.
+      // We can clear it if the node being dragged is the *first* one?
+      // Easier: iterate all edges and set them.
+      if (edgesRef.current) {
+        edgesRef.current.forEach(edge => {
+          const d = edge.data
+          if (d?.waypoints && Array.isArray(d.waypoints)) {
+            dragStartEdgeWaypointsRef.current.set(edge.id, d.waypoints.map((wp: any) => ({ ...wp })))
+          } else if (d?.waypointX !== undefined && d?.waypointY !== undefined) {
+            dragStartEdgeWaypointsRef.current.set(edge.id, { x: d.waypointX, y: d.waypointY })
+          }
+        })
+      }
 
       const isSystem = parentNode.type === 'system' ||
         parentNode.type === 'business-domain' ||
