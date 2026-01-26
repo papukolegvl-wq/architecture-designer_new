@@ -1520,20 +1520,43 @@ function App() {
   // Автоматическая коррекция z-index для больших узлов (контейнеров)
   // Унифицированное управление z-index для обеспечения интерактивности вложенных элементов
   useEffect(() => {
-    const getNodeZIndex = (node: Node): number => {
+    const getNodeZIndex = (node: Node, allNodes: Node[]): number => {
       const data = node.data as ComponentData;
       if (data?.isGhost) return -100;
 
       const nodeType = node.type;
       const dataType = data?.type;
       const isExpanded = data?.isExpanded;
-      const isLarge = (node.width && node.width > 250) || (node.height && node.height > 150) || (node.style?.width && parseFloat(String(node.style.width)) > 250);
+
+      const getW = (n: Node) => n.width || (n.style?.width ? parseFloat(String(n.style.width)) : 0) || 0;
+      const getH = (n: Node) => n.height || (n.style?.height ? parseFloat(String(n.style.height)) : 0) || 0;
+
+      const w = getW(node);
+      const h = getH(node);
+
+      // Порог для автоматического определения контейнера (соотносится с onNodeDragStart)
+      const isLarge = w >= 250 || h >= 150;
+
+      // Проверка: содержит ли этот узел другие узлы визуально?
+      // Если да, он должен быть ниже них (zIndex меньше)
+      const containsOthers = allNodes.some(other => {
+        if (other.id === node.id || other.data?.isGhost) return false;
+
+        const ow = getW(other) || 10;
+        const oh = getH(other) || 10;
+        const ocx = other.position.x + ow / 2;
+        const ocy = other.position.y + oh / 2;
+
+        return ocx >= node.position.x && ocx <= node.position.x + w &&
+          ocy >= node.position.y && ocy <= node.position.y + h &&
+          (w > ow || h > oh); // Только если родитель больше ребенка
+      });
 
       // Системы и домены на самом заднем плане
       if (nodeType === 'system' || nodeType === 'business-domain' || dataType === 'system') return -10;
 
       // Контейнеры и развернутые компоненты чуть выше систем, но ниже обычных узлов
-      if (nodeType === 'group' || nodeType === 'container' || dataType === 'container' || dataType === 'cluster' || dataType === 'vpc' || isExpanded || isLarge) return -5;
+      if (nodeType === 'group' || nodeType === 'container' || dataType === 'container' || dataType === 'cluster' || dataType === 'vpc' || isExpanded || isLarge || containsOthers) return -5;
 
       // Заметки и текст выше всех
       if (nodeType === 'note' || nodeType === 'text') return 50;
@@ -1542,11 +1565,11 @@ function App() {
       return 0;
     };
 
-    const needsUpdate = nodes.some(node => node.style?.zIndex !== getNodeZIndex(node));
+    const needsUpdate = nodes.some(node => node.style?.zIndex !== getNodeZIndex(node, nodes));
 
     if (needsUpdate) {
       setNodes(nds => nds.map(node => {
-        const targetZIndex = getNodeZIndex(node);
+        const targetZIndex = getNodeZIndex(node, nds);
         if (node.style?.zIndex !== targetZIndex) {
           return {
             ...node,
