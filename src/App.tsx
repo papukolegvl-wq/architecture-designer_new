@@ -3699,7 +3699,7 @@ function App() {
                   color: edgeColor,
                   fill: edgeColor,
                   fontWeight: 700,
-                  fontSize: '12px',
+                  fontSize: '16px',
                   backgroundColor: '#1e1e1e',
                   padding: '4px 8px',
                   borderRadius: '4px',
@@ -3748,6 +3748,42 @@ function App() {
           return edge
         })
       )
+    },
+    [setEdges]
+  )
+
+  const reverseEdgeDirection = useCallback(
+    (edgeId: string) => {
+      setEdges((eds) =>
+        eds.map((edge) => {
+          if (edge.id === edgeId) {
+            // Function to correctly swap handle type in ID to match React Flow component types
+            const swapHandleId = (id: string | null | undefined, toType: 'source' | 'target') => {
+              if (!id) return id
+              if (toType === 'source') return id.replace('-target', '-source')
+              return id.replace('-source', '-target')
+            }
+
+            return {
+              ...edge,
+              source: edge.target,
+              target: edge.source,
+              sourceHandle: swapHandleId(edge.targetHandle, 'source'),
+              targetHandle: swapHandleId(edge.sourceHandle, 'target'),
+              // If there are waypoints, we should reverse them to keep the path similar but inverted
+              data: {
+                ...edge.data,
+                waypoints: edge.data?.waypoints ? [...edge.data.waypoints].reverse() : undefined,
+                // These are for simple waypoints, we should probably reverse them too if we swap source/target
+                waypointX: edge.data?.waypointX,
+                waypointY: edge.data?.waypointY,
+              },
+            }
+          }
+          return edge
+        })
+      )
+      historyUpdateTypeRef.current = 'immediate'
     },
     [setEdges]
   )
@@ -6051,6 +6087,7 @@ function App() {
             nodes={nodes}
             onUpdate={updateConnectionType}
             onDelete={deleteSelected}
+            onReverse={reverseEdgeDirection}
           />
         )}
         {pendingObjectStorageDirection && (

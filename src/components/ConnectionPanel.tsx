@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Edge, Node } from 'reactflow'
+import { ArrowLeftRight } from 'lucide-react'
 import { ConnectionType, ComponentData, EdgePathType } from '../types'
 
 interface ConnectionPanelProps {
@@ -7,6 +8,7 @@ interface ConnectionPanelProps {
   nodes: Node[]
   onUpdate: (edgeId: string, connectionType: ConnectionType, dataDescription?: string, pathType?: EdgePathType, customColor?: string) => void
   onDelete: () => void
+  onReverse?: (edgeId: string) => void
 }
 
 const connectionTypes: Array<{ value: ConnectionType; label: string }> = [
@@ -26,6 +28,7 @@ export default function ConnectionPanel({
   nodes,
   onUpdate,
   onDelete,
+  onReverse,
 }: ConnectionPanelProps) {
   const [connectionType, setConnectionType] = useState<ConnectionType>(
     (edge.data?.connectionType as ConnectionType) || 'rest'
@@ -366,6 +369,36 @@ export default function ConnectionPanel({
         </div>
       </div>
 
+
+      <button
+        onClick={() => onReverse?.(edge.id)}
+        style={{
+          width: '100%',
+          padding: '10px',
+          backgroundColor: '#3d3d3d',
+          color: 'white',
+          border: '1px solid #555',
+          borderRadius: '6px',
+          cursor: 'pointer',
+          fontSize: '14px',
+          fontWeight: '500',
+          marginBottom: '10px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+          transition: 'background-color 0.2s',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = '#4d4d4d'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = '#3d3d3d'
+        }}
+      >
+        <ArrowLeftRight size={16} />
+        Поменять направление
+      </button>
 
       <button
         onClick={onDelete}

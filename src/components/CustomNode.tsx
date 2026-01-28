@@ -2008,7 +2008,7 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
               }}
             >
               {/* Database tables / Repository info */}
-              {(data.type === 'database' || data.type === 'repository') && (
+              {(data.type === 'repository' || (data.type === 'database' && (data.databaseConfig?.tables?.length || 0) > 0)) && (
                 <div style={{ fontSize: '11px', color: '#888' }}>
                   {data.databaseConfig?.tables?.length || 0} таблиц(ы)
                 </div>

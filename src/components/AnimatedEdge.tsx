@@ -232,7 +232,7 @@ function AnimatedEdge({
     return {
       ...style,
       stroke: strokeColor,
-      strokeWidth: selected ? 3 : 2,
+      strokeWidth: selected ? 4 : 2.5,
       strokeDasharray: isAsync ? '8 4' : style?.strokeDasharray,
     }
   }, [selected, edgeColor, style, data?.connectionType])
@@ -1281,7 +1281,7 @@ function AnimatedEdge({
               borderStyle: 'solid',
               padding: '2px 4px', // Compact padding
               borderRadius: '4px',
-              fontSize: '11px', // Reduced from 20px
+              fontSize: '15px', // Slightly increased further from 13px
               fontWeight: 600,
             }}
             onMouseDown={(e) => {
