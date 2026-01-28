@@ -204,14 +204,16 @@ function BusinessDomainNode({ id, data, selected, onLinkClick, onLinkConfigClick
         width: '100%',
         height: '100%',
         boxSizing: 'border-box',
-        border: isSimple ? 'none' : `2px dashed ${domainColor}`,
+        border: isSimple ? 'none' : `2px dashed ${isHovered && !document.documentElement.classList.contains('light-theme') ? domainColor : (isHovered ? '#333' : domainColor)}`,
         borderRadius: '8px',
-        backgroundColor: isSimple ? 'transparent' : `${domainColor}08`,
+        backgroundColor: isSimple ? 'transparent' : (isHovered && !document.documentElement.classList.contains('light-theme') ? `${domainColor}12` : `${domainColor}08`),
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
         padding: isSimple ? '4px' : '8px',
         overflow: 'visible',
+        cursor: selected ? 'move' : 'pointer',
+        transition: 'all 0.2s',
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

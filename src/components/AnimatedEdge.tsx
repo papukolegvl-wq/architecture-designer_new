@@ -21,6 +21,20 @@ function AnimatedEdge({
   const { setEdges, getViewport, screenToFlowPosition } = useReactFlow()
   const zoom = useStore((s) => s.transform[2])
   const [, setTick] = useState(0)
+  // Reactive Dark Mode check
+  const [isDarkMode, setIsDarkMode] = useState(!document.documentElement.classList.contains('light-theme'));
+
+  useEffect(() => {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'class') {
+          setIsDarkMode(!document.documentElement.classList.contains('light-theme'));
+        }
+      });
+    });
+    observer.observe(document.documentElement, { attributes: true });
+    return () => observer.disconnect();
+  }, []);
 
   // Force update on mount to ensure coordinates are correctly resolved
   useEffect(() => {
@@ -223,19 +237,34 @@ function AnimatedEdge({
     const isAsync = connectionType === 'async' || connectionType === 'async-bidirectional' || connectionType === 'ws' || connectionType === 'wss' || connectionType === 'database-replication'
     const isAsyncBidirectional = connectionType === 'async-bidirectional'
     const isRelated = connectionType === 'related'
+
+    // Линия подсвечена, если она выделена, если у нее стоит флаг highlighted (авто) или accented (вручную)
+    const isHighlighted = selected || data?.highlighted || data?.accented
+
     // Для асинхронной двухсторонней стрелки цвет остаётся жёлтым даже при выделении
     // Для related линии цвет серый, если не выделена
     // Если есть customColor, он имеет приоритет
-    const strokeColor = (selected && !isAsyncBidirectional && !isRelated && !data?.customColor)
-      ? '#4dabf7'
-      : (isAsyncBidirectional && !data?.customColor ? '#ffd43b' : edgeColor)
+    // Если линия в фоне, приглушаем её
+    // Если линия подсвечена вручную (accented), используем розовый цвет акцента или highlightColor
+    // Если она подсвечена автоматически (highlighted), используем highlightColor или стандартный синий
+    const strokeColor = data?.isBackground
+      ? (isDarkMode ? '#666' : '#bbb')
+      : (isHighlighted && !isAsyncBidirectional && !isRelated && !data?.customColor)
+        ? (data?.accented ? (data?.highlightColor || '#e64980') : (data?.highlightColor || '#4dabf7'))
+        : (isAsyncBidirectional && !data?.customColor ? '#ffd43b' : edgeColor)
+
+    // Определяем ширину линии: фон (2), акцент (5), обычная подсветка (4) или стандарт (2.5)
+    const strokeWidth = data?.isBackground ? 2 : (data?.accented ? 5 : (isHighlighted ? 4 : 2.5))
+
     return {
       ...style,
       stroke: strokeColor,
-      strokeWidth: selected ? 4 : 2.5,
-      strokeDasharray: isAsync ? '8 4' : style?.strokeDasharray,
+      strokeWidth: strokeWidth,
+      strokeDasharray: (isAsync || connectionType === 'async-bidirectional') ? '8 4' : style?.strokeDasharray,
+      opacity: data?.isBackground ? 0.55 : 1,
+      filter: data?.accented ? `drop-shadow(0 0 4px ${strokeColor}80)` : 'none',
     }
-  }, [selected, edgeColor, style, data?.connectionType])
+  }, [selected, data?.highlighted, data?.accented, data?.isBackground, edgeColor, style, data?.connectionType, data?.highlightColor, data?.customColor, isDarkMode])
 
   // Определяем тип соединения для отображения стрелок
   const connectionType = (data?.connectionType as string) || 'default'
@@ -263,18 +292,21 @@ function AnimatedEdge({
 
   const isWellKnown = wellKnownTypes.includes(connectionType)
 
+  // Определяем маркеры (стрелки)
+  const isHighlighted = selected || data?.highlighted || data?.accented
+
   // Determine markers based on connection type or relationship type
   let markerStartId = isWellKnown
-    ? `arrowhead-start-${connectionType}${selected ? '-selected' : ''}`
-    : `arrowhead-start-dynamic${selected ? '-selected' : ''}`
+    ? `arrowhead-start-${connectionType}${isHighlighted ? '-selected' : ''}`
+    : `arrowhead-start-dynamic${isHighlighted ? '-selected' : ''}`
   let markerEndId = isWellKnown
-    ? `arrowhead-${connectionType}${selected ? '-selected' : ''}`
-    : `arrowhead-dynamic${selected ? '-selected' : ''}`
+    ? `arrowhead-${connectionType}${isHighlighted ? '-selected' : ''}`
+    : `arrowhead-dynamic${isHighlighted ? '-selected' : ''}`
 
   // Если используется кастомный цвет, используем динамические маркеры, которые наследуют цвет линии
   if (data?.customColor) {
-    markerStartId = `arrowhead-start-dynamic${selected ? '-selected' : ''}`
-    markerEndId = `arrowhead-dynamic${selected ? '-selected' : ''}`
+    markerStartId = `arrowhead-start-dynamic${isHighlighted ? '-selected' : ''}`
+    markerEndId = `arrowhead-dynamic${isHighlighted ? '-selected' : ''}`
   }
 
 
@@ -290,16 +322,16 @@ function AnimatedEdge({
 
     // Map start relationship to marker (reversed as it's the start)
     if (startRel === '1') {
-      markerStartId = `crows-foot-one-start${selected ? '-selected' : ''}`
+      markerStartId = `crows-foot-one-start${isHighlighted ? '-selected' : ''}`
     } else if (startRel === 'n') {
-      markerStartId = `crows-foot-many-start${selected ? '-selected' : ''}`
+      markerStartId = `crows-foot-many-start${isHighlighted ? '-selected' : ''}`
     }
 
     // Map end relationship to marker
     if (endRel === '1') {
-      markerEndId = `crows-foot-one${selected ? '-selected' : ''}`
+      markerEndId = `crows-foot-one${isHighlighted ? '-selected' : ''}`
     } else if (endRel === 'n') {
-      markerEndId = `crows-foot-many${selected ? '-selected' : ''}`
+      markerEndId = `crows-foot-many${isHighlighted ? '-selected' : ''}`
     }
   }
 
@@ -923,15 +955,17 @@ function AnimatedEdge({
 
   return (
     <>
-      <g style={{ cursor: 'default' }}>
+      <g
+        className="react-flow__edge-container"
+        style={{ cursor: 'pointer', pointerEvents: 'all' }}
+      >
         {/* Hit area path for easier clicking */}
         <path
-          className="react-flow__edge-path"
+          className="react-flow__edge-interaction"
           d={finalPath}
           fill="none"
-          stroke="#4dabf7"
-          strokeWidth={20}
-          strokeOpacity={0}
+          stroke="transparent"
+          strokeWidth={selected ? 12 : 20}
           style={{
             cursor: selected ? 'crosshair' : 'pointer',
             pointerEvents: 'all',
@@ -954,9 +988,8 @@ function AnimatedEdge({
           style={{
             ...edgeStyle,
             cursor: selected ? 'crosshair' : 'pointer',
-            pointerEvents: 'all', // Используем 'all' для обработки кликов на всей области линии
-            strokeWidth: selected ? 4 : (edgeStyle.strokeWidth || 2), // Увеличиваем толщину при выделении для удобства клика
-            // Увеличиваем область клика
+            pointerEvents: 'stroke',
+            strokeWidth: selected ? 4 : (edgeStyle.strokeWidth || 3),
             strokeLinecap: 'round',
             strokeLinejoin: 'round',
           }}
@@ -1283,6 +1316,11 @@ function AnimatedEdge({
               borderRadius: '4px',
               fontSize: '15px', // Slightly increased further from 13px
               fontWeight: 600,
+              opacity: data?.isBackground ? 0.7 : 1,
+              backgroundColor: data?.isBackground ? (isDarkMode ? '#252525' : '#f5f5f5') : (labelStyle?.backgroundColor || '#1e1e1e'),
+              color: data?.isBackground ? (isDarkMode ? '#666' : '#999') : (labelStyle?.color || edgeColor),
+              borderColor: data?.isBackground ? (isDarkMode ? '#333' : '#ddd') : (labelStyle?.borderColor || `${edgeColor}40`),
+              filter: data?.isBackground ? 'grayscale(0.5)' : 'none',
             }}
             onMouseDown={(e) => {
               // Останавливаем распространение, чтобы не обрабатывать клик на линии

@@ -150,15 +150,17 @@ function GroupNode({
       style={{
         width: '100%',
         height: '100%',
-        backgroundColor: isSimple ? 'transparent' : groupColor + '20',
-        border: isSimple ? 'none' : `2px dashed ${borderColor}`,
+        backgroundColor: isSimple ? 'transparent' : (isHovered && !document.documentElement.classList.contains('light-theme') ? groupColor + '30' : groupColor + '20'),
+        border: isSimple ? 'none' : `2px dashed ${isHovered && !document.documentElement.classList.contains('light-theme') ? borderColor : (isHovered ? '#333' : borderColor)}`,
         borderRadius: '12px',
         padding: isSimple ? '10px' : '20px',
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: selected && !isSimple ? `0 0 20px ${borderColor}40` : 'none',
+        boxShadow: selected && !isSimple ? `0 0 20px ${borderColor}40` : (isHovered && !document.documentElement.classList.contains('light-theme') ? '0 4px 12px rgba(0,0,0,0.1)' : 'none'),
         overflow: 'visible',
+        cursor: selected ? 'move' : 'pointer',
+        transition: 'all 0.2s',
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

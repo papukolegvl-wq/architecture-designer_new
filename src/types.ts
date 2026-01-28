@@ -1249,7 +1249,7 @@ export interface ComponentData {
   comment?: string // Комментарий/аннотация к компоненту
   groupId?: string // ID группы для группировки компонентов
   isExpanded?: boolean // Флаг расширения компонента до контейнера
-  status?: 'new' | 'existing' | 'refinement' // Статус компонента: новый, существующий или требует доработки
+  status?: 'new' | 'existing' | 'refinement' | 'highlighted' | 'background' // Статус компонента: новый, существующий, требует доработки, выделен или в фоне
   tableConfig?: DatabaseTable
   databaseConfig?: DatabaseConfig
   cacheConfig?: CacheConfig
@@ -1342,6 +1342,14 @@ export interface ConnectionData {
   pathType?: EdgePathType
   // X-координата вертикального сегмента для прямоугольных линий (для смещения по горизонтали)
   verticalSegmentX?: number
+  // Флаг принудительной подсветки для презентации
+  accented?: boolean
+  // Флаг подсветки для визуализации связей (автоматический)
+  highlighted?: boolean
+  // Цвет подсветки (наследуется от выделенного компонента)
+  highlightColor?: string
+  // Флаг фонового режима (приглушенный вид)
+  isBackground?: boolean
 }
 
 

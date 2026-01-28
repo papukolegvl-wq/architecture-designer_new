@@ -91,6 +91,7 @@ import {
   BadgeCheck,
   Milestone,
   Package,
+  Target,
 } from 'lucide-react'
 
 const componentIcons: Record<string, React.ReactNode> = {
@@ -365,7 +366,7 @@ interface CustomNodeProps extends NodeProps<ComponentData> {
   onLinkClick?: (link: ComponentLink) => void
   onLinkConfigClick?: (nodeId: string) => void
   onCommentClick?: (nodeId: string) => void
-  onStatusChange?: (nodeId: string, status: 'new' | 'existing' | 'refinement') => void
+  onStatusChange?: (nodeId: string, status: 'new' | 'existing' | 'refinement' | 'highlighted' | undefined, color?: string) => void
   onColorChange?: (nodeId: string, color: string | undefined) => void
 }
 
@@ -554,7 +555,9 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
       ? '#339af0'
       : data.status === 'refinement'
         ? '#fab005'
-        : color;
+        : data.status === 'highlighted'
+          ? '#e64980' // Яркий розовый для акцента
+          : color;
 
   useEffect(() => {
     setLabel(data.label)
@@ -1203,15 +1206,22 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
         boxSizing: 'border-box',
         padding: isSimple ? '8px' : '16px 20px',
         borderRadius: '12px',
-        background: data.isExpanded ? `${color}10` : (isSimple ? color : (isDarkMode ? backgroundColor : '#ffffff')),
+        background: data.status === 'highlighted'
+          ? `${color}25` // Заливка цветом при акценте
+          : (data.isExpanded ? `${color}10` : (isSimple ? color : (isDarkMode ? backgroundColor : (isHovered ? '#f8f9fa' : '#ffffff')))),
         // В светлой теме всегда используем цветную рамку, а не transparent, чтобы компонент был виден
-        border: `${borderWidth} ${actualBorderStyle} ${selected ? color : (isSimple ? 'transparent' : (isDarkMode ? borderColor : color))}`,
+        border: `${data.status === 'highlighted' ? '3px' : borderWidth} ${actualBorderStyle} ${selected || data.status === 'highlighted' ? color : (isSimple ? 'transparent' : (isDarkMode ? borderColor : (isHovered ? '#333' : color)))}`,
         color: isSimple ? '#fff' : textColor,
         minWidth: isSimple ? '60px' : '200px',
         minHeight: isSimple ? '60px' : '110px',
         // Stronger shadow in light mode to make it "pop"
-        boxShadow: isDarkMode ? '0 4px 6px rgba(0,0,0,0.3)' : `0 2px 10px rgba(0,0,0,0.05), 0 0 0 1px ${color}40`,
-        transition: 'background 0.3s, border 0.3s, box-shadow 0.3s, opacity 0.3s',
+        boxShadow: data.status === 'highlighted'
+          ? `0 0 25px 8px ${color}60, 0 0 0 2px ${color}`
+          : (isDarkMode
+            ? (isHovered ? '0 6px 12px rgba(0,0,0,0.4)' : '0 4px 6px rgba(0,0,0,0.3)')
+            : (isHovered ? `0 4px 15px ${color}25, 0 0 0 1px ${color}60` : `0 2px 10px rgba(0,0,0,0.05), 0 0 0 1px ${color}40`)),
+        animation: data.status === 'highlighted' ? 'node-highlight-pulse 2s infinite' : 'none',
+        transition: 'background 0.3s, border 0.3s, box-shadow 0.3s, opacity 0.3s, filter 0.3s',
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
@@ -1220,8 +1230,12 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
         // В светлой теме также обеспечиваем видимость левой границы
         borderLeft: isSimple ? `none` : `${borderWidth} solid ${color}`,
         overflow: 'visible',
-        opacity: isGhost ? 0 : 1,
-        pointerEvents: isGhost ? 'all' : 'all', // Allow hover events even for ghost
+        opacity: isGhost ? 0 : (data.status === 'background' ? 0.35 : 1),
+        pointerEvents: 'all', // Allow hover events even for ghost
+        filter: data.status === 'highlighted'
+          ? `drop-shadow(0 0 8px ${color}50)`
+          : (data.status === 'background' ? 'grayscale(0.8) contrast(0.8)' : 'none'),
+        cursor: selected ? 'move' : 'pointer',
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -1259,15 +1273,25 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
           <button
             onClick={(e) => {
               e.stopPropagation()
-              // Cycle: undefined -> new -> existing -> refinement -> undefined
-              const nextStatus = !data.status ? 'new' : data.status === 'new' ? 'existing' : data.status === 'existing' ? 'refinement' : undefined
+              // Цикл: undefined -> new -> existing -> refinement -> highlighted -> background -> undefined
+              const nextStatus = !data.status
+                ? 'new'
+                : data.status === 'new'
+                  ? 'existing'
+                  : data.status === 'existing'
+                    ? 'refinement'
+                    : data.status === 'refinement'
+                      ? 'highlighted'
+                      : data.status === 'highlighted'
+                        ? 'background'
+                        : undefined
 
               if (onStatusChange) {
-                onStatusChange(id, nextStatus as any)
+                onStatusChange(id, nextStatus as any, color)
               } else {
                 // Dispatch event directly if prop not provided
                 const event = new CustomEvent('componentStatusChange', {
-                  detail: { nodeId: id, status: nextStatus },
+                  detail: { nodeId: id, status: nextStatus, color: color },
                 })
                 window.dispatchEvent(event)
               }
@@ -1277,7 +1301,7 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
               border: actionButtonBorder,
               boxShadow: actionButtonShadow,
               borderRadius: '6px',
-              color: data.status === 'new' ? '#40c057' : data.status === 'existing' ? '#339af0' : data.status === 'refinement' ? '#fab005' : (isDarkMode ? '#888' : '#555'),
+              color: data.status === 'new' ? '#40c057' : data.status === 'existing' ? '#339af0' : data.status === 'refinement' ? '#fab005' : data.status === 'highlighted' ? '#e64980' : data.status === 'background' ? (isDarkMode ? '#555' : '#aaa') : (isDarkMode ? '#888' : '#555'),
               padding: '6px',
               cursor: 'pointer',
               display: 'flex',
@@ -1285,11 +1309,11 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
               justifyContent: 'center',
               transition: 'all 0.2s',
             }}
-            title={`Статус: ${data.status === 'new' ? 'Новый' : data.status === 'existing' ? 'Существующий' : data.status === 'refinement' ? 'Требует доработки' : 'По умолчанию'}`}
+            title={`Статус: ${data.status === 'new' ? 'Новый' : data.status === 'existing' ? 'Существующий' : data.status === 'refinement' ? 'Требует доработки' : data.status === 'highlighted' ? 'Акцент (Презентация)' : data.status === 'background' ? 'В фоне (Приглушен)' : 'По умолчанию'}`}
             onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
             onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
-            {data.status === 'new' ? <Sparkles size={14} /> : data.status === 'existing' ? <CheckCircle size={14} /> : data.status === 'refinement' ? <AlertTriangle size={14} /> : <Settings size={14} />}
+            {data.status === 'new' ? <Sparkles size={14} /> : data.status === 'existing' ? <CheckCircle size={14} /> : data.status === 'refinement' ? <AlertTriangle size={14} /> : data.status === 'highlighted' ? <Target size={14} /> : data.status === 'background' ? <EyeOff size={14} /> : <Settings size={14} />}
           </button>
 
           {/* Link buttons */}

@@ -1590,6 +1590,56 @@ function App() {
       historyUpdateTypeRef.current = 'immediate'
     }
 
+    const handleStatusChange = (event: CustomEvent) => {
+      const { nodeId, status, color } = event.detail
+      setNodes((nds) =>
+        nds.map((n) => {
+          if (n.id === nodeId) {
+            return {
+              ...n,
+              data: { ...n.data, status }
+            }
+          }
+          return n
+        })
+      )
+
+      // Если статус 'highlighted', подсвечиваем все связанные ребра
+      // Если статус изменился с 'highlighted', убираем принудительную подсветку (если они не выбраны иным способом)
+      setEdges((eds) =>
+        eds.map((edge) => {
+          const isSourceHighlighted = status === 'highlighted' && edge.source === nodeId
+          const isTargetHighlighted = status === 'highlighted' && edge.target === nodeId
+
+          // Проверяем, есть ли другие причины для подсветки (другие узлы подсвечены)
+          let shouldBeHighlighted = isSourceHighlighted || isTargetHighlighted
+
+          if (!shouldBeHighlighted) {
+            // Проверяем второй узел ребра - вдруг он тоже подсвечен
+            const otherNodeId = edge.source === nodeId ? edge.target : edge.source
+            const otherNode = nodes.find(n => n.id === otherNodeId)
+            if (otherNode && (otherNode.data as ComponentData).status === 'highlighted') {
+              shouldBeHighlighted = true
+            }
+          }
+
+          if (shouldBeHighlighted !== edge.data?.highlighted || edge.data?.highlightColor !== color) {
+            return {
+              ...edge,
+              data: {
+                ...edge.data,
+                highlighted: shouldBeHighlighted,
+                highlightColor: shouldBeHighlighted ? color : undefined
+              }
+            }
+          }
+          return edge
+        })
+      )
+
+      historyUpdateTypeRef.current = 'immediate'
+    }
+
     const handleDataUpdate = (event: CustomEvent) => {
       const { nodeId, data: newData } = event.detail
       setNodes((nds) =>
@@ -1614,14 +1664,16 @@ function App() {
       historyUpdateTypeRef.current = 'immediate'
     }
 
-    window.addEventListener('nodeDeleteRequest', handleDeleteRequest as EventListener)
-    window.addEventListener('nodeDataUpdate', handleDataUpdate as EventListener)
+    window.addEventListener('nodeDeleteRequest', handleDeleteRequest as unknown as EventListener)
+    window.addEventListener('nodeDataUpdate', handleDataUpdate as unknown as EventListener)
+    window.addEventListener('componentStatusChange', handleStatusChange as unknown as EventListener)
 
     return () => {
-      window.removeEventListener('nodeDeleteRequest', handleDeleteRequest as EventListener)
-      window.removeEventListener('nodeDataUpdate', handleDataUpdate as EventListener)
+      window.removeEventListener('nodeDeleteRequest', handleDeleteRequest as unknown as EventListener)
+      window.removeEventListener('nodeDataUpdate', handleDataUpdate as unknown as EventListener)
+      window.removeEventListener('componentStatusChange', handleStatusChange as unknown as EventListener)
     }
-  }, [setNodes, setEdges])
+  }, [setNodes, setEdges, nodes])
 
   const addComponent = useCallback(
     (type: ComponentType, position?: { x: number; y: number }, label?: string) => {
@@ -2300,7 +2352,9 @@ function App() {
           ...(additionalData?.relationshipType && {
             relationshipType: additionalData.relationshipType,
           }),
+          isBackground: false,
         },
+        zIndex: 10,
       }
 
       setEdges((eds) => addEdge(newEdge, eds))
@@ -2512,6 +2566,7 @@ function App() {
             tool,
           },
         },
+        zIndex: 20, // Репликация по умолчанию акцентирована
       }
 
       setEdges((eds) => {
@@ -3615,7 +3670,7 @@ function App() {
   )
 
   const updateConnectionType = useCallback(
-    (edgeId: string, connectionType: ConnectionType, dataDescription?: string, pathType?: EdgePathType, customColor?: string) => {
+    (edgeId: string, connectionType: ConnectionType, dataDescription?: string, pathType?: EdgePathType, customColor?: string, accented?: boolean, isBackground?: boolean) => {
       const getLabelText = (type: ConnectionType): string => {
         switch (type) {
           case 'async':
@@ -3709,7 +3764,7 @@ function App() {
                 },
                 style: {
                   stroke: edgeColor,
-                  strokeWidth: connectionType === 'inheritance' ? 2 : 3,
+                  strokeWidth: accented ? 5 : (connectionType === 'inheritance' ? 2 : 3),
                   strokeDasharray:
                     connectionType === 'async' || connectionType === 'database-replication' || connectionType === 'ws' || connectionType === 'wss'
                       ? '8,4'
@@ -3723,7 +3778,10 @@ function App() {
                   ...(dataDescription !== undefined && { dataDescription }),
                   ...(pathType !== undefined && { pathType }),
                   ...(customColor !== undefined && { customColor }),
+                  ...(accented !== undefined && { accented }),
+                  ...(isBackground !== undefined && { isBackground }),
                 },
+                zIndex: isBackground ? 1 : (accented ? 20 : 10),
               }
             } else {
               // Если нет описания, убираем label и labelStyle
@@ -3732,7 +3790,7 @@ function App() {
                 ...edgeWithoutLabel,
                 style: {
                   stroke: edgeColor,
-                  strokeWidth: 3,
+                  strokeWidth: isBackground ? 1.5 : (accented ? 5 : 3),
                   strokeDasharray: connectionType === 'async' || connectionType === 'database-replication' || connectionType === 'ws' || connectionType === 'wss' ? '8,4' : undefined,
                 },
                 data: {
@@ -3741,7 +3799,10 @@ function App() {
                   ...(dataDescription !== undefined && { dataDescription }),
                   ...(pathType !== undefined && { pathType }),
                   ...(customColor !== undefined && { customColor }),
+                  ...(accented !== undefined && { accented }),
+                  ...(isBackground !== undefined && { isBackground }),
                 },
+                zIndex: isBackground ? 1 : (accented ? 20 : 10),
               }
             }
           }
@@ -3892,14 +3953,8 @@ function App() {
       }))
     )
 
-    // Обновляем selected в связях для ReactFlow
-    setEdges((eds) =>
-      eds.map((edge) => ({
-        ...edge,
-        selected: params.edges.some(selectedEdge => selectedEdge.id === edge.id),
-      }))
-    )
     console.log('🔄 ========== onSelectionChange завершен ==========')
+
 
     // Находим все выделенные системы, бизнес-домены и группы
     const selectedContainers = params.nodes.filter(node => {
@@ -3961,6 +4016,29 @@ function App() {
     })
     const selectedIds = selectableNodes.map(n => n.id)
     setSelectedNodeIds(selectedIds)
+
+    // Обновляем selected и highlighted в связях для ReactFlow
+    // Это позволяет визуализировать связи выбранных компонентов
+    const selectedNodeIdsSet = new Set(selectedIds)
+    setEdges((eds) =>
+      eds.map((edge) => {
+        // Линия выбрана явно (рамкой или кликом)
+        const isExplicitlySelected = params.edges.some(selectedEdge => selectedEdge.id === edge.id)
+        // Линия соединяет два выбранных компонента -> выделяем её (Relationship)
+        const isRelationship = selectedNodeIdsSet.has(edge.source) && selectedNodeIdsSet.has(edge.target)
+        // Линия соединена хотя бы с одним выбранным компонентом -> подсвечиваем её (Associated)
+        const isAssociated = selectedNodeIdsSet.has(edge.source) || selectedNodeIdsSet.has(edge.target)
+
+        return {
+          ...edge,
+          selected: isExplicitlySelected || isRelationship,
+          data: {
+            ...edge.data,
+            highlighted: isAssociated || !!edge.data?.accented
+          }
+        }
+      })
+    )
 
     // Проверяем, есть ли у выбранных компонентов одинаковый groupId
     if (selectedIds.length > 0) {
@@ -5530,8 +5608,8 @@ function App() {
           const event = new CustomEvent('componentCommentClick', { detail: { nodeId } })
           window.dispatchEvent(event)
         }}
-        onStatusChange={(nodeId: string, status: 'new' | 'existing' | 'refinement') => {
-          const event = new CustomEvent('componentStatusChange', { detail: { nodeId, status } })
+        onStatusChange={(nodeId: string, status: 'new' | 'existing' | 'refinement' | 'highlighted' | 'background' | undefined, color?: string) => {
+          const event = new CustomEvent('componentStatusChange', { detail: { nodeId, status, color } })
           window.dispatchEvent(event)
         }}
         onColorChange={(nodeId: string, color: string | undefined) => {
@@ -5896,7 +5974,7 @@ function App() {
           edgeUpdaterRadius={20}
           onlyRenderVisibleElements={true} // Рендерим только видимые элементы
           elevateNodesOnSelect={false} // Отключаем поднятие узлов при выделении для лучшей производительности
-          elevateEdgesOnSelect={false} // Отключаем поднятие связей при выделении
+          elevateEdgesOnSelect={true} // ВКЛЮЧАЕМ поднятие связей при выделении для удобства клика
         >
           <ConnectionMarkers />
           <Background

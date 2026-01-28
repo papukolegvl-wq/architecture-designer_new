@@ -221,15 +221,17 @@ function SystemNode({ id, data, selected, onLinkClick, onLinkConfigClick, onColo
       style={{
         width: '100%',
         height: '100%',
-        border: isSimple ? 'none' : `2px dashed ${borderColor}`,
+        border: isSimple ? 'none' : `2px dashed ${isHovered && !document.documentElement.classList.contains('light-theme') ? borderColor : (isHovered ? '#333' : borderColor)}`,
         borderRadius: '8px',
-        backgroundColor: isSimple ? 'transparent' : backgroundColor,
+        backgroundColor: isSimple ? 'transparent' : (isHovered && !document.documentElement.classList.contains('light-theme') ? backgroundColor : (isHovered ? 'rgba(0,0,0,0.03)' : backgroundColor)),
         position: 'relative',
         minWidth: isSimple ? 100 : 400,
         minHeight: isSimple ? 100 : 300,
         padding: isSimple ? '10px' : '20px',
         boxSizing: 'border-box',
         overflow: 'visible',
+        cursor: selected ? 'move' : 'pointer',
+        transition: 'all 0.2s',
       }}
       onDoubleClick={handleDoubleClick}
       onMouseEnter={() => setIsHovered(true)}

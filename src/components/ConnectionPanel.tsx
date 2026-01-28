@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Edge, Node } from 'reactflow'
-import { ArrowLeftRight } from 'lucide-react'
+import { ArrowLeftRight, EyeOff, Target } from 'lucide-react'
 import { ConnectionType, ComponentData, EdgePathType } from '../types'
 
 interface ConnectionPanelProps {
   edge: Edge
   nodes: Node[]
-  onUpdate: (edgeId: string, connectionType: ConnectionType, dataDescription?: string, pathType?: EdgePathType, customColor?: string) => void
+  onUpdate: (edgeId: string, connectionType: ConnectionType, dataDescription?: string, pathType?: EdgePathType, customColor?: string, accented?: boolean, isBackground?: boolean) => void
   onDelete: () => void
   onReverse?: (edgeId: string) => void
 }
@@ -42,6 +42,12 @@ export default function ConnectionPanel({
   const [customColor, setCustomColor] = useState<string>(
     (edge.data?.customColor as string) || ''
   )
+  const [accented, setAccented] = useState<boolean>(
+    (edge.data?.accented as boolean) || false
+  )
+  const [isBackground, setIsBackground] = useState<boolean>(
+    (edge.data?.isBackground as boolean) || false
+  )
 
 
 
@@ -65,27 +71,47 @@ export default function ConnectionPanel({
       setCustomColor('')
     }
 
+    const isAccented = edge.data?.accented as boolean
+    setAccented(!!isAccented)
+    const background = edge.data?.isBackground as boolean
+    setIsBackground(!!background)
 
   }, [edge])
 
   const handleChange = (newType: ConnectionType) => {
     setConnectionType(newType)
-    onUpdate(edge.id, newType, dataDescription, pathType, customColor)
+    onUpdate(edge.id, newType, dataDescription, pathType, customColor, accented, isBackground)
   }
 
   const handleDescriptionChange = (newDescription: string) => {
     setDataDescription(newDescription)
-    onUpdate(edge.id, connectionType, newDescription, pathType, customColor)
+    onUpdate(edge.id, connectionType, newDescription, pathType, customColor, accented, isBackground)
   }
 
   const handlePathTypeChange = (newPathType: EdgePathType) => {
     setPathType(newPathType)
-    onUpdate(edge.id, connectionType, dataDescription, newPathType, customColor)
+    onUpdate(edge.id, connectionType, dataDescription, newPathType, customColor, accented, isBackground)
   }
 
   const handleColorChange = (newColor: string) => {
     setCustomColor(newColor)
-    onUpdate(edge.id, connectionType, dataDescription, pathType, newColor)
+    onUpdate(edge.id, connectionType, dataDescription, pathType, newColor, accented, isBackground)
+  }
+
+  const handleAccentedToggle = (newAccented: boolean) => {
+    setAccented(newAccented)
+    // Если включаем акцент, выключаем фон
+    const newBackground = newAccented ? false : isBackground
+    if (newAccented) setIsBackground(false)
+    onUpdate(edge.id, connectionType, dataDescription, pathType, customColor, newAccented, newBackground)
+  }
+
+  const handleBackgroundToggle = (newBackground: boolean) => {
+    setIsBackground(newBackground)
+    // Если включаем фон, выключаем акцент
+    const newAccented = newBackground ? false : accented
+    if (newBackground) setAccented(false)
+    onUpdate(edge.id, connectionType, dataDescription, pathType, customColor, newAccented, newBackground)
   }
 
   // Определяем доступные типы связи на основе соединенных компонентов
@@ -322,6 +348,118 @@ export default function ConnectionPanel({
             <span style={{ fontSize: '14px', color: '#fff' }}>Прямоугольная со скруглением</span>
           </label>
         </div>
+      </div>
+
+      <div style={{ marginBottom: '10px' }}>
+        <label
+          onClick={() => handleAccentedToggle(!accented)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '10px 12px',
+            backgroundColor: accented ? '#e6498020' : '#3d3d3d50',
+            border: `1px solid ${accented ? '#e64980' : '#444'}`,
+            borderRadius: '6px',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '6px',
+              backgroundColor: accented ? '#e64980' : '#444',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+              transition: 'all 0.2s',
+            }}>
+              <Target size={18} />
+            </div>
+            <div>
+              <div style={{ fontSize: '14px', fontWeight: 'bold', color: accented ? '#e64980' : '#fff' }}>Акцент</div>
+              <div style={{ fontSize: '11px', color: '#888' }}>Выделить линию для презентации</div>
+            </div>
+          </div>
+          <div style={{
+            width: '36px',
+            height: '20px',
+            backgroundColor: accented ? '#e64980' : '#555',
+            borderRadius: '10px',
+            position: 'relative',
+            transition: 'all 0.2s',
+          }}>
+            <div style={{
+              width: '14px',
+              height: '14px',
+              backgroundColor: '#fff',
+              borderRadius: '50%',
+              position: 'absolute',
+              top: '3px',
+              left: accented ? '19px' : '3px',
+              transition: 'all 0.2s',
+            }} />
+          </div>
+        </label>
+      </div>
+
+      <div style={{ marginBottom: '15px' }}>
+        <label
+          onClick={() => handleBackgroundToggle(!isBackground)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '10px 12px',
+            backgroundColor: isBackground ? '#adb5bd20' : '#3d3d3d50',
+            border: `1px solid ${isBackground ? '#adb5bd' : '#444'}`,
+            borderRadius: '6px',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '6px',
+              backgroundColor: isBackground ? '#adb5bd' : '#444',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+              transition: 'all 0.2s',
+            }}>
+              <EyeOff size={18} />
+            </div>
+            <div>
+              <div style={{ fontSize: '14px', fontWeight: 'bold', color: isBackground ? '#adb5bd' : '#fff' }}>В фоне</div>
+              <div style={{ fontSize: '11px', color: '#888' }}>Сделать линию приглушенной</div>
+            </div>
+          </div>
+          <div style={{
+            width: '36px',
+            height: '20px',
+            backgroundColor: isBackground ? '#adb5bd' : '#555',
+            borderRadius: '10px',
+            position: 'relative',
+            transition: 'all 0.2s',
+          }}>
+            <div style={{
+              width: '14px',
+              height: '14px',
+              backgroundColor: '#fff',
+              borderRadius: '50%',
+              position: 'absolute',
+              top: '3px',
+              left: isBackground ? '19px' : '3px',
+              transition: 'all 0.2s',
+            }} />
+          </div>
+        </label>
       </div>
       <div style={{ marginBottom: '15px' }}>
         <label
