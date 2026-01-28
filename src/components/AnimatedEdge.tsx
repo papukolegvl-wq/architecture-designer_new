@@ -957,70 +957,46 @@ function AnimatedEdge({
     <>
       <g
         className="react-flow__edge-container"
-        style={{ cursor: 'pointer', pointerEvents: 'all' }}
+        style={{ cursor: 'pointer' }}
       >
-        {/* Hit area path for easier clicking */}
-        <path
-          className="react-flow__edge-interaction"
-          d={finalPath}
-          fill="none"
-          stroke="transparent"
-          strokeWidth={selected ? 12 : 20}
-          style={{
-            cursor: selected ? 'crosshair' : 'pointer',
-            pointerEvents: 'all',
-          }}
-          onMouseDown={(e) => {
-            if (!selected) return
-            e.stopPropagation()
-            e.preventDefault()
-            handleMouseDown(e)
-          }}
-          onClick={(e) => {
-            if (!selected) return
-            e.stopPropagation()
-            e.preventDefault()
-            if (e.detail === 1) handleMouseDown(e as any)
-          }}
-        />
         <path
           id={id}
           style={{
             ...edgeStyle,
-            cursor: selected ? 'crosshair' : 'pointer',
-            pointerEvents: 'stroke',
+            pointerEvents: 'none',
             strokeWidth: selected ? 4 : (edgeStyle.strokeWidth || 3),
             strokeLinecap: 'round',
             strokeLinejoin: 'round',
           }}
           d={finalPath}
           fill="none"
+          markerEnd={`url(#${markerEndId})`}
+          markerStart={isBidirectional ? `url(#${markerStartId})` : undefined}
+        />
+
+        {/* Hit area path - placed AFTER main path to be on top */}
+        <path
+          className="react-flow__edge-interaction"
+          d={finalPath}
+          fill="none"
+          stroke="transparent"
+          strokeWidth={selected ? 12 : 14}
+          style={{
+            cursor: selected ? 'crosshair' : 'pointer',
+            pointerEvents: 'stroke',
+          }}
           onMouseDown={(e) => {
-            // Обрабатываем клики на линии
-            // Если линия не выделена, НЕ останавливаем распространение, чтобы ReactFlow мог выделить линию
-            if (!selected) {
-              // Позволяем ReactFlow обработать клик для выделения этой конкретной линии
-              return
-            }
-            // Если линия выделена, останавливаем распространение и обрабатываем клик для waypoints
+            if (!selected) return // Allow propagation for selection
             e.stopPropagation()
             e.preventDefault()
             handleMouseDown(e)
           }}
           onClick={(e) => {
-            // Если линия не выделена, позволяем ReactFlow обработать клик для выделения
-            if (!selected) {
-              return
-            }
-            // Если линия уже выделена, останавливаем распространение и обрабатываем клик для waypoint
+            if (!selected) return // Allow propagation for selection
             e.stopPropagation()
             e.preventDefault()
-            if (e.detail === 1) {
-              handleMouseDown(e as any)
-            }
+            if (e.detail === 1) handleMouseDown(e as any)
           }}
-          markerEnd={`url(#${markerEndId})`}
-          markerStart={isBidirectional ? `url(#${markerStartId})` : undefined}
         />
 
         {/* Отображение меток кардинальности (1, N) для связей таблиц */}
