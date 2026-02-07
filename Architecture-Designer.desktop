@@ -1,0 +1,29 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Architecture Designer
+Name[ru]=Архитектурный Дизайнер
+Comment=Визуальный редактор архитектуры программного обеспечения
+Comment[ru]=Визуальный редактор архитектуры программного обеспечения
+Exec=/home/DN101187POV/architecture-designer/start.sh
+Icon=application-x-executable
+Terminal=true
+Categories=Development;Graphics;Engineering;
+Path=/home/DN101187POV/architecture-designer
+StartupNotify=true
+MimeType=
+Keywords=architecture;designer;diagram;software;архитектура;дизайнер;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
