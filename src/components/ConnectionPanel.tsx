@@ -78,6 +78,7 @@ export default function ConnectionPanel({
     !!edge.data?.isTruthSource
   )
   const [isAdditionalOpen, setIsAdditionalOpen] = useState(false)
+  const [isColorPickerOpen, setIsColorPickerOpen] = useState(false)
 
   useEffect(() => {
     const edgeType = edge.data?.connectionType as ConnectionType
@@ -293,61 +294,116 @@ export default function ConnectionPanel({
         >
           Колір лінії:
         </label>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-          {[
-            '', // По умолчанию
-            '#1971c2', '#339af0', '#74c0fc', // Blues
-            '#087f5b', '#20c997', '#63e6be', // Teals/Greens
-            '#2f9e44', '#51cf66', '#94d82d', // Greens/Lime
-            '#f08c00', '#fcc419', '#ffd43b', // Oranges/Yellows
-            '#e03131', '#ff6b6b', '#ff8787', // Reds
-            '#6741d9', '#845ef7', '#b197fc', // Purples
-            '#c2255e', '#f06595', '#faa2c1', // Pinks
-            '#343a40', '#868e96', '#adb5bd', // Grays
-          ].map((color) => (
-            <div
-              key={color || 'default'}
-              onClick={() => handleColorChange(color)}
-              title={color ? color : 'За замовчуванням'}
-              style={{
-                width: '24px',
-                height: '24px',
-                borderRadius: '50%',
-                backgroundColor: color || '#4dabf7',
-                border: customColor === color ? '2px solid #fff' : '2px solid rgba(255,255,255,0.1)',
-                cursor: 'pointer',
-                position: 'relative',
-                boxShadow: customColor === color ? `0 0 0 2px ${color || '#4dabf7'}` : 'none',
-                transition: 'all 0.2s',
-              }}
-            >
-              {!color && (
-                <div style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%) rotate(45deg)',
-                  width: '12px',
-                  height: '2px',
-                  backgroundColor: '#fff',
-                }} />
-              )}
-            </div>
-          ))}
-          <input
-            type="color"
-            value={customColor || '#4dabf7'}
-            onChange={(e) => handleColorChange(e.target.value)}
+        <div style={{ position: 'relative' }}>
+          <div
+            onClick={() => setIsColorPickerOpen(!isColorPickerOpen)}
             style={{
-              width: '30px',
-              height: '30px',
-              padding: '0',
-              border: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '8px',
+              backgroundColor: '#2d2d2d',
+              border: '1px solid #555',
               borderRadius: '4px',
-              backgroundColor: 'transparent',
               cursor: 'pointer'
             }}
-          />
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{
+                width: '18px',
+                height: '18px',
+                borderRadius: '50%',
+                backgroundColor: customColor || '#4dabf7',
+                border: '1px solid rgba(255,255,255,0.2)'
+              }} />
+              <span style={{ fontSize: '14px', color: '#fff' }}>
+                {customColor || 'За замовчуванням'}
+              </span>
+            </div>
+            {isColorPickerOpen ? <ChevronUp size={16} color="#888" /> : <ChevronDown size={16} color="#888" />}
+          </div>
+
+          {isColorPickerOpen && (
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              zIndex: 10,
+              backgroundColor: '#2d2d2d',
+              border: '1px solid #555',
+              borderRadius: '4px',
+              padding: '12px',
+              marginTop: '4px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
+            }}>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                {[
+                  '', // По умолчанию
+                  '#1971c2', '#339af0', '#74c0fc', // Blues
+                  '#087f5b', '#20c997', '#63e6be', // Teals/Greens
+                  '#2f9e44', '#51cf66', '#94d82d', // Greens/Lime
+                  '#f08c00', '#fcc419', '#ffd43b', // Oranges/Yellows
+                  '#e03131', '#ff6b6b', '#ff8787', // Reds
+                  '#6741d9', '#845ef7', '#b197fc', // Purples
+                  '#c2255e', '#f06595', '#faa2c1', // Pinks
+                  '#343a40', '#868e96', '#adb5bd', // Grays
+                ].map((color) => (
+                  <div
+                    key={color || 'default'}
+                    onClick={() => {
+                      handleColorChange(color);
+                      setIsColorPickerOpen(false);
+                    }}
+                    title={color ? color : 'За замовчуванням'}
+                    style={{
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '50%',
+                      backgroundColor: color || '#4dabf7',
+                      border: customColor === color ? '2px solid #fff' : '2px solid rgba(255,255,255,0.1)',
+                      cursor: 'pointer',
+                      position: 'relative',
+                      boxShadow: customColor === color ? `0 0 0 2px ${color || '#4dabf7'}` : 'none',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    {!color && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%) rotate(45deg)',
+                        width: '12px',
+                        height: '2px',
+                        backgroundColor: '#fff',
+                      }} />
+                    )}
+                  </div>
+                ))}
+
+                {/* Custom Color Input Wrapper */}
+                <div style={{ position: 'relative', width: '24px', height: '24px', overflow: 'hidden', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.2)' }}>
+                  <input
+                    type="color"
+                    value={customColor || '#4dabf7'}
+                    onChange={(e) => handleColorChange(e.target.value)}
+                    style={{
+                      position: 'absolute',
+                      top: '-25%',
+                      left: '-25%',
+                      width: '150%',
+                      height: '150%',
+                      padding: '0',
+                      border: 'none',
+                      backgroundColor: 'transparent',
+                      cursor: 'pointer'
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       <div style={{ marginBottom: '15px' }}>
