@@ -238,16 +238,18 @@ export default function ConnectionPanel({
         backgroundColor: '#2d2d2d',
         border: '1px solid #555',
         borderRadius: '8px',
-        padding: '20px',
-        minWidth: '250px',
+        padding: '12px',
+        width: '260px',
+        maxHeight: 'calc(100vh - 40px)',
+        overflowY: 'auto',
         boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
         zIndex: 1000,
       }}
     >
-      <h3 style={{ marginBottom: '15px', fontSize: '16px', fontWeight: 'bold', color: '#fff' }}>
+      <h3 style={{ marginBottom: '12px', fontSize: '15px', fontWeight: 'bold', color: '#fff' }}>
         Налаштування зв'язку
       </h3>
-      <div style={{ marginBottom: '15px' }}>
+      <div style={{ marginBottom: '10px' }}>
         <label
           style={{
             display: 'block',
@@ -282,7 +284,7 @@ export default function ConnectionPanel({
         </select>
       </div>
 
-      <div style={{ marginBottom: '15px' }}>
+      <div style={{ marginBottom: '10px' }}>
         <label
           style={{
             display: 'block',
@@ -406,7 +408,7 @@ export default function ConnectionPanel({
           )}
         </div>
       </div>
-      <div style={{ marginBottom: '15px' }}>
+      <div style={{ marginBottom: '10px' }}>
         <label
           style={{
             display: 'block',
@@ -439,7 +441,7 @@ export default function ConnectionPanel({
         </select>
       </div>
 
-      <div style={{ marginBottom: '15px' }}>
+      <div style={{ marginBottom: '10px' }}>
         <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500', color: '#ccc' }}>
           Відображення та стиль:
         </label>
@@ -619,7 +621,7 @@ export default function ConnectionPanel({
 
 
 
-      <div style={{ marginBottom: '15px' }}>
+      <div style={{ marginBottom: '10px' }}>
         <label
           style={{
             display: 'block',
