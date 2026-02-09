@@ -1247,10 +1247,10 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
   return (
     <div
       style={{
-        width: (nodeWidth && nodeWidth > 10) ? '100%' : (isSimple ? '60px' : (isStart || isEnd) ? '40px' : isDecision ? '60px' : isForkJoin ? '150px' : '180px'),
+        width: (nodeWidth && nodeWidth > 10) ? '100%' : (isSimple ? '60px' : (isStart || isEnd) ? '40px' : isDecision ? '60px' : isForkJoin ? '150px' : '210px'),
         height: isDecision ? (nodeWidth ? `${nodeWidth}px` : '60px') : '100%',
         boxSizing: 'border-box',
-        padding: (isSimple || isStart || isEnd || isForkJoin || isDecision) ? '0' : '16px 16px',
+        padding: (isSimple || isStart || isEnd || isForkJoin || isDecision) ? '0' : '16px 24px',
         borderRadius: isStart || isEnd ? '50%' : isDecision ? '4px' : isAction ? '20px' : isForkJoin ? '2px' : '12px',
         background: isStart
           ? `linear-gradient(135deg, ${color}, ${color}dd)`
