@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Edge, Node } from 'reactflow'
-import { ArrowLeftRight, EyeOff, Target, XCircle, TrendingUp, AlertTriangle, Tag, ShieldCheck } from 'lucide-react'
+import { ArrowLeftRight, EyeOff, Target, XCircle, TrendingUp, AlertTriangle, Tag, ShieldCheck, ChevronDown, ChevronUp } from 'lucide-react'
 import { ConnectionType, ComponentData, EdgePathType } from '../types'
 import { handleTextareaTab } from '../utils/textUtils'
 
@@ -15,7 +15,7 @@ interface ConnectionPanelProps {
 const connectionTypes: Array<{ value: ConnectionType; label: string }> = [
   { value: 'rest', label: 'REST' },
   { value: 'grpc', label: 'gRPC' },
-  { value: 'async', label: 'Асинхронный' },
+  { value: 'async', label: 'Асинхронний' },
   { value: 'ws', label: 'WebSocket' },
   { value: 'graphql', label: 'GraphQL' },
   { value: 'database-connection', label: 'Database Connection' },
@@ -24,7 +24,7 @@ const connectionTypes: Array<{ value: ConnectionType; label: string }> = [
   { value: 'etl', label: 'ETL / Pipeline' },
   { value: 'jdbc', label: 'JDBC / SQL' },
   { value: 'kafka', label: 'Kafka / Streaming' },
-  { value: 'related', label: 'Имеет отношение' },
+  { value: 'related', label: 'Має відношення' },
 ]
 
 export default function ConnectionPanel({
@@ -77,6 +77,7 @@ export default function ConnectionPanel({
   const [isTruthSource, setIsTruthSource] = useState<boolean>(
     !!edge.data?.isTruthSource
   )
+  const [isAdditionalOpen, setIsAdditionalOpen] = useState(false)
 
   useEffect(() => {
     const edgeType = edge.data?.connectionType as ConnectionType
@@ -243,7 +244,7 @@ export default function ConnectionPanel({
       }}
     >
       <h3 style={{ marginBottom: '15px', fontSize: '16px', fontWeight: 'bold', color: '#fff' }}>
-        Настройка связи
+        Налаштування зв'язку
       </h3>
       <div style={{ marginBottom: '15px' }}>
         <label
@@ -255,7 +256,7 @@ export default function ConnectionPanel({
             color: '#ccc',
           }}
         >
-          Тип связи:
+          Тип зв'язку:
         </label>
         <select
           value={connectionType}
@@ -290,14 +291,14 @@ export default function ConnectionPanel({
             color: '#ccc',
           }}
         >
-          Цвет линии:
+          Колір лінії:
         </label>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
           {['', '#4dabf7', '#51cf66', '#ff6b6b', '#ffd43b', '#adb5bd', '#f06595', '#845ef7'].map((color) => (
             <div
               key={color || 'default'}
               onClick={() => handleColorChange(color)}
-              title={color ? color : 'По умолчанию'}
+              title={color ? color : 'За замовчуванням'}
               style={{
                 width: '24px',
                 height: '24px',
@@ -350,7 +351,7 @@ export default function ConnectionPanel({
             color: '#ccc',
           }}
         >
-          Тип линии:
+          Тип лінії:
         </label>
         <select
           value={pathType}
@@ -367,15 +368,15 @@ export default function ConnectionPanel({
             outline: 'none',
           }}
         >
-          <option value="straight">Прямая</option>
-          <option value="step">Прямоугольная</option>
-          <option value="smoothstep">Прямоугольная со скруглением</option>
+          <option value="straight">Пряма</option>
+          <option value="step">Прямокутна</option>
+          <option value="smoothstep">Прямокутна зі скругленням</option>
         </select>
       </div>
 
       <div style={{ marginBottom: '15px' }}>
         <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500', color: '#ccc' }}>
-          Отображение и стиль:
+          Відображення та стиль:
         </label>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {/* Группа взаимоисключающих стилей */}
@@ -403,9 +404,9 @@ export default function ConnectionPanel({
               outline: 'none',
             }}
           >
-            <option value="normal">Обычный стиль</option>
-            <option value="accent">Акцент (презентация)</option>
-            <option value="background">В фоне (приглушенная)</option>
+            <option value="normal">Звичайний стиль</option>
+            <option value="accent">Акцент (презентація)</option>
+            <option value="background">У фоні (приглушена)</option>
           </select>
 
           {/* Группа взаимоисключающих статусов */}
@@ -435,10 +436,10 @@ export default function ConnectionPanel({
               outline: 'none',
             }}
           >
-            <option value="normal">Без спец. статуса</option>
-            <option value="delete">Статус: Удалить</option>
-            <option value="load">Статус: Высокая нагрузка</option>
-            <option value="incorrect">Статус: Ошибка в данных</option>
+            <option value="normal">Без спец. статусу</option>
+            <option value="delete">Статус: Видалити</option>
+            <option value="load">Статус: Високе навантаження</option>
+            <option value="incorrect">Статус: Помилка в даних</option>
           </select>
         </div>
 
@@ -449,7 +450,7 @@ export default function ConnectionPanel({
               type="text"
               value={toBeDeletedComment}
               onChange={(e) => handleDeleteCommentChange(e.target.value)}
-              placeholder="Причина удаления..."
+              placeholder="Причина видалення..."
               style={{
                 width: '100%',
                 padding: '8px',
@@ -468,7 +469,7 @@ export default function ConnectionPanel({
               type="text"
               value={increasedLoadComment}
               onChange={(e) => handleLoadCommentChange(e.target.value)}
-              placeholder="Детали нагрузки..."
+              placeholder="Деталі навантаження..."
               style={{
                 width: '100%',
                 padding: '8px',
@@ -487,7 +488,7 @@ export default function ConnectionPanel({
               type="text"
               value={incorrectDataComment}
               onChange={(e) => handleIncorrectDataCommentChange(e.target.value)}
-              placeholder="Описание ошибки..."
+              placeholder="Опис помилки..."
               style={{
                 width: '100%',
                 padding: '8px',
@@ -502,31 +503,52 @@ export default function ConnectionPanel({
         )}
 
         {/* Компактные переключатели для независимых флагов */}
-        <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', padding: '4px 0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Tag size={16} color={showProtocolBadge ? '#339af0' : '#888'} />
-              <span style={{ fontSize: '13px', color: '#fff' }}>Показать протокол</span>
+        <div style={{ marginTop: '12px' }}>
+          <div
+            onClick={() => setIsAdditionalOpen(!isAdditionalOpen)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              cursor: 'pointer',
+              padding: '8px 0',
+              borderTop: '1px solid #444',
+            }}
+          >
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#888', cursor: 'pointer' }}>
+              Додатково:
+            </label>
+            {isAdditionalOpen ? <ChevronUp size={16} color="#888" /> : <ChevronDown size={16} color="#888" />}
+          </div>
+
+          {isAdditionalOpen && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', padding: '4px 0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Tag size={16} color={showProtocolBadge ? '#339af0' : '#888'} />
+                  <span style={{ fontSize: '13px', color: '#fff' }}>Показати протокол</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={showProtocolBadge}
+                  onChange={(e) => handleShowProtocolToggle(e.target.checked)}
+                  style={{ cursor: 'pointer' }}
+                />
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', padding: '4px 0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <ShieldCheck size={16} color={isTruthSource ? '#51cf66' : '#888'} />
+                  <span style={{ fontSize: '13px', color: '#fff' }}>Джерело істини</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={isTruthSource}
+                  onChange={(e) => handleIsTruthSourceToggle(e.target.checked)}
+                  style={{ cursor: 'pointer' }}
+                />
+              </label>
             </div>
-            <input
-              type="checkbox"
-              checked={showProtocolBadge}
-              onChange={(e) => handleShowProtocolToggle(e.target.checked)}
-              style={{ cursor: 'pointer' }}
-            />
-          </label>
-          <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', padding: '4px 0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <ShieldCheck size={16} color={isTruthSource ? '#51cf66' : '#888'} />
-              <span style={{ fontSize: '13px', color: '#fff' }}>Источник истины</span>
-            </div>
-            <input
-              type="checkbox"
-              checked={isTruthSource}
-              onChange={(e) => handleIsTruthSourceToggle(e.target.checked)}
-              style={{ cursor: 'pointer' }}
-            />
-          </label>
+          )}
         </div>
       </div>
 
@@ -542,7 +564,7 @@ export default function ConnectionPanel({
             color: '#ccc',
           }}
         >
-          Описание данных (опционально):
+          Опис даних (опціонально):
         </label>
         <textarea
           value={dataDescription}
@@ -562,7 +584,7 @@ export default function ConnectionPanel({
           onClick={(e) => {
             e.stopPropagation()
           }}
-          placeholder="Например: JSON данные пользователя, SQL запросы, кешированные данные..."
+          placeholder="Наприклад: JSON дані користувача, SQL запити, кешовані дані..."
           style={{
             width: '100%',
             minHeight: '80px',
@@ -578,7 +600,7 @@ export default function ConnectionPanel({
         />
 
         <div style={{ marginTop: '4px', fontSize: '12px', color: '#888' }}>
-          Укажите, какие данные передаются или получаются по этому соединению
+          Вкажіть, які дані передаються або отримуються по цьому з'єднанню
         </div>
       </div>
 
@@ -610,7 +632,7 @@ export default function ConnectionPanel({
         }}
       >
         <ArrowLeftRight size={16} />
-        Поменять направление
+        Змінити напрямок
       </button>
 
       <button
@@ -634,7 +656,7 @@ export default function ConnectionPanel({
           e.currentTarget.style.backgroundColor = '#dc3545'
         }}
       >
-        Удалить связь
+        Видалити зв'язок
       </button>
     </div >
   )
