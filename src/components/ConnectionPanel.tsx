@@ -238,23 +238,23 @@ export default function ConnectionPanel({
         backgroundColor: '#2d2d2d',
         border: '1px solid #555',
         borderRadius: '8px',
-        padding: '10px',
-        width: '240px',
+        padding: '8px',
+        width: '220px',
         maxHeight: 'calc(100vh - 40px)',
         overflowY: 'auto',
         boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
         zIndex: 1000,
       }}
     >
-      <h3 style={{ marginBottom: '8px', fontSize: '14px', fontWeight: 'bold', color: '#fff' }}>
+      <h3 style={{ marginBottom: '6px', fontSize: '13px', fontWeight: 'bold', color: '#fff' }}>
         Налаштування зв'язку
       </h3>
-      <div style={{ marginBottom: '8px' }}>
+      <div style={{ marginBottom: '6px' }}>
         <label
           style={{
             display: 'block',
-            marginBottom: '4px',
-            fontSize: '12px',
+            marginBottom: '2px',
+            fontSize: '11px',
             fontWeight: '500',
             color: '#ccc',
           }}
@@ -266,12 +266,12 @@ export default function ConnectionPanel({
           onChange={(e) => handleChange(e.target.value as ConnectionType)}
           style={{
             width: '100%',
-            padding: '4px',
+            padding: '2px 4px',
             borderRadius: '4px',
             border: '1px solid #555',
             backgroundColor: '#2d2d2d',
             color: 'white',
-            fontSize: '12px',
+            fontSize: '11px',
             cursor: 'pointer',
             outline: 'none',
           }}
@@ -303,7 +303,7 @@ export default function ConnectionPanel({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '6px',
+              padding: '4px',
               backgroundColor: '#2d2d2d',
               border: '1px solid #555',
               borderRadius: '4px',
@@ -312,17 +312,17 @@ export default function ConnectionPanel({
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div style={{
-                width: '16px',
-                height: '16px',
+                width: '14px',
+                height: '14px',
                 borderRadius: '50%',
                 backgroundColor: customColor || '#4dabf7',
                 border: '1px solid rgba(255,255,255,0.2)'
               }} />
-              <span style={{ fontSize: '12px', color: '#fff' }}>
+              <span style={{ fontSize: '11px', color: '#fff' }}>
                 {customColor || 'За замовчуванням'}
               </span>
             </div>
-            {isColorPickerOpen ? <ChevronUp size={14} color="#888" /> : <ChevronDown size={14} color="#888" />}
+            {isColorPickerOpen ? <ChevronUp size={12} color="#888" /> : <ChevronDown size={12} color="#888" />}
           </div>
 
           {isColorPickerOpen && (
@@ -359,8 +359,8 @@ export default function ConnectionPanel({
                     }}
                     title={color ? color : 'За замовчуванням'}
                     style={{
-                      width: '20px',
-                      height: '20px',
+                      width: '16px',
+                      height: '16px',
                       borderRadius: '50%',
                       backgroundColor: color || '#4dabf7',
                       border: customColor === color ? '2px solid #fff' : '2px solid rgba(255,255,255,0.1)',
@@ -376,7 +376,7 @@ export default function ConnectionPanel({
                         top: '50%',
                         left: '50%',
                         transform: 'translate(-50%, -50%) rotate(45deg)',
-                        width: '12px',
+                        width: '10px',
                         height: '2px',
                         backgroundColor: '#fff',
                       }} />
@@ -385,7 +385,7 @@ export default function ConnectionPanel({
                 ))}
 
                 {/* Custom Color Input Wrapper */}
-                <div style={{ position: 'relative', width: '20px', height: '20px', overflow: 'hidden', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.2)' }}>
+                <div style={{ position: 'relative', width: '16px', height: '16px', overflow: 'hidden', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.2)' }}>
                   <input
                     type="color"
                     value={customColor || '#4dabf7'}
@@ -425,12 +425,12 @@ export default function ConnectionPanel({
           onChange={(e) => handlePathTypeChange(e.target.value as EdgePathType)}
           style={{
             width: '100%',
-            padding: '4px',
+            padding: '2px 4px',
             borderRadius: '4px',
             border: '1px solid #555',
             backgroundColor: '#2d2d2d',
             color: 'white',
-            fontSize: '12px',
+            fontSize: '11px',
             cursor: 'pointer',
             outline: 'none',
           }}
@@ -441,11 +441,11 @@ export default function ConnectionPanel({
         </select>
       </div>
 
-      <div style={{ marginBottom: '10px' }}>
-        <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', fontWeight: '500', color: '#ccc' }}>
+      <div style={{ marginBottom: '6px' }}>
+        <label style={{ display: 'block', marginBottom: '2px', fontSize: '11px', fontWeight: '500', color: '#ccc' }}>
           Відображення та стиль:
         </label>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           {/* Группа взаимоисключающих стилей */}
           <select
             value={accented ? 'accent' : (isBackground ? 'background' : 'normal')}
@@ -582,18 +582,18 @@ export default function ConnectionPanel({
               borderTop: '1px solid #444',
             }}
           >
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: '#888', cursor: 'pointer' }}>
+            <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: '#888', cursor: 'pointer' }}>
               Додатково:
             </label>
-            {isAdditionalOpen ? <ChevronUp size={14} color="#888" /> : <ChevronDown size={14} color="#888" />}
+            {isAdditionalOpen ? <ChevronUp size={12} color="#888" /> : <ChevronDown size={12} color="#888" />}
           </div>
 
           {isAdditionalOpen && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
               <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', padding: '4px 0' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Tag size={16} color={showProtocolBadge ? '#339af0' : '#888'} />
-                  <span style={{ fontSize: '13px', color: '#fff' }}>Показати протокол</span>
+                  <Tag size={14} color={showProtocolBadge ? '#339af0' : '#888'} />
+                  <span style={{ fontSize: '11px', color: '#fff' }}>Показати протокол</span>
                 </div>
                 <input
                   type="checkbox"
@@ -604,8 +604,8 @@ export default function ConnectionPanel({
               </label>
               <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', padding: '4px 0' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <ShieldCheck size={16} color={isTruthSource ? '#51cf66' : '#888'} />
-                  <span style={{ fontSize: '13px', color: '#fff' }}>Джерело істини</span>
+                  <ShieldCheck size={14} color={isTruthSource ? '#51cf66' : '#888'} />
+                  <span style={{ fontSize: '11px', color: '#fff' }}>Джерело істини</span>
                 </div>
                 <input
                   type="checkbox"
@@ -654,19 +654,19 @@ export default function ConnectionPanel({
           placeholder="Наприклад: JSON дані користувача, SQL запити, кешовані дані..."
           style={{
             width: '100%',
-            minHeight: '60px',
+            minHeight: '40px',
             padding: '4px',
             backgroundColor: '#1e1e1e',
             border: '1px solid #555',
             borderRadius: '4px',
             color: '#fff',
-            fontSize: '14px',
+            fontSize: '11px',
             fontFamily: 'inherit',
             resize: 'vertical',
           }}
         />
 
-        <div style={{ marginTop: '4px', fontSize: '12px', color: '#888' }}>
+        <div style={{ marginTop: '2px', fontSize: '10px', color: '#888' }}>
           Вкажіть, які дані передаються або отримуються по цьому з'єднанню
         </div>
       </div>
@@ -698,7 +698,7 @@ export default function ConnectionPanel({
           e.currentTarget.style.backgroundColor = '#3d3d3d'
         }}
       >
-        <ArrowLeftRight size={14} />
+        <ArrowLeftRight size={12} />
         Змінити напрямок
       </button>
 
@@ -706,13 +706,13 @@ export default function ConnectionPanel({
         onClick={onDelete}
         style={{
           width: '100%',
-          padding: '6px',
+          padding: '4px',
           backgroundColor: '#dc3545',
           color: 'white',
           border: 'none',
           borderRadius: '6px',
           cursor: 'pointer',
-          fontSize: '12px',
+          fontSize: '11px',
           fontWeight: '500',
           transition: 'background-color 0.2s',
         }}
