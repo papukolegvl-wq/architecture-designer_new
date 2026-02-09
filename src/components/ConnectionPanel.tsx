@@ -294,7 +294,17 @@ export default function ConnectionPanel({
           Колір лінії:
         </label>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-          {['', '#4dabf7', '#51cf66', '#ff6b6b', '#ffd43b', '#adb5bd', '#f06595', '#845ef7'].map((color) => (
+          {[
+            '', // По умолчанию
+            '#1971c2', '#339af0', '#74c0fc', // Blues
+            '#087f5b', '#20c997', '#63e6be', // Teals/Greens
+            '#2f9e44', '#51cf66', '#94d82d', // Greens/Lime
+            '#f08c00', '#fcc419', '#ffd43b', // Oranges/Yellows
+            '#e03131', '#ff6b6b', '#ff8787', // Reds
+            '#6741d9', '#845ef7', '#b197fc', // Purples
+            '#c2255e', '#f06595', '#faa2c1', // Pinks
+            '#343a40', '#868e96', '#adb5bd', // Grays
+          ].map((color) => (
             <div
               key={color || 'default'}
               onClick={() => handleColorChange(color)}
@@ -304,10 +314,11 @@ export default function ConnectionPanel({
                 height: '24px',
                 borderRadius: '50%',
                 backgroundColor: color || '#4dabf7',
-                border: customColor === color ? '2px solid #fff' : '2px solid transparent',
+                border: customColor === color ? '2px solid #fff' : '2px solid rgba(255,255,255,0.1)',
                 cursor: 'pointer',
                 position: 'relative',
-                boxShadow: customColor === color ? '0 0 0 2px #4dabf7' : 'none',
+                boxShadow: customColor === color ? `0 0 0 2px ${color || '#4dabf7'}` : 'none',
+                transition: 'all 0.2s',
               }}
             >
               {!color && (
@@ -315,12 +326,10 @@ export default function ConnectionPanel({
                   position: 'absolute',
                   top: '50%',
                   left: '50%',
-                  transform: 'translate(-50%, -50%)',
+                  transform: 'translate(-50%, -50%) rotate(45deg)',
                   width: '12px',
                   height: '2px',
                   backgroundColor: '#fff',
-                  transformOrigin: 'center',
-                  rotate: '45deg'
                 }} />
               )}
             </div>
