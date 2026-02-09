@@ -20,7 +20,7 @@ import ReactFlow, {
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 import ComponentPalette from './components/ComponentPalette'
-import CustomNode from './components/CustomNode'
+import CustomNode, { componentColors } from './components/CustomNode'
 import SystemNode from './components/SystemNode'
 import BusinessDomainNode from './components/BusinessDomainNode'
 import ContainerNode from './components/ContainerNode'
@@ -46,6 +46,7 @@ import AnalyticsServiceConfigPanel from './components/AnalyticsServiceConfigPane
 import BusinessIntelligenceConfigPanel from './components/BusinessIntelligenceConfigPanel'
 import VectorDatabaseConfigPanel from './components/VectorDatabaseConfigPanel'
 import ConnectionPanel from './components/ConnectionPanel'
+import NodeControlPanel from './components/NodeControlPanel'
 import ConnectionTypeSelector from './components/ConnectionTypeSelector'
 import DatabaseConfigPanel from './components/DatabaseConfigPanel'
 import DatabaseSchemaEditor from './components/DatabaseSchemaEditor'
@@ -3189,13 +3190,16 @@ function App() {
     [handleComponentConfigUpdate]
   )
 
-  const onNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
+  const handleOpenSettings = useCallback((nodeId: string) => {
+    const node = nodes.find(n => n.id === nodeId)
+    if (!node) return
     const nodeData = node.data as ComponentData
-    // Закрываем все панели
+
+    // Закрываем все панели перед открытием новой
     setDatabaseConfigNode(null)
     setDatabaseSchemaNode(null)
-    setTableEditorNode(null) // Close TableEditor
-    setVectorDBNode(null) // Close VectorDBConfigPanel
+    setTableEditorNode(null)
+    setVectorDBNode(null)
     setCacheConfigNode(null)
     setServiceConfigNode(null)
     setFrontendConfigNode(null)
@@ -3248,12 +3252,11 @@ function App() {
     setOrchestratorConfigNode(null)
     setServiceDiscoveryConfigNode(null)
     setLlmModelConfigNode(null)
-    setSelectedEdge(null)
+    setCommentNode(null)
 
     // Открываем соответствующую панель настройки
     if (nodeData.type === 'database') {
       const dbConfig = nodeData.databaseConfig
-      // Если база уже настроена (есть тип) и есть данные (таблицы/коллекции/key-value), открываем редактор схемы
       if (dbConfig?.dbType) {
         const hasData =
           (dbConfig.tables && dbConfig.tables.length > 0) ||
@@ -3261,22 +3264,14 @@ function App() {
           ((dbConfig as any)?.keyValueStore && (dbConfig as any).keyValueStore.pairs && (dbConfig as any).keyValueStore.pairs.length > 0)
 
         if (hasData) {
-          // Если есть данные, открываем редактор схемы
           setDatabaseSchemaNode(node)
-          setDatabaseConfigNode(null)
         } else if (dbConfig.vendor) {
-          // Если тип и vendor выбраны, но данных нет - открываем редактор схемы для добавления
           setDatabaseSchemaNode(node)
-          setDatabaseConfigNode(null)
         } else {
-          // Если тип выбран, но vendor нет - открываем панель настройки
           setDatabaseConfigNode(node)
-          setDatabaseSchemaNode(null)
         }
       } else {
-        // Если база не настроена, открываем панель настройки типа БД
         setDatabaseConfigNode(node)
-        setDatabaseSchemaNode(null)
       }
     } else if (nodeData.type === 'table') {
       setTableEditorNode(node)
@@ -3289,24 +3284,16 @@ function App() {
     } else if (nodeData.type === 'frontend') {
       setFrontendConfigNode(node)
     } else if (nodeData.type === 'data-warehouse') {
-      // Если платформа уже выбрана, открываем панель данных
       if (nodeData.dataWarehouseConfig?.vendor) {
         setDataWarehouseDataNode(node)
-        setDataWarehouseConfigNode(null)
       } else {
-        // Если не выбрана, открываем панель настройки
         setDataWarehouseConfigNode(node)
-        setDataWarehouseDataNode(null)
       }
     } else if (nodeData.type === 'message-broker') {
-      // Если брокер уже настроен (есть vendor), открываем панель сообщений
       if (nodeData.messageBrokerConfig?.vendor) {
         setMessageBrokerMessagesNode(node)
-        setMessageBrokerConfigNode(null)
       } else {
-        // Если не настроен, открываем панель настройки
         setMessageBrokerConfigNode(node)
-        setMessageBrokerMessagesNode(null)
       }
     } else if (nodeData.type === 'cdn') {
       setCdnConfigNode(node)
@@ -3406,12 +3393,13 @@ function App() {
       setMonitoringConfigNode(node)
     } else if (nodeData.type === 'server' || nodeData.type === 'bare-metal' || nodeData.type === 'virtual-machine') {
       setServerConfigNode(node)
-    } else if (nodeData.type === 'vpc' || nodeData.type === 'subnet' || nodeData.type === 'business-domain' || nodeData.type === 'system' || nodeData.type === 'external-system' || nodeData.type === 'security-group' || nodeData.type === 'internet-gateway' || nodeData.type === 'nat-gateway') {
-      setSelectedNodes([node])
-    } else {
-      setSelectedNodes([node])
     }
-  }, [])
+  }, [nodes])
+
+  const onNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
+    handleOpenSettings(node.id)
+    setSelectedNodes([node])
+  }, [handleOpenSettings, setSelectedNodes])
 
   const handleLinkConfigUpdate = useCallback(
     (nodeId: string, newLink: ComponentLink | null) => {
@@ -5860,6 +5848,66 @@ function App() {
     })
   }, [edges, nodes])
 
+  const isAnyConfigPanelOpen = !!(
+    databaseConfigNode ||
+    databaseSchemaNode ||
+    tableEditorNode ||
+    vectorDBNode ||
+    cacheConfigNode ||
+    serviceConfigNode ||
+    frontendConfigNode ||
+    dataWarehouseConfigNode ||
+    messageBrokerConfigNode ||
+    messageBrokerMessagesNode ||
+    cdnConfigNode ||
+    lambdaConfigNode ||
+    objectStorageConfigNode ||
+    authServiceConfigNode ||
+    firewallConfigNode ||
+    loadBalancerConfigNode ||
+    apiGatewayConfigNode ||
+    esbConfigNode ||
+    classConfigNode ||
+    controllerConfigNode ||
+    repositoryConfigNode ||
+    linkConfigNode ||
+    backupServiceConfigNode ||
+    queueConfigNode ||
+    proxyConfigNode ||
+    vpnGatewayConfigNode ||
+    dnsServiceConfigNode ||
+    eventBusConfigNode ||
+    streamProcessorConfigNode ||
+    searchEngineConfigNode ||
+    graphDatabaseConfigNode ||
+    timeSeriesDatabaseConfigNode ||
+    serviceMeshConfigNode ||
+    configurationManagementConfigNode ||
+    ciCdPipelineConfigNode ||
+    identityProviderConfigNode ||
+    secretManagementConfigNode ||
+    integrationPlatformConfigNode ||
+    batchProcessorConfigNode ||
+    etlServiceConfigNode ||
+    dataLakeConfigNode ||
+    mlServiceConfigNode ||
+    notificationServiceConfigNode ||
+    emailServiceConfigNode ||
+    smsGatewayConfigNode ||
+    analyticsServiceConfigNode ||
+    businessIntelligenceConfigNode ||
+    monitoringConfigNode ||
+    loggingConfigNode ||
+    vcsConfigNode ||
+    webServerConfigNode ||
+    containerConfigNode ||
+    serverConfigNode ||
+    orchestratorConfigNode ||
+    serviceDiscoveryConfigNode ||
+    llmModelConfigNode ||
+    commentNode
+  )
+
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
       <TabsPanel
@@ -6281,6 +6329,38 @@ function App() {
             onUpdate={updateConnectionType}
             onDelete={deleteSelected}
             onReverse={reverseEdgeDirection}
+          />
+        )}
+        {nodes.filter(n => n.selected).length === 1 && (
+          <NodeControlPanel
+            node={nodes.find(n => n.selected)!}
+            componentColors={componentColors}
+            style={isAnyConfigPanelOpen ? { right: '440px' } : undefined}
+            onStatusChange={(nodeId, status) => {
+              const event = new CustomEvent('componentStatusChange', { detail: { nodeId, status } })
+              window.dispatchEvent(event)
+            }}
+            onColorChange={(nodeId, color) => {
+              const event = new CustomEvent('componentColorChange', { detail: { nodeId, color } })
+              window.dispatchEvent(event)
+            }}
+            onLinkConfigClick={(nodeId) => {
+              const event = new CustomEvent('componentLinkConfigClick', { detail: { nodeId } })
+              window.dispatchEvent(event)
+            }}
+            onLinkClick={(link) => {
+              const event = new CustomEvent('componentLinkClick', { detail: { link } })
+              window.dispatchEvent(event)
+            }}
+            onTruthSourceChange={(nodeId, isTruthSource) => {
+              const event = new CustomEvent('nodeDataUpdate', { detail: { nodeId, data: { isTruthSource } } })
+              window.dispatchEvent(event)
+            }}
+            onInfoClick={(nodeId) => {
+              const event = new CustomEvent('showComponentInfo', { detail: { nodeId } })
+              window.dispatchEvent(event)
+            }}
+            onSettingsClick={handleOpenSettings}
           />
         )}
         {pendingObjectStorageDirection && (
