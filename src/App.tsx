@@ -3687,7 +3687,7 @@ function App() {
   )
 
   const updateConnectionType = useCallback(
-    (edgeId: string, connectionType: ConnectionType, dataDescription?: string, pathType?: EdgePathType, customColor?: string, accented?: boolean, isBackground?: boolean, toBeDeleted?: boolean, increasedLoad?: boolean, hasIncorrectData?: boolean, incorrectDataComment?: string, toBeDeletedComment?: string, increasedLoadComment?: string, showProtocolBadge?: boolean, logicSequence?: string, isTruthSource?: boolean) => {
+    (edgeId: string, connectionType: ConnectionType, dataDescription?: string, pathType?: EdgePathType, customColor?: string, accented?: boolean, isBackground?: boolean, toBeDeleted?: boolean, increasedLoad?: boolean, hasIncorrectData?: boolean, incorrectDataComment?: string, toBeDeletedComment?: string, increasedLoadComment?: string, showProtocolBadge?: boolean, isTruthSource?: boolean) => {
       const getLabelText = (type: ConnectionType): string => {
         switch (type) {
           case 'async':
@@ -3818,7 +3818,6 @@ function App() {
                   ...(toBeDeletedComment !== undefined && { toBeDeletedComment }),
                   ...(increasedLoadComment !== undefined && { increasedLoadComment }),
                   ...(showProtocolBadge !== undefined && { showProtocolBadge }),
-                  ...(logicSequence !== undefined && { logicSequence }),
                   ...(isTruthSource !== undefined && { isTruthSource }),
                 },
                 zIndex: isBackground ? 1 : (accented ? 20 : 10),
@@ -3848,7 +3847,6 @@ function App() {
                   ...(toBeDeletedComment !== undefined && { toBeDeletedComment }),
                   ...(increasedLoadComment !== undefined && { increasedLoadComment }),
                   ...(showProtocolBadge !== undefined && { showProtocolBadge }),
-                  ...(logicSequence !== undefined && { logicSequence }),
                   ...(isTruthSource !== undefined && { isTruthSource }),
                 },
                 zIndex: isBackground ? 1 : (accented ? 20 : 10),
@@ -4558,10 +4556,6 @@ function App() {
             x: edge.data.incorrectDataPosition.x - minX + pasteOffsetX,
             y: edge.data.incorrectDataPosition.y - minY + pasteOffsetY,
           } : edge.data?.incorrectDataPosition,
-          logicSequencePosition: edge.data?.logicSequencePosition && isNewSource && isNewTarget ? {
-            x: edge.data.logicSequencePosition.x - minX + pasteOffsetX,
-            y: edge.data.logicSequencePosition.y - minY + pasteOffsetY,
-          } : edge.data?.logicSequencePosition,
         },
       }
       return newEdge
@@ -4700,10 +4694,6 @@ function App() {
         incorrectDataPosition: edge.data?.incorrectDataPosition ? {
           x: edge.data.incorrectDataPosition.x + offset,
           y: edge.data.incorrectDataPosition.y + offset,
-        } : undefined,
-        logicSequencePosition: edge.data?.logicSequencePosition ? {
-          x: edge.data.logicSequencePosition.x + offset,
-          y: edge.data.logicSequencePosition.y + offset,
         } : undefined,
       }
     }))

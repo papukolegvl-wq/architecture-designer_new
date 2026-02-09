@@ -1394,10 +1394,6 @@ export interface ConnectionData {
   showProtocolBadge?: boolean
   protocolBadgePosition?: { x: number; y: number }
 
-  // Порядковый номер в логике процесса (1, 2, 3...)
-  logicSequence?: string
-  logicSequencePosition?: { x: number; y: number }
-
   // Флаг связи как "Источника истины"
   isTruthSource?: boolean
   truthSourcePosition?: { x: number; y: number }
