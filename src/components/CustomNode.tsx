@@ -93,6 +93,11 @@ import {
   Milestone,
   Package,
   Target,
+  Circle,
+  CircleDot,
+  Diamond,
+  SeparatorHorizontal,
+  StickyNote,
 } from 'lucide-react'
 
 const componentIcons: Record<string, React.ReactNode> = {
@@ -230,6 +235,13 @@ const componentIcons: Record<string, React.ReactNode> = {
   'roadmap-phase': <Map size={32} />,
   tracking: <Clock size={32} />,
   'external-component': <ExternalLink size={32} />,
+  'activity-start': <Circle size={32} fill="currentColor" />,
+  'activity-end': <CircleDot size={32} strokeWidth={3} />,
+  'activity-decision': <Diamond size={32} />,
+  'activity-action': <Activity size={32} />,
+  'activity-fork': <SeparatorHorizontal size={40} strokeWidth={5} />,
+  'activity-join': <SeparatorHorizontal size={40} strokeWidth={5} />,
+  'activity-note': <StickyNote size={32} />,
 }
 
 const componentColors: Record<string, string> = {
@@ -409,6 +421,16 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
 
   // Explicitly track connection state from global store to ensure handle interactivity updates correctly
   const isGlobalConnecting = useStore((s) => !!s.connectionNodeId);
+
+  const isActivity = data.type?.startsWith('activity-');
+  const isStart = data.type === 'activity-start';
+  const isEnd = data.type === 'activity-end';
+  const isDecision = data.type === 'activity-decision';
+  const isFork = data.type === 'activity-fork';
+  const isJoin = data.type === 'activity-join';
+  const isForkJoin = isFork || isJoin;
+  const isAction = data.type === 'activity-action';
+  const isActivityNote = data.type === 'activity-note';
 
   // Добавляем логику контейнера, если компонент расширен
   const updateContainerSize = React.useCallback(() => {
@@ -1029,6 +1051,20 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
         return data.serviceMeshConfig.vendor
       }
       return 'Service Mesh'
+    } else if (data.type === 'activity-start') {
+      return '(Start)'
+    } else if (data.type === 'activity-end') {
+      return '(End)'
+    } else if (data.type === 'activity-decision') {
+      return '(Decision)'
+    } else if (data.type === 'activity-action') {
+      return '(Action)'
+    } else if (data.type === 'activity-fork') {
+      return '(Fork)'
+    } else if (data.type === 'activity-join') {
+      return '(Join)'
+    } else if (data.type === 'activity-note') {
+      return '(Note)'
     } else if (data.type === 'configuration-management') {
       if (data.configurationManagementConfig?.vendor) {
         return data.configurationManagementConfig.vendor
@@ -1211,37 +1247,48 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
   return (
     <div
       style={{
-        width: (nodeWidth && nodeWidth > 10) ? '100%' : (isSimple ? '60px' : '200px'),
-        height: '100%',
+        width: (nodeWidth && nodeWidth > 10) ? '100%' : (isSimple ? '60px' : (isStart || isEnd) ? '40px' : isDecision ? '100px' : isForkJoin ? '150px' : '200px'),
+        height: isDecision ? (nodeWidth ? `${nodeWidth}px` : '100px') : '100%',
         boxSizing: 'border-box',
-        padding: isSimple ? '8px' : '16px 20px',
-        borderRadius: '12px',
-        background: data.status === 'highlighted'
-          ? `${color}05` // Minimal
-          : (data.isExpanded ? `${color}01` : (isSimple ? color : (isDarkMode ? backgroundColor : (isHovered ? '#ffffff' : '#ffffff')))),
-        // В светлой теме всегда используем цветную рамку, а не transparent, чтобы компонент был виден
-        border: `${data.status === 'highlighted' ? '2px' : borderWidth} ${actualBorderStyle} ${selected || data.status === 'highlighted' ? color + 'CC' : (isSimple ? 'transparent' : (isDarkMode ? borderColor : (isHovered ? '#444' : color + '80')))}`,
+        padding: (isSimple || isStart || isEnd || isForkJoin || isDecision) ? '0' : '16px 20px',
+        borderRadius: isStart || isEnd ? '50%' : isDecision ? '4px' : isAction ? '20px' : isForkJoin ? '2px' : '12px',
+        background: isStart
+          ? `linear-gradient(135deg, ${color}, ${color}dd)`
+          : isEnd
+            ? 'transparent'
+            : isForkJoin
+              ? (color === '#868e96' ? '#222' : color)
+              : data.status === 'highlighted'
+                ? `${color}05`
+                : (data.isExpanded ? `${color}01` : (isSimple ? color : (isDarkMode ? 'rgba(30, 30, 30, 0.7)' : 'rgba(255, 255, 255, 0.9)'))),
+        border: isStart || isForkJoin
+          ? 'none'
+          : isEnd
+            ? `3px solid ${isDarkMode ? '#eee' : '#222'}`
+            : isAction || isDecision
+              ? `1.5px solid ${color}cc`
+              : `${data.status === 'highlighted' ? '2px' : borderWidth} ${actualBorderStyle} ${selected || data.status === 'highlighted' ? color + 'CC' : (isSimple ? 'transparent' : (isDarkMode ? borderColor : (isHovered ? '#444' : color + '80')))}`,
         color: isSimple ? '#fff' : textColor,
-        minWidth: isSimple ? '60px' : '200px',
-        minHeight: isSimple ? '60px' : '110px',
-        // Stronger shadow in light mode to make it "pop"
-        boxShadow: data.status === 'highlighted'
-          ? `0 0 6px 1px ${color}15, 0 0 0 1px ${color}40`
-          : (isDarkMode
-            ? (isHovered ? '0 1px 2px rgba(0,0,0,0.1)' : 'none')
-            : (isHovered ? `0 1px 4px ${color}03, 0 0 0 1px ${color}10` : `none`)),
-        animation: data.status === 'highlighted' ? 'node-highlight-pulse 2s infinite' : 'none',
-        transition: 'background 0.3s, border 0.3s, box-shadow 0.3s, opacity 0.3s, filter 0.3s',
-        position: 'relative',
+        minWidth: isStart || isEnd ? '40px' : isDecision ? '100px' : isForkJoin ? '10px' : isSimple ? '60px' : '120px',
+        minHeight: isStart || isEnd ? '40px' : isDecision ? '100px' : isForkJoin ? '10px' : isSimple ? '60px' : '60px',
+        boxShadow: isStart || isEnd
+          ? `0 4px 12px ${color}40`
+          : isForkJoin
+            ? '0 2px 4px rgba(0,0,0,0.3)'
+            : (data.status === 'highlighted'
+              ? `0 0 6px 1px ${color}15, 0 0 0 1px ${color}40`
+              : (isDarkMode
+                ? (isHovered ? `0 8px 24px rgba(0,0,0,0.4), inset 0 0 0 1px ${color}20` : `0 4px 12px rgba(0,0,0,0.2)`)
+                : (isHovered ? `0 8px 24px ${color}15, inset 0 0 0 1px ${color}30` : `0 4px 12px ${color}10`))),
+        transform: isDecision ? 'rotate(45deg)' : 'none',
         display: 'flex',
-        flexDirection: 'column',
+        flexDirection: isForkJoin ? (isFork ? 'column' : 'row') : 'column',
         alignItems: 'center',
-        justifyContent: isSimple ? 'center' : 'flex-start',
-        // В светлой теме также обеспечиваем видимость левой границы
-        borderLeft: isSimple ? `none` : `${borderWidth} solid ${color}CC`,
+        justifyContent: 'center',
         overflow: 'visible',
+        backdropFilter: (isAction || isDecision) ? 'blur(8px)' : 'none',
         opacity: isGhost ? 0 : (data.status === 'background' ? 0.35 : 1),
-        pointerEvents: 'all', // Allow hover events even for ghost
+        pointerEvents: 'all',
         filter: data.isTruthSource
           ? `drop-shadow(0 0 12px #51cf66aa) drop-shadow(0 0 20px #51cf6640)`
           : (data.status === 'highlighted' ? `drop-shadow(0 0 4px ${color}30)` : (data.status === 'background' ? 'grayscale(0.8) contrast(0.8)' : 'none')),
@@ -1251,6 +1298,15 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
       onMouseLeave={() => setIsHovered(false)}
       onDoubleClick={handleDoubleClick}
     >
+      {/* Inner end circle for activity-end */}
+      {isEnd && (
+        <div style={{
+          width: '18px',
+          height: '18px',
+          borderRadius: '50%',
+          backgroundColor: isDarkMode ? '#eee' : '#222',
+        }} />
+      )}
       {data.isTruthSource && !isSimple && (
         <div style={{
           position: 'absolute',
@@ -1787,23 +1843,24 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
           style={{
             width: '100%',
             height: '100%',
-            backgroundColor: data.isExpanded ? 'transparent' : (isSimple ? 'transparent' : (isDarkMode ? 'rgba(30, 30, 30, 0.01)' : 'rgba(255, 255, 255, 0.02)')),
+            backgroundColor: (data.isExpanded || isDecision || isAction) ? 'transparent' : (isSimple ? 'transparent' : (isDarkMode ? 'rgba(30, 30, 30, 0.01)' : 'rgba(255, 255, 255, 0.02)')),
             backdropFilter: isDarkMode ? 'none' : 'blur(0.5px)',
-            border: isSimple ? 'none' : `1px solid ${statusColor}80`, // Thinner and more transparent
-            borderRadius: data.isExpanded ? '12px' : (data.type === 'database' || data.type === 'data-warehouse' ? '12px 12px 12px 12px' : '12px'),
-            display: 'flex',
+            border: (isSimple || isStart || isEnd || isForkJoin || isDecision || isAction) ? 'none' : `1px solid ${statusColor}80`, // Thinner and more transparent
+            borderRadius: data.isExpanded ? '12px' : (data.type === 'database' || data.type === 'data-warehouse' ? '12px 12px 12px 12px' : (isAction ? '20px' : '12px')),
+            display: (isStart || isEnd || isForkJoin) ? 'none' : 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: (data.isExpanded || (nodeHeight > 140)) ? 'flex-start' : 'center',
-            padding: data.isExpanded ? '20px' : (isMedium ? '10px' : '20px'),
+            justifyContent: (data.isExpanded || (nodeHeight > 140)) && !isDecision ? 'flex-start' : 'center',
+            padding: (data.isExpanded || isDecision) ? '10px' : (isMedium ? '10px' : '20px'),
             boxShadow: selected && !isSimple ? `0 0 4px ${color}08` : 'none',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             position: 'relative',
-            overflow: 'hidden',
+            overflow: (isDecision || isStart || isEnd) ? 'visible' : 'hidden',
             minWidth: isGhost ? '0px' : (data.isExpanded ? '300px' : 'auto'),
             minHeight: isGhost ? '0px' : (data.isExpanded ? '200px' : 'auto'),
             opacity: isGhost ? 0 : 1,
             pointerEvents: data.isExpanded ? 'none' : (isGhost ? 'none' : 'all'), // Если развернут, пропускаем клики сквозь тело к связям
+            transform: isDecision ? 'rotate(-45deg)' : 'none', // Counter-rotate content for decision
           }}
         >
           {data.isExpanded && (
@@ -1840,7 +1897,7 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
               alignItems: (nodeWidth > 220 && !data.isExpanded) ? 'flex-start' : 'center',
               justifyContent: 'center',
               width: '100%',
-              marginTop: data.isExpanded ? '40px' : (nodeHeight > 140 ? '10px' : '0'),
+              marginTop: data.isExpanded ? '40px' : ((nodeHeight > 140 && !isDecision) ? '10px' : '0'),
               gap: (nodeWidth > 220 && !data.isExpanded) ? '16px' : '0'
             }}
           >
@@ -1923,7 +1980,7 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
               </div>
 
               {/* Subtitle / Type badge - hide in Medium view */}
-              {!isMedium && subtitle && (
+              {!isMedium && subtitle && !isActivity && (
                 <div
                   style={{
                     fontSize: '11px',
@@ -1947,7 +2004,7 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
 
 
             {/* Icon container with gradient background - Fixed size to prevent stretching */}
-            {!data.isExpanded && (
+            {!data.isExpanded && !isActivity && (
               <div
                 style={{
                   width: isMedium ? '40px' : '56px',

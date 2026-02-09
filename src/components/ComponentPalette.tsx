@@ -98,6 +98,10 @@ import {
   Combine,
   Construction,
   Eye,
+  Circle,
+  CircleDot,
+  Diamond,
+  SeparatorHorizontal,
   FileSearch,
   Fingerprint,
   FlaskConical,
@@ -266,7 +270,7 @@ interface ComponentPaletteProps {
   onClose?: () => void
 }
 
-type ComponentCategory = 'all' | 'infrastructure' | 'data' | 'security' | 'development' | 'monitoring' | 'integration' | 'communication' | 'text' | 'ai' | 'roles' | 'management' | 'misc' | 'aws' | 'gcp' | 'azure' | 'oracle' | 'branded'
+type ComponentCategory = 'all' | 'infrastructure' | 'data' | 'security' | 'development' | 'monitoring' | 'integration' | 'communication' | 'text' | 'ai' | 'roles' | 'management' | 'misc' | 'aws' | 'gcp' | 'azure' | 'oracle' | 'branded' | 'activity'
 
 interface Component {
   type: ComponentType
@@ -471,6 +475,15 @@ export const components: Component[] = [
   { type: 'capability-map', label: 'Capability Map', icon: <Map size={24} />, color: '#1098ad', category: 'management' },
   { type: 'risk-register', label: 'Risk Register', icon: <AlertTriangle size={24} />, color: '#fa5252', category: 'management' },
   { type: 'compliance', label: 'Compliance Service', icon: <BadgeCheck size={24} />, color: '#087f5b', category: 'management' },
+
+  // Activity Diagram / Flowchart
+  { type: 'activity-start', label: 'Начало', icon: <Circle size={24} fill="currentColor" />, color: '#51cf66', category: 'activity' },
+  { type: 'activity-end', label: 'Конец', icon: <CircleDot size={24} strokeWidth={3} />, color: '#fa5252', category: 'activity' },
+  { type: 'activity-decision', label: 'Условие / Решение', icon: <Diamond size={24} />, color: '#ffd43b', category: 'activity' },
+  { type: 'activity-action', label: 'Действие / Шаг', icon: <Activity size={24} />, color: '#4dabf7', category: 'activity' },
+  { type: 'activity-fork', label: 'Разветвление', icon: <SeparatorHorizontal size={24} strokeWidth={4} />, color: '#868e96', category: 'activity' },
+  { type: 'activity-join', label: 'Слияние', icon: <SeparatorHorizontal size={24} strokeWidth={4} />, color: '#868e96', category: 'activity' },
+  { type: 'activity-note', label: 'Заметка / Коммент', icon: <StickyNote size={24} />, color: '#ffd666', category: 'activity' },
 
   // Разное
   { type: 'tracking', label: 'Трекинг', icon: <Clock size={24} />, color: '#ffd43b', category: 'misc' },
@@ -775,6 +788,7 @@ const categoryLabels: Record<ComponentCategory, string> = {
   azure: 'Azure',
   oracle: 'Oracle',
   branded: 'Технологии (Бренды)',
+  activity: 'Блок-схемы / Activity',
 }
 
 export default function ComponentPalette({ onComponentClick, onRecommendationClick, onClose }: ComponentPaletteProps) {

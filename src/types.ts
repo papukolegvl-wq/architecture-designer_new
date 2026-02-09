@@ -251,6 +251,13 @@ export type ComponentType =
   | 'prometheus'
   | 'grafana'
   | 'ansible'
+  | 'activity-start'
+  | 'activity-end'
+  | 'activity-decision'
+  | 'activity-action'
+  | 'activity-fork'
+  | 'activity-join'
+  | 'activity-note'
 
 
 export type ConnectionType =

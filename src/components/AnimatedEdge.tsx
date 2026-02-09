@@ -270,20 +270,20 @@ function AnimatedEdge({
       strokeColor = '#dc3545'
     }
 
-    // Определяем ширину линии: фон (2), акцент (8), обычная подсветка (4) или стандарт (2.5)
-    let strokeWidth = data?.isBackground ? 2 : (data?.accented ? 8 : (isHighlighted ? 4 : 2.5))
+    // Определяем ширину линии: фон (1.5), акцент (5), обычная подсветка (3) или стандарт (1.8)
+    let strokeWidth = data?.isBackground ? 1.5 : (data?.accented ? 5 : (isHighlighted ? 3 : 1.8))
     if (isIncreasedLoad) {
       strokeWidth += 3
     }
 
     if (data?.hasIncorrectData && !data?.customColor) {
       strokeColor = '#ff0000'
-      strokeWidth = Math.max(strokeWidth, 3)
+      strokeWidth = Math.max(strokeWidth, 2.5)
     }
 
     if (data?.isTruthSource && !data?.customColor) {
       strokeColor = '#51cf66'
-      strokeWidth = Math.max(strokeWidth, 7)
+      strokeWidth = Math.max(strokeWidth, 4)
     }
 
     return {
@@ -1052,7 +1052,7 @@ function AnimatedEdge({
           style={{
             ...edgeStyle,
             pointerEvents: 'none',
-            strokeWidth: (edgeStyle.strokeWidth as number || 4) + 2.5,
+            strokeWidth: edgeStyle.strokeWidth || 2,
             strokeLinecap: 'round',
             strokeLinejoin: 'round',
           }}
