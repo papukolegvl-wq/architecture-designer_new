@@ -352,534 +352,182 @@ export default function ConnectionPanel({
         >
           Тип линии:
         </label>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <label
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              cursor: 'pointer',
-              padding: '8px',
-              borderRadius: '4px',
-              backgroundColor: pathType === 'straight' ? '#3d3d3d' : 'transparent',
-              transition: 'background-color 0.2s',
-            }}
-          >
-            <input
-              type="radio"
-              name="pathType"
-              value="straight"
-              checked={pathType === 'straight'}
-              onChange={() => handlePathTypeChange('straight')}
-              style={{ cursor: 'pointer' }}
-            />
-            <span style={{ fontSize: '14px', color: '#fff' }}>Прямая</span>
-          </label>
-          <label
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              cursor: 'pointer',
-              padding: '8px',
-              borderRadius: '4px',
-              backgroundColor: pathType === 'step' ? '#3d3d3d' : 'transparent',
-              transition: 'background-color 0.2s',
-            }}
-          >
-            <input
-              type="radio"
-              name="pathType"
-              value="step"
-              checked={pathType === 'step'}
-              onChange={() => handlePathTypeChange('step')}
-              style={{ cursor: 'pointer' }}
-            />
-            <span style={{ fontSize: '14px', color: '#fff' }}>Прямоугольная</span>
-          </label>
-          <label
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              cursor: 'pointer',
-              padding: '8px',
-              borderRadius: '4px',
-              backgroundColor: pathType === 'smoothstep' ? '#3d3d3d' : 'transparent',
-              transition: 'background-color 0.2s',
-            }}
-          >
-            <input
-              type="radio"
-              name="pathType"
-              value="smoothstep"
-              checked={pathType === 'smoothstep'}
-              onChange={() => handlePathTypeChange('smoothstep')}
-              style={{ cursor: 'pointer' }}
-            />
-            <span style={{ fontSize: '14px', color: '#fff' }}>Прямоугольная со скруглением</span>
-          </label>
-        </div>
-      </div>
-
-      <div style={{ marginBottom: '10px' }}>
-        <label
-          onClick={() => handleAccentedToggle(!accented)}
+        <select
+          value={pathType}
+          onChange={(e) => handlePathTypeChange(e.target.value as EdgePathType)}
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '10px 12px',
-            backgroundColor: accented ? '#e6498020' : '#3d3d3d50',
-            border: `1px solid ${accented ? '#e64980' : '#444'}`,
-            borderRadius: '6px',
+            width: '100%',
+            padding: '8px',
+            borderRadius: '4px',
+            border: '1px solid #555',
+            backgroundColor: '#2d2d2d',
+            color: 'white',
+            fontSize: '14px',
             cursor: 'pointer',
-            transition: 'all 0.2s',
+            outline: 'none',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '6px',
-              backgroundColor: accented ? '#e64980' : '#444',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              transition: 'all 0.2s',
-            }}>
-              <Target size={18} />
-            </div>
-            <div>
-              <div style={{ fontSize: '14px', fontWeight: 'bold', color: accented ? '#e64980' : '#fff' }}>Акцент</div>
-              <div style={{ fontSize: '11px', color: '#888' }}>Выделить линию для презентации</div>
-            </div>
-          </div>
-          <div style={{
-            width: '36px',
-            height: '20px',
-            backgroundColor: accented ? '#e64980' : '#555',
-            borderRadius: '10px',
-            position: 'relative',
-            transition: 'all 0.2s',
-          }}>
-            <div style={{
-              width: '14px',
-              height: '14px',
-              backgroundColor: '#fff',
-              borderRadius: '50%',
-              position: 'absolute',
-              top: '3px',
-              left: accented ? '19px' : '3px',
-              transition: 'all 0.2s',
-            }} />
-          </div>
-        </label>
+          <option value="straight">Прямая</option>
+          <option value="step">Прямоугольная</option>
+          <option value="smoothstep">Прямоугольная со скруглением</option>
+        </select>
       </div>
 
       <div style={{ marginBottom: '15px' }}>
-        <label
-          onClick={() => handleBackgroundToggle(!isBackground)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '10px 12px',
-            backgroundColor: isBackground ? '#adb5bd20' : '#3d3d3d50',
-            border: `1px solid ${isBackground ? '#adb5bd' : '#444'}`,
-            borderRadius: '6px',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '6px',
-              backgroundColor: isBackground ? '#adb5bd' : '#444',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              transition: 'all 0.2s',
-            }}>
-              <EyeOff size={18} />
-            </div>
-            <div>
-              <div style={{ fontSize: '14px', fontWeight: 'bold', color: isBackground ? '#adb5bd' : '#fff' }}>В фоне</div>
-              <div style={{ fontSize: '11px', color: '#888' }}>Сделать линию приглушенной</div>
-            </div>
-          </div>
-          <div style={{
-            width: '36px',
-            height: '20px',
-            backgroundColor: isBackground ? '#adb5bd' : '#555',
-            borderRadius: '10px',
-            position: 'relative',
-            transition: 'all 0.2s',
-          }}>
-            <div style={{
-              width: '14px',
-              height: '14px',
-              backgroundColor: '#fff',
-              borderRadius: '50%',
-              position: 'absolute',
-              top: '3px',
-              left: isBackground ? '19px' : '3px',
-              transition: 'all 0.2s',
-            }} />
-          </div>
+        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500', color: '#ccc' }}>
+          Отображение и стиль:
         </label>
-      </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {/* Группа взаимоисключающих стилей */}
+          <select
+            value={accented ? 'accent' : (isBackground ? 'background' : 'normal')}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === 'accent') handleAccentedToggle(true);
+              else if (val === 'background') handleBackgroundToggle(true);
+              else {
+                setAccented(false);
+                setIsBackground(false);
+                onUpdate(edge.id, connectionType, dataDescription, pathType, customColor, false, false, toBeDeleted, increasedLoad, hasIncorrectData, incorrectDataComment, toBeDeletedComment, increasedLoadComment, showProtocolBadge, isTruthSource);
+              }
+            }}
+            style={{
+              width: '100%',
+              padding: '8px',
+              borderRadius: '4px',
+              border: '1px solid #555',
+              backgroundColor: '#2d2d2d',
+              color: 'white',
+              fontSize: '14px',
+              cursor: 'pointer',
+              outline: 'none',
+            }}
+          >
+            <option value="normal">Обычный стиль</option>
+            <option value="accent">Акцент (презентация)</option>
+            <option value="background">В фоне (приглушенная)</option>
+          </select>
 
-      <div style={{ marginBottom: '10px' }}>
-        <label
-          onClick={() => handleShowProtocolToggle(!showProtocolBadge)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '10px 12px',
-            backgroundColor: showProtocolBadge ? '#339af020' : '#3d3d3d50',
-            border: `1px solid ${showProtocolBadge ? '#339af0' : '#444'}`,
-            borderRadius: '6px',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '6px',
-              backgroundColor: showProtocolBadge ? '#339af0' : '#444',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              transition: 'all 0.2s',
-            }}>
-              <Tag size={18} />
-            </div>
-            <div>
-              <div style={{ fontSize: '14px', fontWeight: 'bold', color: showProtocolBadge ? '#339af0' : '#fff' }}>Протокол</div>
-              <div style={{ fontSize: '11px', color: '#888' }}>Показать тип протокола на линии</div>
-            </div>
-          </div>
-          <div style={{
-            width: '36px',
-            height: '20px',
-            backgroundColor: showProtocolBadge ? '#339af0' : '#555',
-            borderRadius: '10px',
-            position: 'relative',
-            transition: 'all 0.2s',
-          }}>
-            <div style={{
-              width: '14px',
-              height: '14px',
-              backgroundColor: '#fff',
-              borderRadius: '50%',
-              position: 'absolute',
-              top: '3px',
-              left: showProtocolBadge ? '19px' : '3px',
-              transition: 'all 0.2s',
-            }} />
-          </div>
-        </label>
-      </div>
+          {/* Группа взаимоисключающих статусов */}
+          <select
+            value={toBeDeleted ? 'delete' : (increasedLoad ? 'load' : (hasIncorrectData ? 'incorrect' : 'normal'))}
+            onChange={(e) => {
+              const val = e.target.value;
+              setToBeDeleted(val === 'delete');
+              setIncreasedLoad(val === 'load');
+              setHasIncorrectData(val === 'incorrect');
+              onUpdate(
+                edge.id, connectionType, dataDescription, pathType, customColor, accented, isBackground,
+                val === 'delete', val === 'load', val === 'incorrect',
+                incorrectDataComment, toBeDeletedComment, increasedLoadComment,
+                showProtocolBadge, isTruthSource
+              );
+            }}
+            style={{
+              width: '100%',
+              padding: '8px',
+              borderRadius: '4px',
+              border: '1px solid #555',
+              backgroundColor: '#2d2d2d',
+              color: 'white',
+              fontSize: '14px',
+              cursor: 'pointer',
+              outline: 'none',
+            }}
+          >
+            <option value="normal">Без спец. статуса</option>
+            <option value="delete">Статус: Удалить</option>
+            <option value="load">Статус: Высокая нагрузка</option>
+            <option value="incorrect">Статус: Ошибка в данных</option>
+          </select>
+        </div>
 
-      <div style={{ marginBottom: '10px' }}>
-        <label
-          onClick={() => handleIsTruthSourceToggle(!isTruthSource)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '10px 12px',
-            backgroundColor: isTruthSource ? '#51cf6620' : '#3d3d3d50',
-            border: `1px solid ${isTruthSource ? '#51cf66' : '#444'}`,
-            borderRadius: '6px',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '6px',
-              backgroundColor: isTruthSource ? '#51cf66' : '#444',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              transition: 'all 0.2s',
-            }}>
-              <ShieldCheck size={18} />
-            </div>
-            <div>
-              <div style={{ fontSize: '14px', fontWeight: 'bold', color: isTruthSource ? '#51cf66' : '#fff' }}>Источник истины</div>
-              <div style={{ fontSize: '11px', color: '#888' }}>Пометить связь как входящую от источника истины</div>
-            </div>
-          </div>
-          <div style={{
-            width: '36px',
-            height: '20px',
-            backgroundColor: isTruthSource ? '#51cf66' : '#555',
-            borderRadius: '10px',
-            position: 'relative',
-            transition: 'all 0.2s',
-          }}>
-            <div style={{
-              width: '14px',
-              height: '14px',
-              backgroundColor: '#fff',
-              borderRadius: '50%',
-              position: 'absolute',
-              top: '3px',
-              left: isTruthSource ? '19px' : '3px',
-              transition: 'all 0.2s',
-            }} />
-          </div>
-        </label>
-      </div>
-
-      <div style={{ marginBottom: '10px' }}>
-        <label
-          onClick={() => handleDeletedToggle(!toBeDeleted)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '10px 12px',
-            backgroundColor: toBeDeleted ? '#dc354520' : '#3d3d3d50',
-            border: `1px solid ${toBeDeleted ? '#dc3545' : '#444'}`,
-            borderRadius: '6px',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '6px',
-              backgroundColor: toBeDeleted ? '#dc3545' : '#444',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              transition: 'all 0.2s',
-            }}>
-              <XCircle size={18} />
-            </div>
-            <div>
-              <div style={{ fontSize: '14px', fontWeight: 'bold', color: toBeDeleted ? '#dc3545' : '#fff' }}>Удалить</div>
-              <div style={{ fontSize: '11px', color: '#888' }}>Пометить как удаляемую связь</div>
-            </div>
-          </div>
-          <div style={{
-            width: '36px',
-            height: '20px',
-            backgroundColor: toBeDeleted ? '#dc3545' : '#555',
-            borderRadius: '10px',
-            position: 'relative',
-            transition: 'all 0.2s',
-          }}>
-            <div style={{
-              width: '14px',
-              height: '14px',
-              backgroundColor: '#fff',
-              borderRadius: '50%',
-              position: 'absolute',
-              top: '3px',
-              left: toBeDeleted ? '19px' : '3px',
-              transition: 'all 0.2s',
-            }} />
-          </div>
-        </label>
+        {/* Поля для комментариев к статусам */}
         {toBeDeleted && (
-          <div style={{ marginTop: '8px', marginLeft: '12px', marginRight: '1px' }}>
+          <div style={{ marginTop: '8px' }}>
             <input
               type="text"
               value={toBeDeletedComment}
               onChange={(e) => handleDeleteCommentChange(e.target.value)}
-              onKeyDown={(e) => {
-                e.stopPropagation();
-                if (e.key === 'Tab') {
-                  handleTextareaTab(e as any, toBeDeletedComment, setToBeDeletedComment);
-                  const newComment = toBeDeletedComment.substring(0, (e.target as any).selectionStart) + '  ' + toBeDeletedComment.substring((e.target as any).selectionEnd);
-                  handleDeleteCommentChange(newComment);
-                }
-              }}
-              placeholder="Текст для удаления (под значком)"
+              placeholder="Причина удаления..."
               style={{
                 width: '100%',
                 padding: '8px',
                 borderRadius: '4px',
                 border: '1px solid #dc3545',
-                backgroundColor: '#2d2d2d',
+                backgroundColor: '#1e1e1e',
                 color: 'white',
                 fontSize: '12px'
               }}
-              onClick={(e) => e.stopPropagation()}
             />
           </div>
         )}
-      </div>
-
-      <div style={{ marginBottom: '15px' }}>
-        <label
-          onClick={() => handleLoadToggle(!increasedLoad)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '10px 12px',
-            backgroundColor: increasedLoad ? '#fab00520' : '#3d3d3d50',
-            border: `1px solid ${increasedLoad ? '#fab005' : '#444'}`,
-            borderRadius: '6px',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '6px',
-              backgroundColor: increasedLoad ? '#fab005' : '#444',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              transition: 'all 0.2s',
-            }}>
-              <TrendingUp size={18} />
-            </div>
-            <div>
-              <div style={{ fontSize: '14px', fontWeight: 'bold', color: increasedLoad ? '#fab005' : '#fff' }}>Нагрузка</div>
-              <div style={{ fontSize: '11px', color: '#888' }}>Пометить увеличение нагрузки</div>
-            </div>
-          </div>
-          <div style={{
-            width: '36px',
-            height: '20px',
-            backgroundColor: increasedLoad ? '#fab005' : '#555',
-            borderRadius: '10px',
-            position: 'relative',
-            transition: 'all 0.2s',
-          }}>
-            <div style={{
-              width: '14px',
-              height: '14px',
-              backgroundColor: '#fff',
-              borderRadius: '50%',
-              position: 'absolute',
-              top: '3px',
-              left: increasedLoad ? '19px' : '3px',
-              transition: 'all 0.2s',
-            }} />
-          </div>
-        </label>
         {increasedLoad && (
-          <div style={{ marginTop: '8px', marginLeft: '12px', marginRight: '1px' }}>
+          <div style={{ marginTop: '8px' }}>
             <input
               type="text"
               value={increasedLoadComment}
               onChange={(e) => handleLoadCommentChange(e.target.value)}
-              placeholder="Текст ошибки (под значком)"
+              placeholder="Детали нагрузки..."
               style={{
                 width: '100%',
                 padding: '8px',
                 borderRadius: '4px',
                 border: '1px solid #fab005',
-                backgroundColor: '#2d2d2d',
+                backgroundColor: '#1e1e1e',
                 color: 'white',
                 fontSize: '12px'
               }}
-              onClick={(e) => e.stopPropagation()}
             />
           </div>
         )}
-      </div>
-
-      <div style={{ marginBottom: '15px' }}>
-        <label
-          onClick={() => handleIncorrectDataToggle(!hasIncorrectData)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '10px 12px',
-            backgroundColor: hasIncorrectData ? '#fd7e1420' : '#3d3d3d50',
-            border: `1px solid ${hasIncorrectData ? '#fd7e14' : '#444'}`,
-            borderRadius: '6px',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '6px',
-              backgroundColor: hasIncorrectData ? '#fd7e14' : '#444',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              transition: 'all 0.2s',
-            }}>
-              <AlertTriangle size={18} />
-            </div>
-            <div>
-              <div style={{ fontSize: '14px', fontWeight: 'bold', color: hasIncorrectData ? '#fd7e14' : '#fff' }}>Данные</div>
-              <div style={{ fontSize: '11px', color: '#888' }}>Пометить некорректные данные</div>
-            </div>
-          </div>
-          <div style={{
-            width: '36px',
-            height: '20px',
-            backgroundColor: hasIncorrectData ? '#fd7e14' : '#555',
-            borderRadius: '10px',
-            position: 'relative',
-            transition: 'all 0.2s',
-          }}>
-            <div style={{
-              width: '14px',
-              height: '14px',
-              backgroundColor: '#fff',
-              borderRadius: '50%',
-              position: 'absolute',
-              top: '3px',
-              left: hasIncorrectData ? '19px' : '3px',
-              transition: 'all 0.2s',
-            }} />
-          </div>
-        </label>
         {hasIncorrectData && (
-          <div style={{ marginTop: '8px', marginLeft: '12px', marginRight: '1px' }}>
+          <div style={{ marginTop: '8px' }}>
             <input
               type="text"
               value={incorrectDataComment}
               onChange={(e) => handleIncorrectDataCommentChange(e.target.value)}
-              placeholder="Текст ошибки (под значком)"
+              placeholder="Описание ошибки..."
               style={{
                 width: '100%',
                 padding: '8px',
                 borderRadius: '4px',
                 border: '1px solid #fd7e14',
-                backgroundColor: '#2d2d2d',
+                backgroundColor: '#1e1e1e',
                 color: 'white',
                 fontSize: '12px'
               }}
-              onClick={(e) => e.stopPropagation()}
             />
           </div>
         )}
+
+        {/* Компактные переключатели для независимых флагов */}
+        <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', padding: '4px 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Tag size={16} color={showProtocolBadge ? '#339af0' : '#888'} />
+              <span style={{ fontSize: '13px', color: '#fff' }}>Показать протокол</span>
+            </div>
+            <input
+              type="checkbox"
+              checked={showProtocolBadge}
+              onChange={(e) => handleShowProtocolToggle(e.target.checked)}
+              style={{ cursor: 'pointer' }}
+            />
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', padding: '4px 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ShieldCheck size={16} color={isTruthSource ? '#51cf66' : '#888'} />
+              <span style={{ fontSize: '13px', color: '#fff' }}>Источник истины</span>
+            </div>
+            <input
+              type="checkbox"
+              checked={isTruthSource}
+              onChange={(e) => handleIsTruthSourceToggle(e.target.checked)}
+              style={{ cursor: 'pointer' }}
+            />
+          </label>
+        </div>
       </div>
 
 
