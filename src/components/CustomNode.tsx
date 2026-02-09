@@ -1247,8 +1247,8 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
   return (
     <div
       style={{
-        width: (nodeWidth && nodeWidth > 10) ? '100%' : (isSimple ? '60px' : (isStart || isEnd) ? '40px' : isDecision ? '100px' : isForkJoin ? '150px' : '200px'),
-        height: isDecision ? (nodeWidth ? `${nodeWidth}px` : '100px') : '100%',
+        width: (nodeWidth && nodeWidth > 10) ? '100%' : (isSimple ? '60px' : (isStart || isEnd) ? '40px' : isDecision ? '60px' : isForkJoin ? '150px' : '200px'),
+        height: isDecision ? (nodeWidth ? `${nodeWidth}px` : '60px') : '100%',
         boxSizing: 'border-box',
         padding: (isSimple || isStart || isEnd || isForkJoin || isDecision) ? '0' : '16px 20px',
         borderRadius: isStart || isEnd ? '50%' : isDecision ? '4px' : isAction ? '20px' : isForkJoin ? '2px' : '12px',
@@ -1269,8 +1269,8 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
               ? `1.5px solid ${color}cc`
               : `${data.status === 'highlighted' ? '2px' : borderWidth} ${actualBorderStyle} ${selected || data.status === 'highlighted' ? color + 'CC' : (isSimple ? 'transparent' : (isDarkMode ? borderColor : (isHovered ? '#444' : color + '80')))}`,
         color: isSimple ? '#fff' : textColor,
-        minWidth: isStart || isEnd ? '40px' : isDecision ? '100px' : isForkJoin ? '10px' : isSimple ? '60px' : '120px',
-        minHeight: isStart || isEnd ? '40px' : isDecision ? '100px' : isForkJoin ? '10px' : isSimple ? '60px' : '60px',
+        minWidth: isStart || isEnd ? '40px' : isDecision ? '40px' : isForkJoin ? '10px' : isSimple ? '60px' : '120px',
+        minHeight: isStart || isEnd ? '40px' : isDecision ? '40px' : isForkJoin ? '10px' : isSimple ? '60px' : '60px',
         boxShadow: isStart || isEnd
           ? `0 4px 12px ${color}40`
           : isForkJoin
@@ -1815,8 +1815,8 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
         <NodeResizer
           color={color}
           isVisible={selected}
-          minWidth={data.isExpanded ? 300 : 120}
-          minHeight={data.isExpanded ? 200 : 80}
+          minWidth={data.isExpanded ? 300 : (isActivity ? 40 : 120)}
+          minHeight={data.isExpanded ? 200 : (isActivity ? 40 : 80)}
           onResize={(_event, { width, height }) => {
             const sizeEvent = new CustomEvent('nodeSizeUpdate', {
               detail: { nodeId: id, width, height }
@@ -1963,14 +1963,16 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
                       letterSpacing: '-0.01em',
                       textShadow: isDarkMode ? '0 1px 2px rgba(0,0,0,0.3)' : '0 1px 0 rgba(255,255,255,0.8)',
                       fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                      wordBreak: 'break-word',
+                      wordBreak: isDecision ? 'break-all' : 'break-word',
                       overflowWrap: 'break-word',
                       whiteSpace: 'pre-wrap',
                       overflow: 'visible',
                       textOverflow: 'clip',
-                      lineHeight: '1.3',
+                      lineHeight: '1.2',
                       userSelect: 'text',
                       cursor: 'text',
+                      maxWidth: isDecision ? '80%' : '100%',
+                      margin: isDecision ? '0 auto' : '0',
                     }}
                     title={label}
                   >
