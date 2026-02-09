@@ -1,13 +1,13 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Edge, Node } from 'reactflow'
-import { ArrowLeftRight, EyeOff, Target, XCircle, TrendingUp, AlertTriangle, Tag } from 'lucide-react'
+import { ArrowLeftRight, EyeOff, Target, XCircle, TrendingUp, AlertTriangle, Tag, ShieldCheck } from 'lucide-react'
 import { ConnectionType, ComponentData, EdgePathType } from '../types'
 import { handleTextareaTab } from '../utils/textUtils'
 
 interface ConnectionPanelProps {
   edge: Edge
   nodes: Node[]
-  onUpdate: (edgeId: string, connectionType: ConnectionType, dataDescription?: string, pathType?: EdgePathType, customColor?: string, accented?: boolean, isBackground?: boolean, toBeDeleted?: boolean, increasedLoad?: boolean, hasIncorrectData?: boolean, incorrectDataComment?: string, toBeDeletedComment?: string, increasedLoadComment?: string, showProtocolBadge?: boolean) => void
+  onUpdate: (edgeId: string, connectionType: ConnectionType, dataDescription?: string, pathType?: EdgePathType, customColor?: string, accented?: boolean, isBackground?: boolean, toBeDeleted?: boolean, increasedLoad?: boolean, hasIncorrectData?: boolean, incorrectDataComment?: string, toBeDeletedComment?: string, increasedLoadComment?: string, showProtocolBadge?: boolean, logicSequence?: string, isTruthSource?: boolean) => void
   onDelete: () => void
   onReverse?: (edgeId: string) => void
 }
@@ -74,6 +74,12 @@ export default function ConnectionPanel({
   const [showProtocolBadge, setShowProtocolBadge] = useState<boolean>(
     !!edge.data?.showProtocolBadge
   )
+  const [logicSequence, setLogicSequence] = useState<string>(
+    (edge.data?.logicSequence as string) || ''
+  )
+  const [isTruthSource, setIsTruthSource] = useState<boolean>(
+    !!edge.data?.isTruthSource
+  )
 
   useEffect(() => {
     const edgeType = edge.data?.connectionType as ConnectionType
@@ -111,27 +117,38 @@ export default function ConnectionPanel({
     const loadComment = edge.data?.increasedLoadComment as string
     setIncreasedLoadComment(loadComment || '')
     setShowProtocolBadge(!!edge.data?.showProtocolBadge)
-
+    setLogicSequence((edge.data?.logicSequence as string) || '')
+    setIsTruthSource(!!edge.data?.isTruthSource)
   }, [edge])
+
+  const handleLogicSequenceChange = (newSequence: string) => {
+    setLogicSequence(newSequence)
+    onUpdate(edge.id, connectionType, dataDescription, pathType, customColor, accented, isBackground, toBeDeleted, increasedLoad, hasIncorrectData, incorrectDataComment, toBeDeletedComment, increasedLoadComment, showProtocolBadge, newSequence, isTruthSource)
+  }
+
+  const handleIsTruthSourceToggle = (newIsTruthSource: boolean) => {
+    setIsTruthSource(newIsTruthSource)
+    onUpdate(edge.id, connectionType, dataDescription, pathType, customColor, accented, isBackground, toBeDeleted, increasedLoad, hasIncorrectData, incorrectDataComment, toBeDeletedComment, increasedLoadComment, showProtocolBadge, logicSequence, newIsTruthSource)
+  }
 
   const handleChange = (newType: ConnectionType) => {
     setConnectionType(newType)
-    onUpdate(edge.id, newType, dataDescription, pathType, customColor, accented, isBackground, toBeDeleted, increasedLoad, hasIncorrectData, incorrectDataComment, toBeDeletedComment, increasedLoadComment, showProtocolBadge)
+    onUpdate(edge.id, newType, dataDescription, pathType, customColor, accented, isBackground, toBeDeleted, increasedLoad, hasIncorrectData, incorrectDataComment, toBeDeletedComment, increasedLoadComment, showProtocolBadge, logicSequence, isTruthSource)
   }
 
   const handleDescriptionChange = (newDescription: string) => {
     setDataDescription(newDescription)
-    onUpdate(edge.id, connectionType, newDescription, pathType, customColor, accented, isBackground, toBeDeleted, increasedLoad, hasIncorrectData, incorrectDataComment, toBeDeletedComment, increasedLoadComment, showProtocolBadge)
+    onUpdate(edge.id, connectionType, newDescription, pathType, customColor, accented, isBackground, toBeDeleted, increasedLoad, hasIncorrectData, incorrectDataComment, toBeDeletedComment, increasedLoadComment, showProtocolBadge, logicSequence, isTruthSource)
   }
 
   const handlePathTypeChange = (newPathType: EdgePathType) => {
     setPathType(newPathType)
-    onUpdate(edge.id, connectionType, dataDescription, newPathType, customColor, accented, isBackground, toBeDeleted, increasedLoad, hasIncorrectData, incorrectDataComment, toBeDeletedComment, increasedLoadComment, showProtocolBadge)
+    onUpdate(edge.id, connectionType, dataDescription, newPathType, customColor, accented, isBackground, toBeDeleted, increasedLoad, hasIncorrectData, incorrectDataComment, toBeDeletedComment, increasedLoadComment, showProtocolBadge, logicSequence, isTruthSource)
   }
 
   const handleColorChange = (newColor: string) => {
     setCustomColor(newColor)
-    onUpdate(edge.id, connectionType, dataDescription, pathType, newColor, accented, isBackground, toBeDeleted, increasedLoad, hasIncorrectData, incorrectDataComment, toBeDeletedComment, increasedLoadComment, showProtocolBadge)
+    onUpdate(edge.id, connectionType, dataDescription, pathType, newColor, accented, isBackground, toBeDeleted, increasedLoad, hasIncorrectData, incorrectDataComment, toBeDeletedComment, increasedLoadComment, showProtocolBadge, logicSequence, isTruthSource)
   }
 
   const handleAccentedToggle = (newAccented: boolean) => {
@@ -139,7 +156,7 @@ export default function ConnectionPanel({
     // Если включаем акцент, выключаем фон
     const newBackground = newAccented ? false : isBackground
     if (newAccented) setIsBackground(false)
-    onUpdate(edge.id, connectionType, dataDescription, pathType, customColor, newAccented, newBackground, toBeDeleted, increasedLoad, hasIncorrectData, incorrectDataComment, toBeDeletedComment, increasedLoadComment, showProtocolBadge)
+    onUpdate(edge.id, connectionType, dataDescription, pathType, customColor, newAccented, newBackground, toBeDeleted, increasedLoad, hasIncorrectData, incorrectDataComment, toBeDeletedComment, increasedLoadComment, showProtocolBadge, logicSequence, isTruthSource)
   }
 
   const handleBackgroundToggle = (newBackground: boolean) => {
@@ -147,42 +164,42 @@ export default function ConnectionPanel({
     // Если включаем фон, выключаем акцент
     const newAccented = newBackground ? false : accented
     if (newBackground) setAccented(false)
-    onUpdate(edge.id, connectionType, dataDescription, pathType, customColor, newAccented, newBackground, toBeDeleted, increasedLoad, hasIncorrectData, incorrectDataComment, toBeDeletedComment, increasedLoadComment, showProtocolBadge)
+    onUpdate(edge.id, connectionType, dataDescription, pathType, customColor, newAccented, newBackground, toBeDeleted, increasedLoad, hasIncorrectData, incorrectDataComment, toBeDeletedComment, increasedLoadComment, showProtocolBadge, logicSequence, isTruthSource)
   }
 
   const handleDeletedToggle = (newDeleted: boolean) => {
     setToBeDeleted(newDeleted)
-    onUpdate(edge.id, connectionType, dataDescription, pathType, customColor, accented, isBackground, newDeleted, increasedLoad, hasIncorrectData, incorrectDataComment, toBeDeletedComment, increasedLoadComment, showProtocolBadge)
+    onUpdate(edge.id, connectionType, dataDescription, pathType, customColor, accented, isBackground, newDeleted, increasedLoad, hasIncorrectData, incorrectDataComment, toBeDeletedComment, increasedLoadComment, showProtocolBadge, logicSequence, isTruthSource)
   }
 
   const handleDeleteCommentChange = (newComment: string) => {
     setToBeDeletedComment(newComment)
-    onUpdate(edge.id, connectionType, dataDescription, pathType, customColor, accented, isBackground, toBeDeleted, increasedLoad, hasIncorrectData, incorrectDataComment, newComment, increasedLoadComment, showProtocolBadge)
+    onUpdate(edge.id, connectionType, dataDescription, pathType, customColor, accented, isBackground, toBeDeleted, increasedLoad, hasIncorrectData, incorrectDataComment, newComment, increasedLoadComment, showProtocolBadge, logicSequence, isTruthSource)
   }
 
   const handleLoadToggle = (newLoad: boolean) => {
     setIncreasedLoad(newLoad)
-    onUpdate(edge.id, connectionType, dataDescription, pathType, customColor, accented, isBackground, toBeDeleted, newLoad, hasIncorrectData, incorrectDataComment, toBeDeletedComment, increasedLoadComment, showProtocolBadge)
+    onUpdate(edge.id, connectionType, dataDescription, pathType, customColor, accented, isBackground, toBeDeleted, newLoad, hasIncorrectData, incorrectDataComment, toBeDeletedComment, increasedLoadComment, showProtocolBadge, logicSequence, isTruthSource)
   }
 
   const handleLoadCommentChange = (newComment: string) => {
     setIncreasedLoadComment(newComment)
-    onUpdate(edge.id, connectionType, dataDescription, pathType, customColor, accented, isBackground, toBeDeleted, increasedLoad, hasIncorrectData, incorrectDataComment, toBeDeletedComment, newComment, showProtocolBadge)
+    onUpdate(edge.id, connectionType, dataDescription, pathType, customColor, accented, isBackground, toBeDeleted, increasedLoad, hasIncorrectData, incorrectDataComment, toBeDeletedComment, newComment, showProtocolBadge, logicSequence, isTruthSource)
   }
 
   const handleIncorrectDataToggle = (newIncorrect: boolean) => {
     setHasIncorrectData(newIncorrect)
-    onUpdate(edge.id, connectionType, dataDescription, pathType, customColor, accented, isBackground, toBeDeleted, increasedLoad, newIncorrect, incorrectDataComment, toBeDeletedComment, increasedLoadComment, showProtocolBadge)
+    onUpdate(edge.id, connectionType, dataDescription, pathType, customColor, accented, isBackground, toBeDeleted, increasedLoad, newIncorrect, incorrectDataComment, toBeDeletedComment, increasedLoadComment, showProtocolBadge, logicSequence, isTruthSource)
   }
 
   const handleIncorrectDataCommentChange = (newComment: string) => {
     setIncorrectDataComment(newComment)
-    onUpdate(edge.id, connectionType, dataDescription, pathType, customColor, accented, isBackground, toBeDeleted, increasedLoad, hasIncorrectData, newComment, toBeDeletedComment, increasedLoadComment, showProtocolBadge)
+    onUpdate(edge.id, connectionType, dataDescription, pathType, customColor, accented, isBackground, toBeDeleted, increasedLoad, hasIncorrectData, newComment, toBeDeletedComment, increasedLoadComment, showProtocolBadge, logicSequence, isTruthSource)
   }
 
   const handleShowProtocolToggle = (newShow: boolean) => {
     setShowProtocolBadge(newShow)
-    onUpdate(edge.id, connectionType, dataDescription, pathType, customColor, accented, isBackground, toBeDeleted, increasedLoad, hasIncorrectData, incorrectDataComment, toBeDeletedComment, increasedLoadComment, newShow)
+    onUpdate(edge.id, connectionType, dataDescription, pathType, customColor, accented, isBackground, toBeDeleted, increasedLoad, hasIncorrectData, incorrectDataComment, toBeDeletedComment, increasedLoadComment, newShow, logicSequence, isTruthSource)
   }
 
   // Определяем доступные типы связи на основе соединенных компонентов
@@ -591,6 +608,62 @@ export default function ConnectionPanel({
 
       <div style={{ marginBottom: '10px' }}>
         <label
+          onClick={() => handleIsTruthSourceToggle(!isTruthSource)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '10px 12px',
+            backgroundColor: isTruthSource ? '#51cf6620' : '#3d3d3d50',
+            border: `1px solid ${isTruthSource ? '#51cf66' : '#444'}`,
+            borderRadius: '6px',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '6px',
+              backgroundColor: isTruthSource ? '#51cf66' : '#444',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+              transition: 'all 0.2s',
+            }}>
+              <ShieldCheck size={18} />
+            </div>
+            <div>
+              <div style={{ fontSize: '14px', fontWeight: 'bold', color: isTruthSource ? '#51cf66' : '#fff' }}>Источник истины</div>
+              <div style={{ fontSize: '11px', color: '#888' }}>Пометить связь как входящую от источника истины</div>
+            </div>
+          </div>
+          <div style={{
+            width: '36px',
+            height: '20px',
+            backgroundColor: isTruthSource ? '#51cf66' : '#555',
+            borderRadius: '10px',
+            position: 'relative',
+            transition: 'all 0.2s',
+          }}>
+            <div style={{
+              width: '14px',
+              height: '14px',
+              backgroundColor: '#fff',
+              borderRadius: '50%',
+              position: 'absolute',
+              top: '3px',
+              left: isTruthSource ? '19px' : '3px',
+              transition: 'all 0.2s',
+            }} />
+          </div>
+        </label>
+      </div>
+
+      <div style={{ marginBottom: '10px' }}>
+        <label
           onClick={() => handleDeletedToggle(!toBeDeleted)}
           style={{
             display: 'flex',
@@ -823,6 +896,42 @@ export default function ConnectionPanel({
             />
           </div>
         )}
+      </div>
+
+      <div style={{ marginBottom: '15px' }}>
+        <label
+          style={{
+            display: 'block',
+            marginBottom: '8px',
+            fontSize: '14px',
+            fontWeight: '500',
+            color: '#ccc',
+          }}
+        >
+          Порядковый номер в логике (1, 2, 3...):
+        </label>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <input
+            type="text"
+            value={logicSequence}
+            onChange={(e) => handleLogicSequenceChange(e.target.value)}
+            placeholder="Напр. 1.1"
+            style={{
+              width: '80px',
+              padding: '8px',
+              borderRadius: '4px',
+              border: '1px solid #555',
+              backgroundColor: '#2d2d2d',
+              color: 'white',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              textAlign: 'center'
+            }}
+          />
+          <div style={{ fontSize: '11px', color: '#888', alignSelf: 'center' }}>
+            Помогает визуализировать последовательность действий
+          </div>
+        </div>
       </div>
 
       <div style={{ marginBottom: '15px' }}>

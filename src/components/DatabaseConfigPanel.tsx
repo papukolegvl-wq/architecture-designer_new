@@ -351,6 +351,71 @@ export default function DatabaseConfigPanel({
 
       <div style={{ marginBottom: '20px' }}>
         <label
+          onClick={() => {
+            const event = new CustomEvent('nodeDataUpdate', {
+              detail: {
+                nodeId: node.id,
+                data: {
+                  ...data,
+                  isTruthSource: !data.isTruthSource
+                }
+              }
+            })
+            window.dispatchEvent(event)
+          }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '12px',
+            backgroundColor: data.isTruthSource ? '#51cf6620' : '#3d3d3d',
+            border: `2px solid ${data.isTruthSource ? '#51cf66' : '#555'}`,
+            borderRadius: '8px',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '6px',
+              backgroundColor: data.isTruthSource ? '#51cf66' : '#444',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+            }}>
+              <span style={{ fontSize: '18px' }}>🛡️</span>
+            </div>
+            <div>
+              <div style={{ fontSize: '14px', fontWeight: 'bold', color: data.isTruthSource ? '#51cf66' : '#fff' }}>Источник истины (Master)</div>
+              <div style={{ fontSize: '11px', color: '#888' }}>Эталонное джерело данных</div>
+            </div>
+          </div>
+          <div style={{
+            width: '36px',
+            height: '20px',
+            backgroundColor: data.isTruthSource ? '#51cf66' : '#555',
+            borderRadius: '10px',
+            position: 'relative',
+          }}>
+            <div style={{
+              width: '14px',
+              height: '14px',
+              backgroundColor: '#fff',
+              borderRadius: '50%',
+              position: 'absolute',
+              top: '3px',
+              left: data.isTruthSource ? '19px' : '3px',
+              transition: 'all 0.2s',
+            }} />
+          </div>
+        </label>
+      </div>
+
+      <div style={{ marginBottom: '20px' }}>
+        <label
           style={{
             display: 'block',
             marginBottom: '10px',

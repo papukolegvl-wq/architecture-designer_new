@@ -1327,6 +1327,7 @@ export interface ComponentData {
   trackingConfig?: TrackingConfig
   isGhost?: boolean // Флаг того, что компонент "удален", но сохранен для связей
   originalData?: any // Данные компонента до превращения в ghost
+  isTruthSource?: boolean // Флаг компонента как "Источника истины"
 }
 
 
@@ -1385,6 +1386,14 @@ export interface ConnectionData {
   // Показывать плашку с протоколом на линии
   showProtocolBadge?: boolean
   protocolBadgePosition?: { x: number; y: number }
+
+  // Порядковый номер в логике процесса (1, 2, 3...)
+  logicSequence?: string
+  logicSequencePosition?: { x: number; y: number }
+
+  // Флаг связи как "Источника истины"
+  isTruthSource?: boolean
+  truthSourcePosition?: { x: number; y: number }
 }
 
 

@@ -3687,7 +3687,7 @@ function App() {
   )
 
   const updateConnectionType = useCallback(
-    (edgeId: string, connectionType: ConnectionType, dataDescription?: string, pathType?: EdgePathType, customColor?: string, accented?: boolean, isBackground?: boolean, toBeDeleted?: boolean, increasedLoad?: boolean, hasIncorrectData?: boolean, incorrectDataComment?: string, toBeDeletedComment?: string, increasedLoadComment?: string, showProtocolBadge?: boolean) => {
+    (edgeId: string, connectionType: ConnectionType, dataDescription?: string, pathType?: EdgePathType, customColor?: string, accented?: boolean, isBackground?: boolean, toBeDeleted?: boolean, increasedLoad?: boolean, hasIncorrectData?: boolean, incorrectDataComment?: string, toBeDeletedComment?: string, increasedLoadComment?: string, showProtocolBadge?: boolean, logicSequence?: string, isTruthSource?: boolean) => {
       const getLabelText = (type: ConnectionType): string => {
         switch (type) {
           case 'async':
@@ -3818,6 +3818,8 @@ function App() {
                   ...(toBeDeletedComment !== undefined && { toBeDeletedComment }),
                   ...(increasedLoadComment !== undefined && { increasedLoadComment }),
                   ...(showProtocolBadge !== undefined && { showProtocolBadge }),
+                  ...(logicSequence !== undefined && { logicSequence }),
+                  ...(isTruthSource !== undefined && { isTruthSource }),
                 },
                 zIndex: isBackground ? 1 : (accented ? 20 : 10),
               }
@@ -3846,6 +3848,8 @@ function App() {
                   ...(toBeDeletedComment !== undefined && { toBeDeletedComment }),
                   ...(increasedLoadComment !== undefined && { increasedLoadComment }),
                   ...(showProtocolBadge !== undefined && { showProtocolBadge }),
+                  ...(logicSequence !== undefined && { logicSequence }),
+                  ...(isTruthSource !== undefined && { isTruthSource }),
                 },
                 zIndex: isBackground ? 1 : (accented ? 20 : 10),
               }
@@ -4537,6 +4541,27 @@ function App() {
           waypointY: (typeof edge.data?.waypointY === 'number') && isNewSource && isNewTarget
             ? edge.data.waypointY - minY + pasteOffsetY
             : edge.data?.waypointY,
+          // Update indicator positions
+          protocolBadgePosition: edge.data?.protocolBadgePosition && isNewSource && isNewTarget ? {
+            x: edge.data.protocolBadgePosition.x - minX + pasteOffsetX,
+            y: edge.data.protocolBadgePosition.y - minY + pasteOffsetY,
+          } : edge.data?.protocolBadgePosition,
+          toBeDeletedPosition: edge.data?.toBeDeletedPosition && isNewSource && isNewTarget ? {
+            x: edge.data.toBeDeletedPosition.x - minX + pasteOffsetX,
+            y: edge.data.toBeDeletedPosition.y - minY + pasteOffsetY,
+          } : edge.data?.toBeDeletedPosition,
+          increasedLoadPosition: edge.data?.increasedLoadPosition && isNewSource && isNewTarget ? {
+            x: edge.data.increasedLoadPosition.x - minX + pasteOffsetX,
+            y: edge.data.increasedLoadPosition.y - minY + pasteOffsetY,
+          } : edge.data?.increasedLoadPosition,
+          incorrectDataPosition: edge.data?.incorrectDataPosition && isNewSource && isNewTarget ? {
+            x: edge.data.incorrectDataPosition.x - minX + pasteOffsetX,
+            y: edge.data.incorrectDataPosition.y - minY + pasteOffsetY,
+          } : edge.data?.incorrectDataPosition,
+          logicSequencePosition: edge.data?.logicSequencePosition && isNewSource && isNewTarget ? {
+            x: edge.data.logicSequencePosition.x - minX + pasteOffsetX,
+            y: edge.data.logicSequencePosition.y - minY + pasteOffsetY,
+          } : edge.data?.logicSequencePosition,
         },
       }
       return newEdge
@@ -4658,6 +4683,27 @@ function App() {
         labelPosition: edge.data?.labelPosition ? {
           x: edge.data.labelPosition.x + offset,
           y: edge.data.labelPosition.y + offset,
+        } : undefined,
+        // Update indicator positions
+        protocolBadgePosition: edge.data?.protocolBadgePosition ? {
+          x: edge.data.protocolBadgePosition.x + offset,
+          y: edge.data.protocolBadgePosition.y + offset,
+        } : undefined,
+        toBeDeletedPosition: edge.data?.toBeDeletedPosition ? {
+          x: edge.data.toBeDeletedPosition.x + offset,
+          y: edge.data.toBeDeletedPosition.y + offset,
+        } : undefined,
+        increasedLoadPosition: edge.data?.increasedLoadPosition ? {
+          x: edge.data.increasedLoadPosition.x + offset,
+          y: edge.data.increasedLoadPosition.y + offset,
+        } : undefined,
+        incorrectDataPosition: edge.data?.incorrectDataPosition ? {
+          x: edge.data.incorrectDataPosition.x + offset,
+          y: edge.data.incorrectDataPosition.y + offset,
+        } : undefined,
+        logicSequencePosition: edge.data?.logicSequencePosition ? {
+          x: edge.data.logicSequencePosition.x + offset,
+          y: edge.data.logicSequencePosition.y + offset,
         } : undefined,
       }
     }))

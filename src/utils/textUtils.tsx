@@ -10,7 +10,6 @@ import React from 'react';
 const renderLineContent = (text: string): React.ReactNode => {
     if (!text) return null;
 
-    // Patterns for Bold (**), Highlight (==), Code (`), and Dimmed (%%)
     const regex = /(\*\*.*?\*\*|==.*?==|`.*?`|%%.*?%%)/g;
     const parts = text.split(regex);
 

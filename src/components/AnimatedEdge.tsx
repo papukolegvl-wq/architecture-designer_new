@@ -1,6 +1,6 @@
 import { EdgeProps, getStraightPath, getSmoothStepPath, EdgeLabelRenderer, useReactFlow, Position, useStore } from 'reactflow'
 import { useState, useEffect, useRef, memo, useMemo } from 'react'
-import { X, TrendingUp, AlertTriangle, Tag } from 'lucide-react'
+import { X, TrendingUp, AlertTriangle, Tag, ShieldCheck } from 'lucide-react'
 import React from 'react'
 import { renderFormattedText } from '../utils/textUtils'
 import { EdgePathType } from '../types'
@@ -281,15 +281,20 @@ function AnimatedEdge({
       strokeWidth = Math.max(strokeWidth, 3)
     }
 
+    if (data?.isTruthSource && !data?.customColor) {
+      strokeColor = '#51cf66'
+      strokeWidth = Math.max(strokeWidth, 7)
+    }
+
     return {
       ...style,
       stroke: strokeColor,
       strokeWidth: strokeWidth,
       strokeDasharray: (isAsync || connectionType === 'async-bidirectional') ? '8 4' : style?.strokeDasharray,
       opacity: data?.isBackground ? 0.55 : 1,
-      filter: 'none', // Убрано свечение (glow) для всех состояний по просьбе пользователя
+      filter: 'none',
     }
-  }, [selected, data?.highlighted, data?.accented, data?.isBackground, data?.toBeDeleted, data?.increasedLoad, edgeColor, style, data?.connectionType, data?.highlightColor, data?.customColor, isDarkMode, data?.hasIncorrectData])
+  }, [selected, data?.highlighted, data?.accented, data?.isBackground, data?.toBeDeleted, data?.increasedLoad, edgeColor, style, data?.connectionType, data?.highlightColor, data?.customColor, isDarkMode, data?.hasIncorrectData, data?.isTruthSource])
 
   // Вычисляем угол наклона линии для поворота иконок
   const edgeAngle = useMemo(() => {
@@ -1029,12 +1034,25 @@ function AnimatedEdge({
         className="react-flow__edge-container"
         style={{ cursor: 'pointer' }}
       >
+        {data?.isTruthSource && (
+          <path
+            d={finalPath}
+            fill="none"
+            stroke={edgeStyle.stroke}
+            strokeWidth={(edgeStyle.strokeWidth as number || 5.5) + 16}
+            style={{
+              opacity: 0.35,
+              filter: 'blur(8px)',
+              pointerEvents: 'none',
+            }}
+          />
+        )}
         <path
           id={id}
           style={{
             ...edgeStyle,
             pointerEvents: 'none',
-            strokeWidth: edgeStyle.strokeWidth || 3,
+            strokeWidth: (edgeStyle.strokeWidth as number || 4) + 2.5,
             strokeLinecap: 'round',
             strokeLinejoin: 'round',
           }}
@@ -1043,6 +1061,18 @@ function AnimatedEdge({
           markerEnd={`url(#${markerEndId})`}
           markerStart={isBidirectional ? `url(#${markerStartId})` : undefined}
         />
+        {data?.isTruthSource && (
+          <path
+            d={finalPath}
+            fill="none"
+            stroke="#fff"
+            strokeWidth={2}
+            style={{
+              opacity: 0.95,
+              pointerEvents: 'none',
+            }}
+          />
+        )}
 
         {/* Hit area path - placed AFTER main path to be on top */}
         <path
@@ -1360,8 +1390,8 @@ function AnimatedEdge({
               borderStyle: 'solid',
               padding: '4px 10px',
               borderRadius: '6px',
-              fontSize: '14px',
-              fontWeight: 500,
+              fontSize: data?.isTruthSource ? '16px' : '14px',
+              fontWeight: data?.isTruthSource ? 700 : 500,
               opacity: 1, // Always 1 to ensure background masks the line
               backgroundColor: data?.isBackground
                 ? (isDarkMode ? '#2d2d2d' : '#ffffff')

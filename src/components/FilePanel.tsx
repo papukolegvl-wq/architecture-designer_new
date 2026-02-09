@@ -11,6 +11,7 @@ interface FilePanelProps {
   onTogglePalette?: () => void
   workspaces: { id: string; name: string }[]
   activeWorkspaceId: string
+  onExportActivityDiagram?: () => void
 }
 
 export default function FilePanel({
@@ -21,7 +22,8 @@ export default function FilePanel({
   onSaveLayout,
   onTogglePalette,
   workspaces,
-  activeWorkspaceId
+  activeWorkspaceId,
+  onExportActivityDiagram
 }: FilePanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isOpen, setIsOpen] = useState(false)
@@ -267,6 +269,25 @@ export default function FilePanel({
                 title="Экспорт диаграммы в PNG изображение"
               >
                 🖼️ Экспорт в PNG
+              </button>
+            )}
+
+            {onExportActivityDiagram && (
+              <button
+                onClick={() => {
+                  onExportActivityDiagram()
+                  setIsOpen(false)
+                }}
+                style={menuItemStyle}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#4dabf7'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent'
+                }}
+                title="Сгенерировать Activity Diagram на основе порядковых номеров (Mermaid)"
+              >
+                🔄 Activity Diagram (Mermaid)
               </button>
             )}
 

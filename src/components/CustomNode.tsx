@@ -1242,15 +1242,40 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
         overflow: 'visible',
         opacity: isGhost ? 0 : (data.status === 'background' ? 0.35 : 1),
         pointerEvents: 'all', // Allow hover events even for ghost
-        filter: data.status === 'highlighted'
-          ? `drop-shadow(0 0 4px ${color}30)`
-          : (data.status === 'background' ? 'grayscale(0.8) contrast(0.8)' : 'none'),
+        filter: data.isTruthSource
+          ? `drop-shadow(0 0 12px #51cf66aa) drop-shadow(0 0 20px #51cf6640)`
+          : (data.status === 'highlighted' ? `drop-shadow(0 0 4px ${color}30)` : (data.status === 'background' ? 'grayscale(0.8) contrast(0.8)' : 'none')),
         cursor: selected ? 'move' : 'pointer',
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onDoubleClick={handleDoubleClick}
     >
+      {data.isTruthSource && !isSimple && (
+        <div style={{
+          position: 'absolute',
+          top: '-20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'linear-gradient(135deg, #ffd700 0%, #51cf66 100%)',
+          color: '#000',
+          padding: '6px 16px',
+          borderRadius: '24px',
+          fontSize: '12px',
+          fontWeight: '900',
+          boxShadow: '0 0 20px rgba(81, 207, 102, 0.6), 0 0 40px rgba(81, 207, 102, 0.3), 0 4px 15px rgba(0,0,0,0.5)',
+          zIndex: 100,
+          whiteSpace: 'nowrap',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          border: '2px solid #fff',
+          animation: 'truth-source-badge-pulse 2s infinite ease-in-out',
+        }}>
+          <ShieldCheck size={16} strokeWidth={3} />
+          SOURCE OF TRUTH
+        </div>
+      )}
       {!isSimple && (
         <div
           style={{
@@ -1324,6 +1349,41 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
             onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
             {data.status === 'new' ? <Sparkles size={14} /> : data.status === 'existing' ? <CheckCircle size={14} /> : data.status === 'refinement' ? <AlertTriangle size={14} /> : data.status === 'highlighted' ? <Target size={14} /> : data.status === 'background' ? <EyeOff size={14} /> : <Settings size={14} />}
+          </button>
+
+          {/* Truth Source Toggle */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              const event = new CustomEvent('nodeDataUpdate', {
+                detail: {
+                  nodeId: id,
+                  data: {
+                    ...data,
+                    isTruthSource: !data.isTruthSource
+                  }
+                }
+              })
+              window.dispatchEvent(event)
+            }}
+            style={{
+              background: data.isTruthSource ? '#51cf6620' : actionButtonBg,
+              border: data.isTruthSource ? '1px solid #51cf66' : actionButtonBorder,
+              boxShadow: actionButtonShadow,
+              borderRadius: '6px',
+              color: data.isTruthSource ? '#51cf66' : (isDarkMode ? '#888' : '#555'),
+              padding: '6px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s',
+            }}
+            title={data.isTruthSource ? 'Убрать статус источника истины' : 'Пометить как источник истины'}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            <ShieldCheck size={14} />
           </button>
 
           {/* Link buttons */}
