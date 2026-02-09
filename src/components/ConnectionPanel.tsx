@@ -257,34 +257,27 @@ export default function ConnectionPanel({
         >
           Тип связи:
         </label>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <select
+          value={connectionType}
+          onChange={(e) => handleChange(e.target.value as ConnectionType)}
+          style={{
+            width: '100%',
+            padding: '8px',
+            borderRadius: '4px',
+            border: '1px solid #555',
+            backgroundColor: '#2d2d2d',
+            color: 'white',
+            fontSize: '14px',
+            cursor: 'pointer',
+            outline: 'none',
+          }}
+        >
           {availableTypes.map((type) => (
-            <label
-              key={type.value}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                cursor: 'pointer',
-                padding: '8px',
-                borderRadius: '4px',
-                backgroundColor:
-                  connectionType === type.value ? '#3d3d3d' : 'transparent',
-                transition: 'background-color 0.2s',
-              }}
-            >
-              <input
-                type="radio"
-                name="connectionType"
-                value={type.value}
-                checked={connectionType === type.value}
-                onChange={() => handleChange(type.value)}
-                style={{ cursor: 'pointer' }}
-              />
-              <span style={{ fontSize: '14px', color: '#fff' }}>{type.label}</span>
-            </label>
+            <option key={type.value} value={type.value}>
+              {type.label}
+            </option>
           ))}
-        </div>
+        </select>
       </div>
 
       <div style={{ marginBottom: '15px' }}>
