@@ -234,6 +234,16 @@ function AnimatedEdge({
         return '#0ca678'
       case 'kafka':
         return '#e67e22' // Muted orange
+      case 'amqp':
+        return '#fd7e14' // Distinct orange for AMQP
+      case 'http':
+        return '#1c7ed6' // Deep blue
+      case 'soap':
+        return '#1098ad' // Cyan/Teal
+      case 'sftp':
+        return '#495057' // Dark grey
+      case 'smb':
+        return '#1864ab' // Darker blue
       case 'related':
         return '#adb5bd' // Grey
       default:
@@ -244,7 +254,7 @@ function AnimatedEdge({
   // Мемоизируем стиль линии
   const edgeStyle = React.useMemo(() => {
     const connectionType = data?.connectionType
-    const isAsync = connectionType === 'async' || connectionType === 'async-bidirectional' || connectionType === 'ws' || connectionType === 'wss' || connectionType === 'database-replication'
+    const isAsync = connectionType === 'async' || connectionType === 'async-bidirectional' || connectionType === 'ws' || connectionType === 'wss' || connectionType === 'database-replication' || connectionType === 'amqp'
     const isAsyncBidirectional = connectionType === 'async-bidirectional'
     const isRelated = connectionType === 'related'
 
@@ -320,10 +330,16 @@ function AnimatedEdge({
     'inheritance',
     'rest',
     'grpc',
+    'kafka',
     'bidirectional',
     'ws',
     'wss',
     'graphql',
+    'http',
+    'soap',
+    'amqp',
+    'sftp',
+    'smb',
     'default'
   ]
 
@@ -1667,6 +1683,11 @@ function AnimatedEdge({
             case 'ws': return 'WebSocket'
             case 'wss': return 'WSS'
             case 'graphql': return 'GraphQL'
+            case 'soap': return 'SOAP'
+            case 'amqp': return 'AMQP'
+            case 'http': return 'HTTP API'
+            case 'sftp': return 'SFTP'
+            case 'smb': return 'SMB/CIFS'
             case 'database-connection': return 'DB Connection'
             case 'database-replication': return 'Replication'
             case 'cache-connection': return 'Cache'

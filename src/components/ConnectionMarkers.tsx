@@ -17,7 +17,12 @@ const connectionColors: Record<string, string> = {
     inheritance: '#4dabf7',
     rest: '#4dabf7',
     grpc: '#4dabf7',
-    bidirectional: '#4dabf7',
+    kafka: '#e67e22',
+    amqp: '#fd7e14',
+    http: '#1c7ed6',
+    soap: '#1098ad',
+    sftp: '#495057',
+    smb: '#1864ab',
     related: '#adb5bd',
     default: '#4dabf7',
 };

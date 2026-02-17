@@ -18,6 +18,11 @@ const connectionTypes: Array<{ value: ConnectionType; label: string }> = [
   { value: 'async', label: 'Асинхронний' },
   { value: 'ws', label: 'WebSocket' },
   { value: 'graphql', label: 'GraphQL' },
+  { value: 'http', label: 'HTTP API' },
+  { value: 'soap', label: 'SOAP API' },
+  { value: 'amqp', label: 'AMQP (RabbitMQ/NATS)' },
+  { value: 'sftp', label: 'SFTP / SSH' },
+  { value: 'smb', label: 'SMB / CIFS' },
   { value: 'database-connection', label: 'Database Connection' },
   { value: 'database-replication', label: 'Database Replication' },
   { value: 'cache-connection', label: 'Cache Connection' },
@@ -206,7 +211,7 @@ export default function ConnectionPanel({
     const targetData = targetNode.data as ComponentData
 
     // Всегда разрешаем основные типы для максимальной гибкости проектирования
-    const coreValues = ['rest', 'grpc', 'async', 'ws', 'graphql', 'related', 'etl', 'kafka', 'jdbc', 'database-connection']
+    const coreValues = ['rest', 'grpc', 'async', 'ws', 'graphql', 'related', 'etl', 'kafka', 'jdbc', 'database-connection', 'http', 'soap', 'amqp', 'sftp', 'smb']
 
     // Специализированные типы добавляются в зависимости от целевого компонента
     const allowedValues = new Set([...coreValues])
