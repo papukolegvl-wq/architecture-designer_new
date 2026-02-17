@@ -1,6 +1,6 @@
 import { EdgeProps, getStraightPath, getSmoothStepPath, EdgeLabelRenderer, useReactFlow, Position, useStore } from 'reactflow'
 import { useState, useEffect, useRef, memo, useMemo } from 'react'
-import { X, TrendingUp, AlertTriangle, Tag, ShieldCheck } from 'lucide-react'
+import { X, TrendingUp, AlertTriangle, Tag, ShieldCheck, Activity } from 'lucide-react'
 import React from 'react'
 import { renderFormattedText } from '../utils/textUtils'
 import { EdgePathType } from '../types'
@@ -18,6 +18,7 @@ function AnimatedEdge({
   label,
   labelStyle,
   selected,
+  markerEnd, // Added markerEnd destructuring
 }: EdgeProps) {
   // Получаем узлы для определения их типов
   const { setEdges, getViewport, screenToFlowPosition } = useReactFlow()
@@ -104,7 +105,7 @@ function AnimatedEdge({
         targetY,
         sourcePosition,
         targetPosition,
-        borderRadius: pathType === 'smoothstep' ? 10 : 0, // Без скругления для 'step', со скруглением для 'smoothstep'
+        borderRadius: pathType === 'smoothstep' ? 24 : 0, // Без скругления для 'step', со скруглением для 'smoothstep'
       })
     } else {
       // Прямая линия
@@ -1004,7 +1005,7 @@ function AnimatedEdge({
         targetY,
         sourcePosition,
         targetPosition,
-        borderRadius: pathType === 'smoothstep' ? 16 : 0,
+        borderRadius: pathType === 'smoothstep' ? 24 : 0,
       });
       return stepPath || edgePath;
     }
@@ -1050,6 +1051,17 @@ function AnimatedEdge({
         className="react-flow__edge-container"
         style={{ cursor: 'pointer' }}
       >
+        {/* Backdrop for jump-over effect */}
+        <path
+          d={finalPath}
+          fill="none"
+          stroke="var(--color-bg-primary)"
+          strokeWidth={(edgeStyle.strokeWidth as number || 1.8) + 10}
+          style={{
+            strokeLinecap: 'butt',
+            strokeLinejoin: 'round',
+          }}
+        />
         {data?.isTruthSource && (
           <path
             d={finalPath}
@@ -1065,6 +1077,7 @@ function AnimatedEdge({
         )}
         <path
           id={id}
+          className="react-flow__edge-path"
           style={{
             ...edgeStyle,
             pointerEvents: 'none',

@@ -1311,54 +1311,61 @@ function CustomNode({ data, selected, id, onInfoClick, onLinkClick, onLinkConfig
       )}
       <div style={{
         position: 'absolute',
-        top: '-20px',
-        left: '50%',
-        transform: 'translateX(-50%)',
+        top: '-26px',
+        right: '-10px',
         display: 'flex',
-        gap: '8px',
+        flexDirection: 'column',
+        alignItems: 'flex-end',
+        gap: '4px',
         zIndex: 100,
       }}>
+        {/* Source of Truth Badge */}
         {data.isTruthSource && !isSimple && (
           <div style={{
             background: 'linear-gradient(135deg, #ffd700 0%, #51cf66 100%)',
             color: '#000',
-            padding: '6px 16px',
+            padding: '4px 12px',
             borderRadius: '24px',
-            fontSize: '12px',
+            fontSize: '10px',
             fontWeight: '900',
-            boxShadow: '0 0 20px rgba(81, 207, 102, 0.6), 0 0 40px rgba(81, 207, 102, 0.3), 0 4px 15px rgba(0,0,0,0.5)',
+            boxShadow: '0 0 15px rgba(81, 207, 102, 0.4), 0 4px 10px rgba(0,0,0,0.5)',
             whiteSpace: 'nowrap',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            border: '2px solid #fff',
+            gap: '6px',
+            border: '1.5px solid #fff',
             animation: 'truth-source-badge-pulse 2s infinite ease-in-out',
           }}>
-            <ShieldCheck size={16} strokeWidth={3} />
-            SOURCE OF TRUTH
+            <ShieldCheck size={14} strokeWidth={3} />
+            TRUTH SOURCE
           </div>
         )}
 
-        {data.badges?.includes('cron') && !isSimple && (
-          <div style={{
-            background: 'linear-gradient(135deg, #4dabf7 0%, #007bff 100%)',
-            color: '#fff',
-            padding: '6px 16px',
-            borderRadius: '24px',
-            fontSize: '12px',
-            fontWeight: '900',
-            boxShadow: '0 0 20px rgba(77, 171, 247, 0.6), 0 0 40px rgba(77, 171, 247, 0.3), 0 4px 15px rgba(0,0,0,0.5)',
-            whiteSpace: 'nowrap',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            border: '2px solid #fff',
-            animation: 'truth-source-badge-pulse 2s infinite ease-in-out',
-          }}>
-            <Clock size={16} strokeWidth={3} />
-            CRON
-          </div>
-        )}
+        {/* Dynamic Badges */}
+        {!isSimple && data.badges?.map(badgeId => {
+          if (badgeId === 'cron') {
+            return (
+              <div key="cron" style={{
+                background: 'linear-gradient(135deg, #4dabf7 0%, #007bff 100%)',
+                color: '#fff',
+                padding: '4px 12px',
+                borderRadius: '24px',
+                fontSize: '10px',
+                fontWeight: '900',
+                boxShadow: '0 0 15px rgba(77, 171, 247, 0.4), 0 4px 10px rgba(0,0,0,0.5)',
+                whiteSpace: 'nowrap',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                border: '1.5px solid #fff',
+              }}>
+                <Clock size={14} strokeWidth={3} />
+                CRON
+              </div>
+            )
+          }
+          return null
+        })}
       </div>
 
 

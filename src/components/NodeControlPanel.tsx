@@ -49,6 +49,7 @@ export default function NodeControlPanel({
     const data = node.data as ComponentData
     const [isColorPickerOpen, setIsColorPickerOpen] = useState(false)
     const [isStatusOpen, setIsStatusOpen] = useState(false)
+    const [isBadgesOpen, setIsBadgesOpen] = useState(false)
 
     // Close color picker when clicking outside
     const panelRef = useRef<HTMLDivElement>(null)
@@ -57,6 +58,7 @@ export default function NodeControlPanel({
         // Reset states when node changes
         setIsColorPickerOpen(false)
         setIsStatusOpen(false)
+        setIsBadgesOpen(false)
     }, [node.id])
 
     const statusOptions = [
@@ -68,8 +70,14 @@ export default function NodeControlPanel({
         { value: 'background', label: 'В фоне (Приглушен)', icon: <EyeOff size={14} />, color: '#555' },
     ]
 
+    const availableBadges = [
+        { id: 'cron', label: 'Cron (Scheduler)', icon: <Clock size={14} />, color: '#4dabf7' },
+        // New badges can be added here easily
+    ]
+
     const currentStatus = statusOptions.find(opt => opt.value === data.status) || statusOptions[0]
     const currentColor = data.customColor || componentColors[data.type] || '#4dabf7'
+    const currentBadges = data.badges || []
 
     const predefinedColors = [
         '#000000', '#343a40', '#868e96', '#fa5252', '#e64980',
@@ -133,7 +141,8 @@ export default function NodeControlPanel({
                         backgroundColor: '#1e1e1e',
                         border: '1px solid #555',
                         borderRadius: '4px',
-                        overflow: 'hidden'
+                        overflow: 'hidden',
+                        zIndex: 10
                     }}>
                         {statusOptions.map(option => (
                             <div
@@ -292,97 +301,150 @@ export default function NodeControlPanel({
                     </button>
                 )}
 
-                {/* Badges Selection */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingBottom: '4px' }}>
+                {/* Badges Selection Dropdown */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <Tag size={16} color="#888" />
                         <span style={{ fontSize: '13px', color: '#fff', fontWeight: 500 }}>Значки</span>
                     </div>
 
-                    {/* Truth Source Toggle */}
                     <div
-                        onClick={() => onTruthSourceChange(node.id, !data.isTruthSource)}
+                        onClick={() => setIsBadgesOpen(!isBadgesOpen)}
                         style={{
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
-                            padding: '8px 10px',
-                            backgroundColor: data.isTruthSource ? 'rgba(81, 207, 102, 0.15)' : '#1e1e1e',
-                            border: `1px solid ${data.isTruthSource ? '#51cf66' : '#444'}`,
+                            padding: '6px 10px',
+                            backgroundColor: '#1e1e1e',
+                            border: '1px solid #555',
                             borderRadius: '4px',
                             cursor: 'pointer',
-                            transition: 'all 0.2s'
+                            color: '#fff',
+                            fontSize: '12px',
+                            minHeight: '32px'
                         }}
                     >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <ShieldCheck size={14} color={data.isTruthSource ? '#51cf66' : '#888'} />
-                            <span style={{ fontSize: '12px', color: data.isTruthSource ? '#51cf66' : '#ccc' }}>Источник истины</span>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', alignItems: 'center' }}>
+                            {currentBadges.length === 0 && !data.isTruthSource && (
+                                <span style={{ color: '#666' }}>Нет значков</span>
+                            )}
+                            {data.isTruthSource && (
+                                <span style={{
+                                    backgroundColor: 'rgba(81, 207, 102, 0.2)',
+                                    color: '#51cf66',
+                                    padding: '1px 6px',
+                                    borderRadius: '3px',
+                                    fontSize: '10px',
+                                    border: '1px solid rgba(81, 207, 102, 0.3)'
+                                }}>Truth</span>
+                            )}
+                            {currentBadges.map(badgeId => {
+                                const badge = availableBadges.find(b => b.id === badgeId)
+                                return (
+                                    <span key={badgeId} style={{
+                                        backgroundColor: badge ? `${badge.color}20` : '#444',
+                                        color: badge ? badge.color : '#ccc',
+                                        padding: '1px 6px',
+                                        borderRadius: '3px',
+                                        fontSize: '10px',
+                                        border: `1px solid ${badge ? `${badge.color}40` : '#555'}`
+                                    }}>
+                                        {badge ? badge.label.split(' ')[0] : badgeId}
+                                    </span>
+                                )
+                            })}
                         </div>
-                        <div style={{
-                            width: '28px',
-                            height: '14px',
-                            backgroundColor: data.isTruthSource ? '#51cf66' : '#444',
-                            borderRadius: '7px',
-                            position: 'relative',
-                        }}>
-                            <div style={{
-                                width: '10px',
-                                height: '10px',
-                                backgroundColor: '#fff',
-                                borderRadius: '50%',
-                                position: 'absolute',
-                                top: '2px',
-                                left: data.isTruthSource ? '16px' : '2px',
-                                transition: 'all 0.2s',
-                            }} />
-                        </div>
+                        {isBadgesOpen ? <ChevronUp size={14} color="#888" /> : <ChevronDown size={14} color="#888" />}
                     </div>
 
-                    {/* Cron Badge (Service Only) */}
-                    {data.type === 'service' && (
-                        <div
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                const currentBadges = data.badges || []
-                                const newBadges = currentBadges.includes('cron')
-                                    ? currentBadges.filter(b => b !== 'cron')
-                                    : [...currentBadges, 'cron']
-                                onBadgesChange(node.id, newBadges)
-                            }}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                padding: '8px 10px',
-                                backgroundColor: data.badges?.includes('cron') ? 'rgba(77, 171, 247, 0.15)' : '#1e1e1e',
-                                border: `1px solid ${data.badges?.includes('cron') ? '#4dabf7' : '#444'}`,
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s'
-                            }}
-                        >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <Clock size={14} color={data.badges?.includes('cron') ? '#4dabf7' : '#888'} />
-                                <span style={{ fontSize: '12px', color: data.badges?.includes('cron') ? '#4dabf7' : '#ccc' }}>Cron (Scheduler)</span>
-                            </div>
-                            <div style={{
-                                width: '28px',
-                                height: '14px',
-                                backgroundColor: data.badges?.includes('cron') ? '#4dabf7' : '#444',
-                                borderRadius: '7px',
-                                position: 'relative',
-                            }}>
-                                <div style={{
-                                    width: '10px',
-                                    height: '10px',
-                                    backgroundColor: '#fff',
-                                    borderRadius: '50%',
-                                    position: 'absolute',
-                                    top: '2px',
-                                    left: data.badges?.includes('cron') ? '16px' : '2px',
-                                    transition: 'all 0.2s',
-                                }} />
-                            </div>
+                    {isBadgesOpen && (
+                        <div style={{
+                            marginTop: '2px',
+                            backgroundColor: '#1e1e1e',
+                            border: '1px solid #555',
+                            borderRadius: '4px',
+                            overflow: 'hidden',
+                            zIndex: 10
+                        }}>
+                            {/* Truth Source Toggle as a badge option - ONLY for databases */}
+                            {data.type === 'database' && (
+                                <div
+                                    onClick={() => onTruthSourceChange(node.id, !data.isTruthSource)}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        padding: '8px 10px',
+                                        cursor: 'pointer',
+                                        backgroundColor: data.isTruthSource ? '#333' : 'transparent',
+                                        color: data.isTruthSource ? '#51cf66' : '#ccc',
+                                        fontSize: '12px',
+                                        borderBottom: '1px solid #333'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2a2a2a'}
+                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = data.isTruthSource ? '#333' : 'transparent'}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <ShieldCheck size={14} />
+                                        <span>Источник истины</span>
+                                    </div>
+                                    <div style={{
+                                        width: '12px',
+                                        height: '12px',
+                                        borderRadius: '2px',
+                                        border: '1px solid #555',
+                                        backgroundColor: data.isTruthSource ? '#51cf66' : 'transparent',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}>
+                                        {data.isTruthSource && <CheckCircle size={10} color="#fff" />}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Dynamically generated badges from availableBadges */}
+                            {availableBadges.map(badge => (
+                                <div
+                                    key={badge.id}
+                                    onClick={() => {
+                                        const newBadges = currentBadges.includes(badge.id)
+                                            ? currentBadges.filter(id => id !== badge.id)
+                                            : [...currentBadges, badge.id]
+                                        onBadgesChange(node.id, newBadges)
+                                    }}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        padding: '8px 10px',
+                                        cursor: 'pointer',
+                                        backgroundColor: currentBadges.includes(badge.id) ? '#333' : 'transparent',
+                                        color: currentBadges.includes(badge.id) ? badge.color : '#ccc',
+                                        fontSize: '12px',
+                                        borderBottom: '1px solid #333'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2a2a2a'}
+                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = currentBadges.includes(badge.id) ? '#333' : 'transparent'}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        {badge.icon}
+                                        <span>{badge.label}</span>
+                                    </div>
+                                    <div style={{
+                                        width: '12px',
+                                        height: '12px',
+                                        borderRadius: '2px',
+                                        border: '1px solid #555',
+                                        backgroundColor: currentBadges.includes(badge.id) ? badge.color : 'transparent',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}>
+                                        {currentBadges.includes(badge.id) && <CheckCircle size={10} color="#fff" />}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     )}
                 </div>

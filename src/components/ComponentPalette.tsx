@@ -304,6 +304,7 @@ export const components: Component[] = [
   { type: 'edge-worker', label: 'Edge Worker', icon: <Cpu size={24} />, color: '#ffd43b', category: 'infrastructure' },
   { type: 'service-proxy', label: 'Service Proxy', icon: <Server size={24} />, color: '#666', category: 'infrastructure' },
   { type: 'api-proxy', label: 'API Proxy', icon: <Zap size={24} />, color: '#4dabf7', category: 'infrastructure' },
+  { type: 'cron', label: 'Cron (Планировщик)', icon: <Clock size={24} />, color: '#4dabf7', category: 'infrastructure' },
 
   // Данные
   { type: 'database', label: 'База данных', icon: <Database size={24} />, color: '#51cf66', category: 'data' },

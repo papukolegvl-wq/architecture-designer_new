@@ -98,7 +98,7 @@ svg g {
 
 /* Улучшенная анимация для потоков данных */
 .react-flow__edge-path {
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
 }
 
 .react-flow__edge.animated .react-flow__edge-path {
@@ -300,17 +300,20 @@ svg g {
 .react-flow__controls {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
 }
+
 @keyframes truth-source-badge-pulse {
   0% {
-    box-shadow: 0 0 10px rgba(81, 207, 102, 0.5), 0 4px 15px rgba(0,0,0,0.5);
+    box-shadow: 0 0 10px rgba(81, 207, 102, 0.5), 0 4px 15px rgba(0, 0, 0, 0.5);
     transform: translateX(-50%) scale(1);
   }
+
   50% {
-    box-shadow: 0 0 25px rgba(81, 207, 102, 0.8), 0 6px 20px rgba(0,0,0,0.6);
+    box-shadow: 0 0 25px rgba(81, 207, 102, 0.8), 0 6px 20px rgba(0, 0, 0, 0.6);
     transform: translateX(-50%) scale(1.05);
   }
+
   100% {
-    box-shadow: 0 0 10px rgba(81, 207, 102, 0.5), 0 4px 15px rgba(0,0,0,0.5);
+    box-shadow: 0 0 10px rgba(81, 207, 102, 0.5), 0 4px 15px rgba(0, 0, 0, 0.5);
     transform: translateX(-50%) scale(1);
   }
 }

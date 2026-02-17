@@ -98,6 +98,7 @@ export type ComponentType =
   | 'vcs'
   | 'backup-service'
   | 'identity-provider'
+  | 'cron'
   | 'secret-management'
   | 'api-client'
   | 'api-documentation'
@@ -1262,6 +1263,7 @@ export interface TrackingConfig {
   items: TrackingItem[]
   included?: boolean
 }
+
 
 export interface ComponentData {
   type: ComponentType

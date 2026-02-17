@@ -2052,30 +2052,6 @@ function App() {
 
 
 
-  const onConnect = useCallback(
-    (params: Connection) => {
-      if (!params.source || !params.target) return
-
-      const sourceNode = nodes.find((n) => n.id === params.source)
-      const targetNode = nodes.find((n) => n.id === params.target)
-
-      if (!sourceNode || !targetNode) return
-
-      // Сохраняем Handle ID для привязки к конкретным сторонам компонента
-      // Если Handle не указан, ReactFlow автоматически определит его на основе позиции
-      // Поддерживаем привязку к верхней/нижней стороне через Handle ID: "top-source", "bottom-target" и т.д.
-      const connectionParams: any = {
-        ...params,
-        sourceHandle: params.sourceHandle || null,
-        targetHandle: params.targetHandle || null,
-      }
-
-      // Показываем диалог выбора типа связи
-      setPendingConnection({ source: sourceNode, target: targetNode, params: connectionParams })
-    },
-    [nodes]
-  )
-
   const createConnectionEdge = useCallback(
     (params: Connection, connectionType: ConnectionType, additionalData?: { objectStorageDirection?: ObjectStorageDirection, relationshipType?: '1:1' | '1:n' | 'n:1' | 'n:m' }) => {
       const getLabelText = (type: ConnectionType): string => {
@@ -2151,7 +2127,7 @@ function App() {
         },
         data: {
           connectionType,
-          pathType: 'step' as EdgePathType,
+          pathType: 'smoothstep' as EdgePathType,
           waypoints: [],
           verticalSegmentX: null,
           ...(additionalData?.objectStorageDirection && {
@@ -2168,6 +2144,30 @@ function App() {
       setEdges((eds) => addEdge(newEdge, eds))
     },
     [setEdges]
+  )
+
+  const onConnect = useCallback(
+    (params: Connection) => {
+      if (!params.source || !params.target) return
+
+      const sourceNode = nodes.find((n) => n.id === params.source)
+      const targetNode = nodes.find((n) => n.id === params.target)
+
+      if (!sourceNode || !targetNode) return
+
+      // Сохраняем Handle ID для привязки к конкретным сторонам компонента
+      // Если Handle не указан, ReactFlow автоматически определит его на основе позиции
+      // Поддерживаем привязку к верхней/нижней стороне через Handle ID: "top-source", "bottom-target" и т.д.
+      const connectionParams: any = {
+        ...params,
+        sourceHandle: params.sourceHandle || null,
+        targetHandle: params.targetHandle || null,
+      }
+
+      // Показываем диалог выбора типа связи
+      setPendingConnection({ source: sourceNode, target: targetNode, params: connectionParams })
+    },
+    [nodes, createConnectionEdge]
   )
 
   const handleConnectionTypeSelected = useCallback(
