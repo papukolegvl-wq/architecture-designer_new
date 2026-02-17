@@ -12,6 +12,7 @@ interface FilePanelProps {
   workspaces: { id: string; name: string }[]
   activeWorkspaceId: string
   onExportActivityDiagram?: () => void
+  onLoadNewTab?: (file: File) => void
 }
 
 export default function FilePanel({
@@ -23,17 +24,24 @@ export default function FilePanel({
   onTogglePalette,
   workspaces,
   activeWorkspaceId,
-  onExportActivityDiagram
+  onExportActivityDiagram,
+  onLoadNewTab
 }: FilePanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isOpen, setIsOpen] = useState(false)
+  const [loadMode, setLoadMode] = useState<'current' | 'new'>('current')
 
   const menuRef = useRef<HTMLDivElement>(null)
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      onLoad(file)
+      if (loadMode === 'new' && onLoadNewTab) {
+        onLoadNewTab(file)
+      } else {
+        onLoad(file)
+      }
+
       // Сбрасываем значение input, чтобы можно было загрузить тот же файл снова
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
@@ -42,8 +50,19 @@ export default function FilePanel({
     setIsOpen(false)
   }
 
-  const handleLoadClick = () => {
-    fileInputRef.current?.click()
+  const handleLoadClick = (mode: 'current' | 'new' = 'current') => {
+    setLoadMode(mode)
+    // Wait for state update is not needed for synchronized logic, but good to be safe if handling complex effects.
+    // However, setLoadMode is async. But React 18 batches. 
+    // To be safer, we can trigger click after a tiny timeout or rely on batching.
+    // Actually, relying on state set immediately before click might be tricky if not careful.
+    // Let's use a timeout to ensure state is set, or better, just use two inputs? 
+    // Or just simple state. In React event handler, updates are batched. 
+    // But file input click is programmatic.
+    // Let's just use setTimeout 0.
+    setTimeout(() => {
+      fileInputRef.current?.click()
+    }, 0)
   }
 
   // Закрываем меню при клике вне его
@@ -205,7 +224,7 @@ export default function FilePanel({
             </button>
 
             <button
-              onClick={handleLoadClick}
+              onClick={() => handleLoadClick('current')}
               style={menuItemStyle}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = '#51cf66'
@@ -215,6 +234,19 @@ export default function FilePanel({
               }}
             >
               📂 Загрузить
+            </button>
+
+            <button
+              onClick={() => handleLoadClick('new')}
+              style={menuItemStyle}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#51cf66'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent'
+              }}
+            >
+              📑 Загрузить в новую вкладку
             </button>
 
             {onTogglePalette && (

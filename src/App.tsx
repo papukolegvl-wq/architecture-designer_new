@@ -1955,295 +1955,101 @@ function App() {
       try {
         const data = await loadFromFile(file)
 
-        // Проверяем, это пакет вкладок или одиночная архитектура
-        if (data.workspaces && Array.isArray(data.workspaces) && data.workspaces.length > 0) {
-          console.log('Загрузка пакета вкладок:', data.workspaces.length)
+        // Generate unique IDs for new workspaces
+        const generateWorkspaceId = () => `workspace-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
-          // Восстанавливаем вкладки
-          const restoredWorkspaces = data.workspaces.map((w: any) => ({
+        let newWorkspaces: Workspace[] = []
+
+        // Check if it's a bundle or single file
+        if (data.workspaces && Array.isArray(data.workspaces) && data.workspaces.length > 0) {
+          console.log('Загрузка пакета вкладок (добавление):', data.workspaces.length)
+
+          newWorkspaces = data.workspaces.map((w: any) => ({
             ...w,
+            id: generateWorkspaceId(), // Ensure unique ID
+            name: `${w.name} (Imported)`,
             nodes: w.nodes || [],
             edges: ensureEdgesNotAutoDeleted(w.edges || []),
             viewport: w.viewport || { x: 0, y: 0, zoom: 1 }
           }))
+        } else {
+          console.log('Загрузка файла в новую вкладку (добавление)')
+          const nodes = data.nodes || []
+          const edges = data.edges || []
 
-          // Обновляем состояние
-          setWorkspaces(restoredWorkspaces)
-          saveWorkspacesToStorage(restoredWorkspaces)
+          // Restore nodes with logic similar to previous implementation but for new tab
+          const restoredNodes = nodes.map((node: Node) => ({
+            ...node,
+            data: node.data ? { ...node.data } : node.data
+          }))
 
-          // Переключаемся на первую вкладку из загруженных
-          const firstWorkspace = restoredWorkspaces[0]
-          setActiveWorkspaceId(firstWorkspace.id)
+          const restoredEdges = (edges || []).map((edge: Edge) => ({
+            ...edge,
+            data: edge.data ? { ...edge.data, pathType: (edge.data.pathType || 'step') } : { pathType: 'step' }
+          }))
 
-          // Сбрасываем историю
+          const newId = generateWorkspaceId()
+          newWorkspaces = [{
+            id: newId,
+            name: file.name.replace('.json', '') || 'Imported Architecture',
+            nodes: restoredNodes,
+            edges: ensureEdgesNotAutoDeleted(restoredEdges),
+            isLocked: false,
+            viewport: { x: 0, y: 0, zoom: 1 }
+          }]
+        }
+
+        if (newWorkspaces.length > 0) {
+          setWorkspaces(prev => {
+            // Update current workspace data in the list logic, same as others
+            const updatedCurrent = prev.map(w =>
+              w.id === activeWorkspaceId
+                ? { ...w, nodes, edges }
+                : w
+            )
+
+            const updated = [...updatedCurrent, ...newWorkspaces]
+
+            saveWorkspacesToStorage(updated)
+            newWorkspaces.forEach(w => saveWorkspaceData(w))
+            const currentW = updated.find(w => w.id === activeWorkspaceId)
+            if (currentW) saveWorkspaceData(currentW)
+
+            return updated
+          })
+
+          // Switch to first new tab
+          const firstNewId = newWorkspaces[0].id
+          setActiveWorkspaceId(firstNewId)
           historyUpdateTypeRef.current = 'reset'
-          setNodes(firstWorkspace.nodes)
-          setEdges(firstWorkspace.edges)
+          setNodes(newWorkspaces[0].nodes)
+          setEdges(newWorkspaces[0].edges)
 
-          // Устанавливаем флаг загрузки для fitView
+          // Fit View
           isFileLoadRef.current = true
-
-          // Применяем fitView
           requestAnimationFrame(() => {
             setTimeout(() => {
               const instance = reactFlowInstanceRef.current || reactFlowInstance
-              if (instance && firstWorkspace.nodes.length > 0) {
-                instance.fitView({ padding: 0.15, duration: 0 })
+              if (instance && newWorkspaces[0].nodes.length > 0) {
+                try {
+                  instance.fitView({ padding: 0.15, duration: 0 })
+                } catch (e) { console.warn(e) }
               }
             }, 100)
           })
 
-          alert(`Успешно загружено ${restoredWorkspaces.length} вкладок!`)
+          alert(`Успешно загружено ${newWorkspaces.length} вкладок!`)
           setHasUnsavedChanges(false)
-          return
         }
 
-        // --- Старая логика для одиночного файла (загрузка в текущую вкладку) ---
-
-        // Загружаем узлы и проверяем, нужна ли нормализация координат
-        const nodes = data.nodes || []
-        if (nodes.length === 0) {
-          alert('Файл не содержит узлов')
-          return
-        }
-
-        // Вычисляем границы архитектуры для определения необходимости нормализации
-        let minX = Infinity
-        let minY = Infinity
-        let maxX = -Infinity
-        let maxY = -Infinity
-
-        nodes.forEach((node: Node) => {
-          if (node.position) {
-            const width = node.width || 200
-            const height = node.height || 120
-            minX = Math.min(minX, node.position.x)
-            minY = Math.min(minY, node.position.y)
-            maxX = Math.max(maxX, node.position.x + width)
-            maxY = Math.max(maxY, node.position.y + height)
-          }
-        })
-
-        const width = maxX - minX
-        const height = maxY - minY
-
-        // НЕ нормализуем координаты - сохраняем оригинальные позиции
-        // Это гарантирует, что при загрузке компоненты будут в тех же позициях, что и при сохранении
-        console.log('Загрузка архитектуры с оригинальными координатами, узлов:', nodes.length, {
-          bounds: { minX, minY, maxX, maxY, width, height }
-        })
-
-        // Восстанавливаем все узлы с полным сохранением всех конфигураций и позиций
-        const restoredNodes = nodes.map((node: Node) => {
-          // Сохраняем оригинальную позицию без изменений
-          const originalPosition = node.position || { x: 0, y: 0 }
-
-          // Сохраняем все свойства узла, включая все конфигурации и позиции
-          const restoredNode: Node = {
-            ...node,
-            // Сохраняем оригинальную позицию без изменений
-            position: originalPosition,
-            // Сохраняем positionAbsolute если оно есть
-            positionAbsolute: node.positionAbsolute || undefined,
-            // data уже содержит все конфигурации из файла, сохраняем как есть
-            data: node.data ? { ...node.data } : node.data,
-            // Сохраняем размеры если они есть
-            width: node.width,
-            height: node.height,
-            // Сохраняем стиль если он есть
-            style: node.style,
-          }
-
-          // Восстанавливаем свойства для компонентов типа "system" и "external-system"
-          const nodeData = node.data as ComponentData
-          const isSystemType = nodeData?.type === 'system' || nodeData?.type === 'external-system' || nodeData?.type === 'business-domain'
-          if (isSystemType) {
-            restoredNode.type = nodeData?.type === 'business-domain' ? 'business-domain' : 'system'
-            restoredNode.width = node.width || 600
-            restoredNode.height = node.height || 400
-            restoredNode.style = node.style || { zIndex: -1 }
-
-            // Восстанавливаем systemConfig, сохраняя все остальные свойства data
-            if (!nodeData.systemConfig) {
-              restoredNode.data = {
-                ...restoredNode.data,
-                systemConfig: { childNodes: [] },
-              }
-            } else {
-              restoredNode.data = {
-                ...restoredNode.data,
-                systemConfig: {
-                  childNodes: nodeData.systemConfig.childNodes || [],
-                },
-              }
-            }
-          }
-          // Для всех остальных компонентов все конфигурации уже сохранены через spread выше
-
-          return restoredNode
-        })
-        // Восстанавливаем edges: сохраняем все свойства, включая waypoints, без нормализации
-        const restoredEdges = (data.edges || []).map((edge: Edge) => {
-          // Сохраняем все данные edge, включая waypoints, без изменений
-          const edgeData = edge.data ? { ...edge.data } : {}
-          // Устанавливаем pathType: 'step' для всех edges, если он не указан
-          if (!edgeData.pathType) {
-            edgeData.pathType = 'step'
-          }
-          // Сохраняем waypoints без изменений (не применяем нормализацию)
-          // waypoints уже сохранены в правильных координатах в файле
-
-          const dataDescription = edgeData.dataDescription as string | undefined
-          if (dataDescription && dataDescription.trim()) {
-            // Если есть описание, показываем только его
-            const connectionType = edge.data?.connectionType as ConnectionType
-            const getColor = (type: ConnectionType): string => {
-              switch (type) {
-                case 'async':
-                  return '#ffd43b'
-                case 'database-connection':
-                  return '#51cf66'
-                case 'database-replication':
-                  return '#20c997'
-                case 'cache-connection':
-                  return '#845ef7'
-                case 'dependency':
-                  return '#9c88ff'
-                case 'composition':
-                  return '#ff6b6b'
-                case 'aggregation':
-                  return '#ff8787'
-                case 'method-call':
-                  return '#51cf66'
-                case 'inheritance':
-                  return '#4dabf7'
-                default:
-                  return '#4dabf7'
-              }
-            }
-            return {
-              ...edge,
-              data: edgeData,
-              label: dataDescription.trim(),
-              labelStyle: {
-                color: getColor(connectionType || 'rest'),
-                fill: getColor(connectionType || 'rest'),
-                fontWeight: 700,
-                fontSize: '17px',
-                backgroundColor: '#1e1e1e',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                border: `1px solid ${getColor(connectionType || 'rest')}40`,
-                whiteSpace: 'pre-line',
-                textAlign: 'center' as any,
-              },
-            }
-          }
-          // Если нет описания, убираем label и labelStyle, но сохраняем нормализованные данные
-          const { label: _, labelStyle: __, ...edgeWithoutLabel } = edge
-          return {
-            ...edgeWithoutLabel,
-            data: edgeData, // edgeData уже содержит pathType: 'step' если его не было
-            labelStyle: { textAlign: 'center' as any }
-          }
-        })
-
-        // Устанавливаем флаг загрузки из файла
-        isFileLoadRef.current = true
-
-        // Проверяем, что waypoint координаты сохранены в restoredEdges
-        const edgesWithWaypoints = restoredEdges.filter(e => e.data?.waypointX !== undefined && e.data?.waypointY !== undefined)
-        if (edgesWithWaypoints.length > 0) {
-          console.log('📂 Загружено edges с waypoint из файла:', edgesWithWaypoints.length, edgesWithWaypoints.map(e => ({
-            id: e.id,
-            waypointX: e.data?.waypointX,
-            waypointY: e.data?.waypointY,
-            pathType: e.data?.pathType
-          })))
-        }
-
-        // Загружаем данные в текущую вкладку
-        setNodes(restoredNodes)
-        setEdges(ensureEdgesNotAutoDeleted(restoredEdges))
-
-        // Обновляем состояние текущей вкладки
-        setWorkspaces(prev => {
-          const updated = prev.map(w =>
-            w.id === activeWorkspaceId
-              ? { ...w, nodes: restoredNodes, edges: ensureEdgesNotAutoDeleted(restoredEdges) }
-              : w
-          )
-          saveWorkspacesToStorage(updated)
-          return updated
-        })
-
-        // Применяем fitView для компактного и читаемого отображения
-        // Используем несколько попыток для надежности
-        requestAnimationFrame(() => {
-          setTimeout(() => {
-            const instance = reactFlowInstanceRef.current || reactFlowInstance
-            if (instance && restoredNodes.length > 0) {
-              try {
-                console.log('Применяю fitView для компактного отображения')
-                instance.fitView({
-                  padding: 0.15, // Умеренный padding для читаемости
-                  duration: 0, // Без анимации для мгновенного результата
-                  maxZoom: 1.2, // Ограничиваем максимальный zoom для компактности
-                  minZoom: 0.3, // Увеличиваем минимальный zoom для читаемости
-                  includeHiddenNodes: false
-                })
-              } catch (error) {
-                console.warn('Ошибка при fitView:', error)
-              }
-            }
-          }, 100)
-        })
-
-        // Дополнительные попытки для надежности
-        setTimeout(() => {
-          const instance = reactFlowInstanceRef.current || reactFlowInstance
-          if (instance && restoredNodes.length > 0) {
-            try {
-              console.log('Применяю fitView (дополнительная попытка)')
-              instance.fitView({
-                padding: 0.15,
-                duration: 0,
-                maxZoom: 1.2,
-                minZoom: 0.3,
-                includeHiddenNodes: false
-              })
-            } catch (error) {
-              console.warn('Ошибка при fitView (дополнительная попытка):', error)
-            }
-          }
-        }, 500)
-
-        setTimeout(() => {
-          const instance = reactFlowInstanceRef.current || reactFlowInstance
-          if (instance && restoredNodes.length > 0) {
-            try {
-              console.log('Применяю fitView (третья попытка)')
-              instance.fitView({
-                padding: 0.15,
-                duration: 0,
-                maxZoom: 1.2,
-                minZoom: 0.3,
-                includeHiddenNodes: false
-              })
-            } catch (error) {
-              console.warn('Ошибка при fitView (третья попытка):', error)
-            }
-          }
-        }, 1000)
-
-        alert('Архитектура успешно загружена в текущую вкладку!')
-        setHasUnsavedChanges(false)
       } catch (error) {
         alert('Ошибка при загрузке файла: ' + (error as Error).message)
       }
     },
-    [setNodes, setEdges, activeWorkspaceId, reactFlowInstance, reactFlowInstanceRef]
+    [setNodes, setEdges, activeWorkspaceId, reactFlowInstance, reactFlowInstanceRef, nodes, edges]
   )
+
+
 
 
   const onConnect = useCallback(
@@ -6013,6 +5819,7 @@ function App() {
         onTogglePalette={() => setShowPalette(!showPalette)}
         workspaces={workspaces}
         activeWorkspaceId={activeWorkspaceId}
+        onLoadNewTab={handleLoad}
       />
       <div
         ref={reactFlowWrapper}
