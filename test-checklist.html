@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Чек-лист тестирования Architecture Designer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #fff;
+        }
+        h1 {
+            color: #4dabf7;
+            border-bottom: 2px solid #4dabf7;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #51cf66;
+            margin-top: 30px;
+            border-left: 4px solid #51cf66;
+            padding-left: 10px;
+        }
+        .test-section {
+            background: #2d2d2d;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .test-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            background: #1e1e1e;
+            border-radius: 4px;
+            border-left: 3px solid #555;
+        }
+        .test-item:hover {
+            background: #333;
+        }
+        .test-item input[type="checkbox"] {
+            margin-right: 10px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        .test-item label {
+            flex: 1;
+            cursor: pointer;
+            user-select: none;
+        }
+        .test-item.completed {
+            border-left-color: #51cf66;
+            opacity: 0.7;
+        }
+        .test-item.completed label {
+            text-decoration: line-through;
+            color: #888;
+        }
+        .summary {
+            background: #2d2d2d;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+            border: 2px solid #4dabf7;
+        }
+        .summary h3 {
+            color: #4dabf7;
+            margin-top: 0;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #1e1e1e;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4dabf7, #51cf66);
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-weight: bold;
+        }
+        button {
+            background: #4dabf7;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #339af0;
+        }
+        .critical {
+            border-left-color: #ff6b6b !important;
+        }
+        .important {
+            border-left-color: #ffd43b !important;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Чек-лист тестирования Architecture Designer</h1>
+    
+    <div class="summary">
+        <h3>Прогресс тестирования</h3>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress" style="width: 0%">0%</div>
+        </div>
+        <div>
+            <strong>Выполнено:</strong> <span id="completed">0</span> из <span id="total">0</span>
+        </div>
+        <button onclick="resetAll()">Сбросить все</button>
+        <button onclick="exportResults()">Экспорт результатов</button>
+    </div>
+
+    <div class="test-section">
+        <h2>1. Компоненты палитры</h2>
+        <div class="test-item critical">
+            <input type="checkbox" id="test-1-1" onchange="updateProgress()">
+            <label for="test-1-1">Поиск компонентов работает</label>
+        </div>
+        <div class="test-item critical">
+            <input type="checkbox" id="test-1-2" onchange="updateProgress()">
+            <label for="test-1-2">Фильтрация по категориям работает</label>
+        </div>
+        <div class="test-item important">
+            <input type="checkbox" id="test-1-3" onchange="updateProgress()">
+            <label for="test-1-3">Сворачивание/разворачивание палитры</label>
+        </div>
+        <div class="test-item critical">
+            <input type="checkbox" id="test-1-4" onchange="updateProgress()">
+            <label for="test-1-4">Все компоненты отображаются в палитре</label>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Создание компонентов</h2>
+        <div class="test-item critical">
+            <input type="checkbox" id="test-2-1" onchange="updateProgress()">
+            <label for="test-2-1">Создание компонента через клик</label>
+        </div>
+        <div class="test-item critical">
+            <input type="checkbox" id="test-2-2" onchange="updateProgress()">
+            <label for="test-2-2">Создание компонента через drag & drop</label>
+        </div>
+        <div class="test-item important">
+            <input type="checkbox" id="test-2-3" onchange="updateProgress()">
+            <label for="test-2-3">Редактирование названия компонента</label>
+        </div>
+        <div class="test-item critical">
+            <input type="checkbox" id="test-2-4" onchange="updateProgress()">
+            <label for="test-2-4">Открытие панелей конфигурации</label>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Связи между компонентами</h2>
+        <div class="test-item critical">
+            <input type="checkbox" id="test-3-1" onchange="updateProgress()">
+            <label for="test-3-1">Создание REST связи</label>
+        </div>
+        <div class="test-item critical">
+            <input type="checkbox" id="test-3-2" onchange="updateProgress()">
+            <label for="test-3-2">Создание gRPC связи</label>
+        </div>
+        <div class="test-item critical">
+            <input type="checkbox" id="test-3-3" onchange="updateProgress()">
+            <label for="test-3-3">Создание асинхронной связи</label>
+        </div>
+        <div class="test-item important">
+            <input type="checkbox" id="test-3-4" onchange="updateProgress()">
+            <label for="test-3-4">Создание архитектурных связей (dependency, composition, etc.)</label>
+        </div>
+        <div class="test-item important">
+            <input type="checkbox" id="test-3-5" onchange="updateProgress()">
+            <label for="test-3-5">Изменение типа связи</label>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Ссылки между компонентами</h2>
+        <div class="test-item critical">
+            <input type="checkbox" id="test-4-1" onchange="updateProgress()">
+            <label for="test-4-1">Создание ссылки на той же вкладке</label>
+        </div>
+        <div class="test-item critical">
+            <input type="checkbox" id="test-4-2" onchange="updateProgress()">
+            <label for="test-4-2">Создание ссылки на другой вкладке</label>
+        </div>
+        <div class="test-item critical">
+            <input type="checkbox" id="test-4-3" onchange="updateProgress()">
+            <label for="test-4-3">Переход по ссылке работает</label>
+        </div>
+        <div class="test-item important">
+            <input type="checkbox" id="test-4-4" onchange="updateProgress()">
+            <label for="test-4-4">Все компоненты доступны для ссылок</label>
+        </div>
+        <div class="test-item important">
+            <input type="checkbox" id="test-4-5" onchange="updateProgress()">
+            <label for="test-4-5">Редактирование и удаление ссылок</label>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>5. Undo/Redo</h2>
+        <div class="test-item critical">
+            <input type="checkbox" id="test-5-1" onchange="updateProgress()">
+            <label for="test-5-1">Ctrl+Z отменяет действие</label>
+        </div>
+        <div class="test-item critical">
+            <input type="checkbox" id="test-5-2" onchange="updateProgress()">
+            <label for="test-5-2">Ctrl+Shift+Z повторяет действие</label>
+        </div>
+        <div class="test-item important">
+            <input type="checkbox" id="test-5-3" onchange="updateProgress()">
+            <label for="test-5-3">Кнопки Undo/Redo работают</label>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>6. Сохранение и загрузка</h2>
+        <div class="test-item critical">
+            <input type="checkbox" id="test-6-1" onchange="updateProgress()">
+            <label for="test-6-1">Сохранение в JSON</label>
+        </div>
+        <div class="test-item critical">
+            <input type="checkbox" id="test-6-2" onchange="updateProgress()">
+            <label for="test-6-2">Загрузка из JSON</label>
+        </div>
+        <div class="test-item important">
+            <input type="checkbox" id="test-6-3" onchange="updateProgress()">
+            <label for="test-6-3">Восстановление всех данных после загрузки</label>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>7. Экспорт</h2>
+        <div class="test-item critical">
+            <input type="checkbox" id="test-7-1" onchange="updateProgress()">
+            <label for="test-7-1">Экспорт в draw.io работает</label>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>8. Панели</h2>
+        <div class="test-item important">
+            <input type="checkbox" id="test-8-1" onchange="updateProgress()">
+            <label for="test-8-1">Панель статистики (Ctrl+Shift+S)</label>
+        </div>
+        <div class="test-item important">
+            <input type="checkbox" id="test-8-2" onchange="updateProgress()">
+            <label for="test-8-2">Список компонентов (Ctrl+L)</label>
+        </div>
+        <div class="test-item important">
+            <input type="checkbox" id="test-8-3" onchange="updateProgress()">
+            <label for="test-8-3">Комментарии к компонентам</label>
+        </div>
+        <div class="test-item important">
+            <input type="checkbox" id="test-8-4" onchange="updateProgress()">
+            <label for="test-8-4">Информация о компоненте</label>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>9. Вкладки (Workspaces)</h2>
+        <div class="test-item critical">
+            <input type="checkbox" id="test-9-1" onchange="updateProgress()">
+            <label for="test-9-1">Создание новой вкладки</label>
+        </div>
+        <div class="test-item critical">
+            <input type="checkbox" id="test-9-2" onchange="updateProgress()">
+            <label for="test-9-2">Переключение между вкладками</label>
+        </div>
+        <div class="test-item important">
+            <input type="checkbox" id="test-9-3" onchange="updateProgress()">
+            <label for="test-9-3">Сохранение состояния при переключении</label>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>10. Новые компоненты (30+)</h2>
+        <div class="test-item critical">
+            <input type="checkbox" id="test-10-1" onchange="updateProgress()">
+            <label for="test-10-1">Все новые компоненты доступны в палитре</label>
+        </div>
+        <div class="test-item important">
+            <input type="checkbox" id="test-10-2" onchange="updateProgress()">
+            <label for="test-10-2">Информация доступна для всех компонентов</label>
+        </div>
+        <div class="test-item important">
+            <input type="checkbox" id="test-10-3" onchange="updateProgress()">
+            <label for="test-10-3">Иконки и цвета отображаются корректно</label>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>11. Горячие клавиши</h2>
+        <div class="test-item important">
+            <input type="checkbox" id="test-11-1" onchange="updateProgress()">
+            <label for="test-11-1">Все горячие клавиши работают</label>
+        </div>
+    </div>
+
+    <script>
+        function updateProgress() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            const completed = document.querySelectorAll('input[type="checkbox"]:checked').length;
+            const total = checkboxes.length;
+            const percentage = Math.round((completed / total) * 100);
+            
+            document.getElementById('completed').textContent = completed;
+            document.getElementById('total').textContent = total;
+            document.getElementById('progress').style.width = percentage + '%';
+            document.getElementById('progress').textContent = percentage + '%';
+            
+            // Сохраняем в localStorage
+            const results = {};
+            checkboxes.forEach(cb => {
+                results[cb.id] = cb.checked;
+            });
+            localStorage.setItem('testResults', JSON.stringify(results));
+            
+            // Обновляем визуальное состояние
+            checkboxes.forEach(cb => {
+                const item = cb.closest('.test-item');
+                if (cb.checked) {
+                    item.classList.add('completed');
+                } else {
+                    item.classList.remove('completed');
+                }
+            });
+        }
+        
+        function resetAll() {
+            if (confirm('Сбросить все результаты тестирования?')) {
+                document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                    cb.checked = false;
+                });
+                localStorage.removeItem('testResults');
+                updateProgress();
+            }
+        }
+        
+        function exportResults() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            const results = [];
+            checkboxes.forEach(cb => {
+                const item = cb.closest('.test-item');
+                const label = item.querySelector('label').textContent;
+                results.push({
+                    id: cb.id,
+                    test: label,
+                    status: cb.checked ? 'PASSED' : 'FAILED'
+                });
+            });
+            
+            const completed = results.filter(r => r.status === 'PASSED').length;
+            const total = results.length;
+            const percentage = Math.round((completed / total) * 100);
+            
+            const report = {
+                date: new Date().toISOString(),
+                summary: {
+                    total,
+                    completed,
+                    percentage
+                },
+                results
+            };
+            
+            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `test-results-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        // Загружаем сохраненные результаты
+        window.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('testResults');
+            if (saved) {
+                const results = JSON.parse(saved);
+                Object.keys(results).forEach(id => {
+                    const cb = document.getElementById(id);
+                    if (cb) {
+                        cb.checked = results[id];
+                    }
+                });
+            }
+            updateProgress();
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
