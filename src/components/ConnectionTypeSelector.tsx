@@ -56,6 +56,8 @@ const connectionTypes: Array<{ value: ConnectionType; label: string; description
   { value: 'method-call', label: 'Вызов метода', description: 'Вызов метода класса' },
   { value: 'inheritance', label: 'Наследование', description: 'Наследование класса' },
   { value: 'related', label: 'Имеет отношение', description: 'Простая связь без направления' },
+  { value: 'uses', label: 'Использует', description: 'Один компонент использует другой (структурная связь)' },
+  { value: 'realizes', label: 'Реализует', description: 'Компонент реализует интерфейс или контракт' },
 ]
 
 const architecturalTypes: Array<{ value: ConnectionType; label: string; description: string }> = [
@@ -64,6 +66,8 @@ const architecturalTypes: Array<{ value: ConnectionType; label: string; descript
   { value: 'aggregation', label: 'Агрегация', description: 'Агрегация (слабая связь)' },
   { value: 'method-call', label: 'Вызов метода', description: 'Вызов метода класса' },
   { value: 'inheritance', label: 'Наследование', description: 'Наследование класса' },
+  { value: 'uses', label: 'Использует', description: 'Компонент использует другой (структурная связь)' },
+  { value: 'realizes', label: 'Реализует', description: 'Компонент реализует интерфейс или контракт' },
 ]
 
 export default function ConnectionTypeSelector({

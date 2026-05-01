@@ -323,43 +323,7 @@ export default function FilePanel({
               </button>
             )}
 
-            <button
-              onClick={() => {
-                const event = new CustomEvent('showAIAssistant')
-                window.dispatchEvent(event)
-                setIsOpen(false)
-              }}
-              style={menuItemStyle}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#9c88ff'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent'
-              }}
-              title="AI Ассистент для помощи в построении архитектуры"
-            >
-              ✨ AI Ассистент
-            </button>
 
-            <button
-              onClick={() => {
-                const event = new CustomEvent('showLearningPanel')
-                window.dispatchEvent(event)
-                setIsOpen(false)
-              }}
-              style={menuItemStyle}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#FFD43B'
-                e.currentTarget.style.color = '#333'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent'
-                e.currentTarget.style.color = 'white'
-              }}
-              title="Интерактивное обучение архитектурным паттернам"
-            >
-              🎓 Обучение
-            </button>
 
             {onSaveLayout && (
               <button

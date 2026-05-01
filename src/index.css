@@ -281,6 +281,8 @@ svg g {
   width: 24px !important;
   height: 24px !important;
   fill: #fff !important;
+  background: #2d2d2d !important;
+  border: none !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
   transition: all 0.2s !important;
   display: flex !important;

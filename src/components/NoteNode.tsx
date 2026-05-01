@@ -53,6 +53,47 @@ const NoteNode: React.FC<NodeProps & {
             if (e.key === 'Enter' && e.ctrlKey) {
                 setIsEditing(false);
                 handleBlur();
+                return;
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+                e.preventDefault();
+                const target = e.target as HTMLTextAreaElement;
+                const start = target.selectionStart;
+                const end = target.selectionEnd;
+                const selectedText = label.substring(start, end);
+
+                let newLabel = label;
+                let newSelectionStart = start;
+                let newSelectionEnd = end;
+
+                if (start >= 2 && end <= label.length - 2 && 
+                    label.substring(start - 2, start) === '**' && 
+                    label.substring(end, end + 2) === '**') {
+                    // Remove bold
+                    newLabel = label.substring(0, start - 2) + selectedText + label.substring(end + 2);
+                    newSelectionStart = start - 2;
+                    newSelectionEnd = end - 2;
+                } else {
+                    // Add bold
+                    newLabel = label.substring(0, start) + '**' + selectedText + '**' + label.substring(end);
+                    newSelectionStart = start + 2;
+                    newSelectionEnd = end + 2;
+                }
+
+                setLabel(newLabel);
+                window.dispatchEvent(
+                    new CustomEvent('nodeLabelUpdate', {
+                        detail: { nodeId: id, label: newLabel },
+                    })
+                );
+
+                setTimeout(() => {
+                    if (target) {
+                        target.selectionStart = newSelectionStart;
+                        target.selectionEnd = newSelectionEnd;
+                    }
+                }, 0);
+                return;
             }
             if (e.key === 'Tab') {
                 handleTextareaTab(e as any, label, setLabel);

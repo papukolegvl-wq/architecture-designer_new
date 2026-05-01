@@ -826,6 +826,8 @@ function App() {
         parentData.type === 'container' ||
         parentData.type === 'vpc' ||
         parentData.type === 'subnet' ||
+        parentData.type === 'aws-region' ||
+        parentData.type === 'aws-az' ||
         parentData.type === 'server' ||
         parentData.type === 'web-server' ||
         parentData.type === 'orchestrator'
@@ -1699,7 +1701,7 @@ function App() {
         finalPosition = { x: 400 + Math.random() * 20, y: 300 + Math.random() * 20 }
       }
 
-      const isSystemType = type === 'system' || type === 'external-system' || type === 'business-domain' || type === 'vpc' || type === 'subnet' || type === 'external-component' || type === 'cluster'
+      const isSystemType = type === 'system' || type === 'external-system' || type === 'business-domain' || type === 'vpc' || type === 'subnet' || type === 'aws-region' || type === 'aws-az' || type === 'external-component' || type === 'cluster'
       const isContainerType = type === 'container'
       const isGroupType = type === 'group'
       const isTableType = type === 'table'
@@ -3061,7 +3063,7 @@ function App() {
     setCommentNode(null)
 
     // Открываем соответствующую панель настройки
-    if (nodeData.type === 'database') {
+    if (nodeData.type === 'database' || nodeData.type === 'browser-database' || nodeData.type === 'embedded-database' || nodeData.type === 'in-memory-database' || nodeData.type === 'log-database') {
       const dbConfig = nodeData.databaseConfig
       if (dbConfig?.dbType) {
         const hasData =
@@ -3526,6 +3528,10 @@ function App() {
             return 'gRPC'
           case 'related':
             return '' // Don't show label for simple related links by default
+          case 'uses':
+            return 'использует'
+          case 'realizes':
+            return 'реализует'
           default:
             return type.toUpperCase()
         }
@@ -3559,6 +3565,10 @@ function App() {
             return '#51cf66'
           case 'inheritance':
             return '#4dabf7'
+          case 'uses':
+            return '#adb5bd'  // Серый — структурная связь
+          case 'realizes':
+            return '#74c0fc'  // Светло-голубой — реализация интерфейса
           default:
             return '#4dabf7'
         }
@@ -3593,9 +3603,11 @@ function App() {
                   strokeDasharray:
                     connectionType === 'async' || connectionType === 'database-replication' || connectionType === 'ws' || connectionType === 'wss'
                       ? '8,4'
-                      : connectionType === 'inheritance'
+                      : connectionType === 'inheritance' || connectionType === 'realizes'
                         ? '5,5'
-                        : undefined,
+                        : connectionType === 'uses'
+                          ? '4,4'
+                          : undefined,
                 },
                 data: {
                   ...edge.data,
@@ -3624,7 +3636,13 @@ function App() {
                 style: {
                   stroke: edgeColor,
                   strokeWidth: isBackground ? 1.5 : (accented ? 5 : 3),
-                  strokeDasharray: connectionType === 'async' || connectionType === 'database-replication' || connectionType === 'ws' || connectionType === 'wss' ? '8,4' : undefined,
+                  strokeDasharray: connectionType === 'async' || connectionType === 'database-replication' || connectionType === 'ws' || connectionType === 'wss'
+                    ? '8,4'
+                    : connectionType === 'inheritance' || connectionType === 'realizes'
+                      ? '5,5'
+                      : connectionType === 'uses'
+                        ? '4,4'
+                        : undefined,
                 },
                 data: {
                   ...edge.data,
@@ -5919,8 +5937,8 @@ function App() {
             size={1}
           />
           <Controls
-            showZoom={controlsExpanded}
-            showFitView={controlsExpanded}
+            showZoom={false}
+            showFitView={false}
             showInteractive={false}
             position="bottom-left"
             style={{

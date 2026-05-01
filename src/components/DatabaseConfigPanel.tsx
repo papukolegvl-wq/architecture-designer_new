@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Node } from 'reactflow'
-import { ComponentData, DatabaseType, NoSQLType, DatabaseVendor, DatabaseConfig, ResiliencePatterns } from '../types'
+import { ComponentData, DatabaseType, NoSQLType, DatabaseVendor, DatabaseConfig, ResiliencePatterns, DatabaseInternalArchitecture } from '../types'
 
 interface DatabaseConfigPanelProps {
   node: Node
@@ -12,6 +12,9 @@ interface DatabaseConfigPanelProps {
 const databaseTypes: Array<{ value: DatabaseType; label: string }> = [
   { value: 'sql', label: 'SQL' },
   { value: 'nosql', label: 'NoSQL' },
+  { value: 'browser', label: 'Браузерные' },
+  { value: 'embedded', label: 'Встраиваемые / Мобильные' },
+  { value: 'in-memory', label: 'In-Memory / Кэш / Логи' },
 ]
 
 const nosqlTypes: Array<{ value: NoSQLType; label: string; description: string }> = [
@@ -74,6 +77,29 @@ const nosqlVendors: Record<NoSQLType, Array<{ value: DatabaseVendor; label: stri
 
 const searchVendors: Array<{ value: DatabaseVendor; label: string }> = [
   { value: 'elasticsearch', label: 'Elasticsearch' },
+]
+
+const browserVendors: Array<{ value: DatabaseVendor; label: string }> = [
+  { value: 'indexeddb', label: 'IndexedDB' },
+  { value: 'localstorage', label: 'LocalStorage' },
+  { value: 'sessionstorage', label: 'SessionStorage' },
+  { value: 'websql', label: 'WebSQL' },
+]
+
+const embeddedVendors: Array<{ value: DatabaseVendor; label: string }> = [
+  { value: 'sqlite', label: 'SQLite' },
+  { value: 'realm', label: 'Realm' },
+  { value: 'coredata', label: 'CoreData' },
+  { value: 'room', label: 'Room (Android)' },
+  { value: 'leveldb', label: 'LevelDB' },
+  { value: 'rocksdb', label: 'RocksDB' },
+  { value: 'berkeleydb', label: 'Berkeley DB' },
+]
+
+const inMemoryVendors: Array<{ value: DatabaseVendor; label: string }> = [
+  { value: 'redis', label: 'Redis' },
+  { value: 'memcached', label: 'Memcached' },
+  { value: 'loki', label: 'Grafana Loki (Logs)' },
 ]
 
 const vendorDetails: Record<string, { pros: string[]; cons: string[] }> = {
@@ -216,6 +242,30 @@ const vendorDetails: Record<string, { pros: string[]; cons: string[] }> = {
   janusgraph: {
     pros: ['Масштабируемость до триллионов ребер', 'Интеграция с Big Data (Hadoop/Spark)', 'Выбор хранилища (Cassandra/HBase)'],
     cons: ['Очень сложная настройка и эксплуатация', 'Зависимость от внешних компонентов (Storage/Indexer)', 'Высокие требования к ресурсам']
+  },
+  indexeddb: {
+    pros: ['Большой объем хранения в браузере (сотни MB)', 'Поддержка транзакций', 'Асинхронная работа (не блокирует UI)'],
+    cons: ['Сложное API (требует оберток типа Dexie)', 'Ограничения безопасности браузера', 'Зависимость от очистки кэша пользователем']
+  },
+  localstorage: {
+    pros: ['Максимальная простота использования', 'Синхронное API', 'Работает во всех браузерах'],
+    cons: ['Лимит всего 5MB', 'Блокирует основной поток выполнения', 'Поддерживает только строки (нужна сериализация)']
+  },
+  realm: {
+    pros: ['Очень высокая производительность', 'Объектно-ориентированная модель', 'Простая синхронизация с облаком'],
+    cons: ['Увеличение размера приложения', 'Специфическая система типов', 'Закрытый исходный код некоторых компонентов']
+  },
+  rocksdb: {
+    pros: ['Экстремальная скорость записи', 'Встраиваемая библиотека (без сервера)', 'Огромные возможности тюнинга под железо'],
+    cons: ['Сложность настройки', 'Нет сетевого интерфейса', 'Низкоуровневое C++ API']
+  },
+  loki: {
+    pros: ['Оптимизировано специально для логов', 'Не индексирует содержимое (только метки), что экономит место', 'Бесшовная интеграция с Grafana'],
+    cons: ['Ограниченный поиск по сравнению с Elasticsearch', 'Требует дополнительных агентов сбора (Promtail)']
+  },
+  leveldb: {
+    pros: ['Простая и надежная Key-Value библиотека', 'Написана Google, используется в Chrome', 'Высокая производительность'],
+    cons: ['Только однопоточный доступ к файлу', 'Минималистичный функционал', 'Нет встроенной компрессии в базе']
   }
 }
 
@@ -329,10 +379,13 @@ export default function DatabaseConfigPanel({
     }
     // Сбрасываем vendor при смене типа
     if (dbType === 'sql') {
-      // Don't reset vendor if its already SQL vendor
-      if (vendor && !sqlVendors.some(v => v.value === vendor)) {
-        setVendor(undefined)
-      }
+      if (vendor && !sqlVendors.some(v => v.value === vendor)) setVendor(undefined)
+    } else if (dbType === 'browser') {
+      if (vendor && !browserVendors.some(v => v.value === vendor)) setVendor(undefined)
+    } else if (dbType === 'embedded') {
+      if (vendor && !embeddedVendors.some(v => v.value === vendor)) setVendor(undefined)
+    } else if (dbType === 'in-memory') {
+      if (vendor && !inMemoryVendors.some(v => v.value === vendor)) setVendor(undefined)
     }
   }, [dbType, nosqlType])
 
@@ -371,9 +424,15 @@ export default function DatabaseConfigPanel({
 
   const availableVendors = dbType === 'sql'
     ? sqlVendors
-    : nosqlType
-      ? [...(nosqlVendors[nosqlType] || []), ...searchVendors]
-      : []
+    : dbType === 'browser'
+      ? browserVendors
+      : dbType === 'embedded'
+        ? embeddedVendors
+        : dbType === 'in-memory'
+          ? inMemoryVendors
+          : nosqlType
+            ? [...(nosqlVendors[nosqlType] || []), ...searchVendors]
+            : []
 
   return (
     <div

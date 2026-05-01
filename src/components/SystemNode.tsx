@@ -1,7 +1,8 @@
 import React, { useState, useEffect, memo, useRef } from 'react'
 import { NodeProps, useReactFlow, NodeResizer, useStore } from 'reactflow'
 import { ComponentData, ComponentLink } from '../types'
-import { Box, Link as LinkIcon, Link2, Palette, Sparkles, CheckCircle, AlertTriangle, Settings, ExternalLink, Network } from 'lucide-react'
+import { Box, Link as LinkIcon, Link2, Palette, Sparkles, CheckCircle, AlertTriangle, Settings, ExternalLink, Network, Globe, Grid } from 'lucide-react'
+import { componentColors } from './CustomNode'
 
 interface SystemNodeProps extends NodeProps<ComponentData> {
   onLinkClick?: (link: ComponentLink) => void
@@ -211,10 +212,11 @@ function SystemNode({ id, data, selected, onLinkClick, onLinkConfigClick, onColo
     }
   }
 
-  const borderColor = data.customColor ? (selected ? data.customColor + 'AA' : data.customColor) : (selected ? '#4dabf799' : (document.documentElement.classList.contains('light-theme') ? '#444' : '#555'))
+  const defaultColor = componentColors[data.type] || (document.documentElement.classList.contains('light-theme') ? '#444' : '#555')
+  const borderColor = data.customColor ? (selected ? data.customColor + 'AA' : data.customColor) : (selected ? '#4dabf799' : defaultColor)
   const backgroundColor = data.customColor
     ? `${data.customColor}05` // ~1-2% opacity
-    : 'rgba(77, 171, 247, 0.01)'
+    : (componentColors[data.type] ? `${componentColors[data.type]}05` : 'rgba(77, 171, 247, 0.01)')
   return (
     <div
       style={{
@@ -286,8 +288,12 @@ function SystemNode({ id, data, selected, onLinkClick, onLinkConfigClick, onColo
       >
         {data.type === 'external-component' ? (
           <ExternalLink size={isSimple ? 16 : 20} color={borderColor} />
-        ) : data.type === 'cluster' ? (
+        ) : data.type === 'cluster' || data.type === 'vpc' ? (
           <Network size={isSimple ? 16 : 20} color={borderColor} />
+        ) : data.type === 'aws-region' ? (
+          <Globe size={isSimple ? 16 : 20} color={borderColor} />
+        ) : data.type === 'subnet' || data.type === 'aws-az' ? (
+          <Grid size={isSimple ? 16 : 20} color={borderColor} />
         ) : (
           <Box size={isSimple ? 16 : 20} color={borderColor} />
         )}
