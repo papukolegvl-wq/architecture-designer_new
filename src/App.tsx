@@ -5923,7 +5923,7 @@ function App() {
           // edgesConnectable={true} // removed as it might not be supported
           minZoom={0.1}
           maxZoom={2}
-          style={{ background: isDarkMode ? '#1a1a1a' : '#ffffff' }}
+          style={{ background: isDarkMode ? '#0a0a0a' : '#ffffff' }}
           // Оптимизации производительности
           edgeUpdaterRadius={20}
           onlyRenderVisibleElements={true} // Рендерим только видимые элементы
@@ -5932,7 +5932,7 @@ function App() {
         >
           <ConnectionMarkers />
           <Background
-            color={isDarkMode ? "#333" : "#e0e0e0"}
+            color={isDarkMode ? "#1a1a1a" : "#e0e0e0"}
             gap={20}
             size={1}
           />
@@ -5942,7 +5942,7 @@ function App() {
             showInteractive={false}
             position="bottom-left"
             style={{
-              backgroundColor: '#2d2d2d',
+              backgroundColor: '#141414',
               border: '1px solid #444',
               display: 'flex',
               flexDirection: 'column',

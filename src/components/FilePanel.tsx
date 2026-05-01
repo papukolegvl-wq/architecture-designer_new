@@ -121,7 +121,7 @@ export default function FilePanel({
   }
 
   const modalStyle: React.CSSProperties = {
-    backgroundColor: '#2d2d2d',
+    backgroundColor: '#141414',
     borderRadius: '8px',
     padding: '24px',
     width: '400px',
@@ -166,7 +166,7 @@ export default function FilePanel({
           onClick={() => setIsOpen(!isOpen)}
           style={{
             padding: '10px 16px',
-            backgroundColor: '#2d2d2d',
+            backgroundColor: '#141414',
             color: 'white',
             border: '2px solid #555',
             borderRadius: '8px',
@@ -184,7 +184,7 @@ export default function FilePanel({
             e.currentTarget.style.borderColor = '#666'
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#2d2d2d'
+            e.currentTarget.style.backgroundColor = '#141414'
             e.currentTarget.style.borderColor = '#555'
           }}
         >
@@ -199,7 +199,7 @@ export default function FilePanel({
               position: 'absolute',
               top: '50px',
               right: '0',
-              backgroundColor: '#2d2d2d',
+              backgroundColor: '#141414',
               border: '2px solid #555',
               borderRadius: '8px',
               minWidth: '220px',

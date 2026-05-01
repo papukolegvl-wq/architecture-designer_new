@@ -34,7 +34,7 @@ export default function TabsPanel({
         left: 0,
         right: 0,
         height: '48px',
-        backgroundColor: '#1e1e1e',
+        backgroundColor: '#0a0a0a',
         borderBottom: '1px solid #333',
         display: 'flex',
         alignItems: 'center',
@@ -65,7 +65,7 @@ export default function TabsPanel({
               alignItems: 'center',
               gap: '8px',
               padding: '8px 16px',
-              backgroundColor: activeTabId === tab.id ? '#2d2d2d' : '#252525',
+              backgroundColor: activeTabId === tab.id ? '#1a1a1a' : '#0a0a0a',
               border: activeTabId === tab.id ? '1px solid #4dabf7' : '1px solid #333',
               borderBottom: activeTabId === tab.id ? 'none' : '1px solid #333',
               borderRadius: '8px 8px 0 0',
@@ -80,12 +80,12 @@ export default function TabsPanel({
             }}
             onMouseEnter={(e) => {
               if (activeTabId !== tab.id) {
-                e.currentTarget.style.backgroundColor = '#2a2a2a'
+                e.currentTarget.style.backgroundColor = '#141414'
               }
             }}
             onMouseLeave={(e) => {
               if (activeTabId !== tab.id) {
-                e.currentTarget.style.backgroundColor = '#252525'
+                e.currentTarget.style.backgroundColor = '#0a0a0a'
               }
             }}
           >
@@ -119,7 +119,7 @@ export default function TabsPanel({
                 autoFocus
                 style={{
                   flex: 1,
-                  backgroundColor: '#1e1e1e',
+                  backgroundColor: '#0a0a0a',
                   border: '1px solid #4dabf7',
                   borderRadius: '4px',
                   padding: '2px 6px',
@@ -201,7 +201,7 @@ export default function TabsPanel({
           alignItems: 'center',
           justifyContent: 'center',
           padding: '8px 12px',
-          backgroundColor: '#252525',
+          backgroundColor: '#0a0a0a',
           border: '1px solid #333',
           borderRadius: '8px 8px 0 0',
           cursor: 'pointer',
