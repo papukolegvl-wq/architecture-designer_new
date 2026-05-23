@@ -73,11 +73,14 @@ import ComparisonPanel from './components/ComparisonPanel'
 import RecommendationPanel from './components/RecommendationPanel'
 import FilePanel from './components/FilePanel'
 import TabsPanel from './components/TabsPanel'
+
 import ClassConfigPanel from './components/ClassConfigPanel'
 import ControllerConfigPanel from './components/ControllerConfigPanel'
 import RepositoryConfigPanel from './components/RepositoryConfigPanel'
 import ComponentLinkPanel from './components/ComponentLinkPanel'
 import CommentPanel from './components/CommentPanel'
+import QuickToolsMenu from './components/QuickToolsMenu'
+import ShapeNode from './components/ShapeNode'
 import LearningPanel from './components/LearningPanel'
 import AIAssistantPanel from './components/AIAssistantPanel'
 import BackupServiceConfigPanel from './components/BackupServiceConfigPanel'
@@ -373,9 +376,187 @@ const saveWorkspacesMeta = (workspaces: Workspace[]) => {
 }
 
 const loadWorkspacesFromStorage = (): Workspace[] => {
-  // Возвращаем чистое состояние по умолчанию, как запросил пользователь.
-  // Автоматическое восстановление отключено.
-  return [{ id: '1', name: 'Рабочее пространство 1', nodes: [], edges: [] }]
+  try {
+    const metaStr = localStorage.getItem(STORAGE_KEY_META)
+    if (metaStr) {
+      const meta = JSON.parse(metaStr) as Array<{ id: string; name: string; isLocked?: boolean }>
+      if (meta && meta.length > 0) {
+        const loadedWorkspaces: Workspace[] = []
+        meta.forEach(m => {
+          const dataStr = localStorage.getItem(getWorkspaceKey(m.id))
+          if (dataStr) {
+            const data = JSON.parse(dataStr)
+            loadedWorkspaces.push({
+              id: m.id,
+              name: m.name,
+              isLocked: m.isLocked,
+              nodes: data.nodes || [],
+              edges: data.edges || [],
+              viewport: data.viewport
+            })
+          }
+        })
+        if (loadedWorkspaces.length > 0) {
+          return loadedWorkspaces
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Ошибка при загрузке вкладок из localStorage:', error)
+  }
+
+  // Возвращаем предзаполненное рабочее пространство с диаграммой обработки документов.
+  return [
+    {
+      id: '1',
+      name: 'Обработка документов',
+      viewport: { x: 50, y: 50, zoom: 0.8 },
+      nodes: [
+        {
+          id: 's3-storage',
+          type: 'custom',
+          position: { x: 80, y: 220 },
+          data: {
+            type: 'object-storage',
+            label: 'S3 Хранилище (Входящие)',
+            connectionType: 'async',
+            description: 'Бакет s3://incoming-documents для загрузки документов (PDF, PNG, JPG)'
+          }
+        },
+        {
+          id: 'airflow-orchestrator',
+          type: 'custom',
+          position: { x: 380, y: 220 },
+          data: {
+            type: 'orchestrator',
+            label: 'Apache Airflow (DAG)',
+            connectionType: 'async',
+            description: 'Оркестратор конвейера: отслеживает S3, выполняет роутинг, запускает экстракцию, чанкинг и индексацию в Elasticsearch'
+          }
+        },
+        {
+          id: 'pdf-extractor',
+          type: 'custom',
+          position: { x: 700, y: 80 },
+          data: {
+            type: 'service',
+            label: 'PDF Extractor (pdfplumber)',
+            connectionType: 'sync',
+            description: 'Python-сервис для прямого извлечения текстового слоя из PDF документов'
+          }
+        },
+        {
+          id: 'ocr-service',
+          type: 'custom',
+          position: { x: 700, y: 360 },
+          data: {
+            type: 'ml-ai-service',
+            label: 'OCR Service (Tesseract)',
+            connectionType: 'sync',
+            description: 'Сервис оптического распознавания символов для изображений (PNG, JPG)'
+          }
+        },
+        {
+          id: 'post-processor',
+          type: 'custom',
+          position: { x: 1020, y: 220 },
+          data: {
+            type: 'service',
+            label: 'Python Пост-процессор',
+            connectionType: 'sync',
+            description: 'Получение ЕГРПОУ из структуры путей S3 папок, нарезка текста на чанки'
+          }
+        },
+        {
+          id: 'elasticsearch',
+          type: 'custom',
+          position: { x: 1340, y: 220 },
+          data: {
+            type: 'search-engine',
+            label: 'Elasticsearch',
+            connectionType: 'sync',
+            description: 'Полнотекстовый (Keyword) и векторный (Dense Vector) поиск по документам'
+          }
+        },
+        {
+          id: 'web-ui',
+          type: 'custom',
+          position: { x: 1660, y: 220 },
+          data: {
+            type: 'frontend',
+            label: 'Веб-интерфейс поиска',
+            connectionType: 'sync',
+            description: 'Интерфейс поиска документов клиентов по коду ЕГРПОУ'
+          }
+        }
+      ],
+      edges: [
+        {
+          id: 's3-to-airflow',
+          source: 's3-storage',
+          target: 'airflow-orchestrator',
+          type: 'animated',
+          animated: true,
+          style: { stroke: '#4dabf7', strokeWidth: 5, strokeDasharray: '8,4' },
+          data: { connectionType: 'async', pathType: 'smoothstep' }
+        },
+        {
+          id: 'airflow-to-pdf',
+          source: 'airflow-orchestrator',
+          target: 'pdf-extractor',
+          type: 'animated',
+          animated: true,
+          style: { stroke: '#20c997', strokeWidth: 5 },
+          data: { connectionType: 'sync', pathType: 'smoothstep' }
+        },
+        {
+          id: 'airflow-to-ocr',
+          source: 'airflow-orchestrator',
+          target: 'ocr-service',
+          type: 'animated',
+          animated: true,
+          style: { stroke: '#20c997', strokeWidth: 5 },
+          data: { connectionType: 'sync', pathType: 'smoothstep' }
+        },
+        {
+          id: 'pdf-to-post',
+          source: 'pdf-extractor',
+          target: 'post-processor',
+          type: 'animated',
+          animated: true,
+          style: { stroke: '#20c997', strokeWidth: 5 },
+          data: { connectionType: 'sync', pathType: 'smoothstep' }
+        },
+        {
+          id: 'ocr-to-post',
+          source: 'ocr-service',
+          target: 'post-processor',
+          type: 'animated',
+          animated: true,
+          style: { stroke: '#20c997', strokeWidth: 5 },
+          data: { connectionType: 'sync', pathType: 'smoothstep' }
+        },
+        {
+          id: 'post-to-es',
+          source: 'post-processor',
+          target: 'elasticsearch',
+          type: 'animated',
+          animated: true,
+          style: { stroke: '#20c997', strokeWidth: 5 },
+          data: { connectionType: 'sync', pathType: 'smoothstep' }
+        },
+        {
+          id: 'ui-to-es',
+          source: 'web-ui',
+          target: 'elasticsearch',
+          type: 'animated',
+          animated: true,
+          style: { stroke: '#20c997', strokeWidth: 5 },
+          data: { connectionType: 'sync', pathType: 'smoothstep' }
+        }
+      ]
+    }
+  ]
 }
 
 const saveWorkspacesToStorage = (workspaces: Workspace[]) => {
@@ -499,6 +680,7 @@ function App() {
   const [canRedo, setCanRedo] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
+
   const [controlsExpanded, setControlsExpanded] = useState(false)
   const draggingChildrenRef = useRef<Map<string, string[]>>(new Map())
   const dragStartPositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map())
@@ -1680,7 +1862,7 @@ function App() {
   }, [setNodes, setEdges, nodes])
 
   const addComponent = useCallback(
-    (type: ComponentType, position?: { x: number; y: number }, label?: string) => {
+    (type: ComponentType, position?: { x: number; y: number }, label?: string, customColor?: string) => {
       let finalPosition = position
 
       // Если позиция не указана, добавляем в центр видимой области
@@ -1744,6 +1926,7 @@ function App() {
           type,
           label: label || getComponentLabel(type),
           connectionType: getDefaultConnectionMode(type),
+          ...(isNoteType && customColor && { customColor }),
           ...(isSystemType && {
             systemConfig: {
               childNodes: [],
@@ -1814,6 +1997,59 @@ function App() {
     },
     [addComponent]
   )
+
+  const handleAddQuickNode = useCallback(
+    (type: string, shapeType?: string) => {
+      if (reactFlowInstanceRef.current) {
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+        
+        const jitterX = (Math.random() - 0.5) * 40;
+        const jitterY = (Math.random() - 0.5) * 40;
+
+        const position = reactFlowInstanceRef.current.screenToFlowPosition({ 
+          x: centerX + jitterX, 
+          y: centerY + jitterY 
+        });
+        
+        const newNodeId = `${type}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+        
+        const isShape = type === 'shape';
+        const isText = type === 'text';
+        const isNote = type === 'note';
+
+        const newNode: Node = {
+          id: newNodeId,
+          type: isShape ? 'shape' : isText ? 'text' : 'note',
+          position,
+          data: {
+            type,
+            label: isShape ? '' : isText ? 'Текст' : 'Примечание',
+            connectionType: 'async',
+            shapeType: shapeType
+          },
+          ...(isShape && {
+            width: 150,
+            height: 150,
+            style: { zIndex: 0 }
+          }),
+          ...(isNote && {
+            width: 200,
+            height: 150,
+            style: { zIndex: 1 }
+          }),
+          ...(isText && {
+            width: 200,
+            height: 60,
+            style: { zIndex: 1 }
+          })
+        };
+        setNodes((nds) => nds.concat(newNode));
+        historyUpdateTypeRef.current = 'immediate';
+      }
+    },
+    [setNodes]
+  );
 
   // Храним handle файла, чтобы не спрашивать каждый раз
   const fileHandleRef = useRef<any>(null)
@@ -3440,6 +3676,21 @@ function App() {
     setComparisonType(null)
   }, [])
 
+  const onPaneDoubleClick = useCallback((event: React.MouseEvent) => {
+    if (activeWorkspace?.isLocked) return
+    const target = event.target as HTMLElement
+    if (target.classList.contains('react-flow__pane')) {
+      const instance = reactFlowInstanceRef.current || reactFlowInstance
+      if (instance) {
+        const position = instance.screenToFlowPosition({
+          x: event.clientX,
+          y: event.clientY
+        })
+        addComponent('note', position, 'Двойной клик для ввода текста')
+      }
+    }
+  }, [activeWorkspace?.isLocked, reactFlowInstance, addComponent])
+
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault()
     event.dataTransfer.dropEffect = 'move'
@@ -4636,6 +4887,28 @@ function App() {
         }
       }
 
+      // N key - Add sticky note (Note)
+      if (!event.ctrlKey && !event.metaKey && !event.altKey && (event.code === 'KeyN' || (event.key && event.key.toLowerCase() === 'n') || (event.key && event.key.toLowerCase() === 'т'))) {
+        if (!isInputFocused) {
+          event.preventDefault()
+          event.stopPropagation()
+          event.stopImmediatePropagation()
+          addComponent('note', undefined, 'Новая заметка')
+          return false
+        }
+      }
+
+      // T key - Add text label
+      if (!event.ctrlKey && !event.metaKey && !event.altKey && (event.code === 'KeyT' || (event.key && event.key.toLowerCase() === 't') || (event.key && event.key.toLowerCase() === 'е'))) {
+        if (!isInputFocused) {
+          event.preventDefault()
+          event.stopPropagation()
+          event.stopImmediatePropagation()
+          addComponent('text', undefined, 'Новый текст')
+          return false
+        }
+      }
+
     }
 
     // Используем capture phase для перехвата событий раньше других обработчиков
@@ -4643,7 +4916,7 @@ function App() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown, true)
     }
-  }, [deleteSelected, handleCopy, handlePaste, handleUndo, handleRedo, handleDuplicate])
+  }, [deleteSelected, handleCopy, handlePaste, handleUndo, handleRedo, handleDuplicate, addComponent])
 
   // Функция для получения рекомендаций
   // Функция для автоматического построения компонентов из рекомендации (удалена - рекомендации отключены)
@@ -5605,6 +5878,7 @@ function App() {
         {...props}
       />
     ),
+    shape: ShapeNode,
     ghost: GhostNode,
   }), []) // Пустой массив зависимостей - nodeTypes создаются один раз
 
@@ -5742,6 +6016,7 @@ function App() {
         onNewTab={handleNewTab}
         onTabRename={handleTabRename}
       />
+      <QuickToolsMenu onAddQuickNode={handleAddQuickNode} />
       {showPalette && (
         <ComponentPalette
           onComponentClick={handleAddComponentClick}
@@ -5838,6 +6113,7 @@ function App() {
         workspaces={workspaces}
         activeWorkspaceId={activeWorkspaceId}
         onLoadNewTab={handleLoad}
+
       />
       <div
         ref={reactFlowWrapper}
@@ -5868,6 +6144,8 @@ function App() {
           onNodeClick={onNodeClick}
           onEdgeClick={onEdgeClick}
           onPaneClick={onPaneClick}
+          onPaneDoubleClick={onPaneDoubleClick}
+          zoomOnDoubleClick={false}
           onConnectStart={onPaneClick}
           onSelectionChange={onSelectionChange}
           onInit={(instance) => {
@@ -6536,6 +6814,7 @@ function App() {
             }}
           />
         )}
+
         {infoComponentType && (
           <ComponentInfoPanel
             componentType={infoComponentType}

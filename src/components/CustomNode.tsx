@@ -511,8 +511,6 @@ export const componentColors: Record<string, string> = {
   'embedded-database': '#4dabf7',
   'in-memory-database': '#fab005',
   'log-database': '#ffa94d',
-  'aws-region': '#FF9900',
-  'aws-az': '#FF9900',
   'iam-role': '#FF9900',
   'iam-user': '#FF9900',
   'iam-group': '#FF9900',

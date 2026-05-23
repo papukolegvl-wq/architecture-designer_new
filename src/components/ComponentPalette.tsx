@@ -383,10 +383,6 @@ export const components: Component[] = [
   { type: 'email-service', label: 'Email сервис', icon: <Mail size={24} />, color: '#339af0', category: 'communication' },
   { type: 'sms-gateway', label: 'SMS шлюз', icon: <MessageCircle size={24} />, color: '#4dabf7', category: 'communication' },
 
-  // Текст и аннотации
-  { type: 'note', label: 'Заметка', icon: <FileText size={24} />, color: '#ffd666', category: 'text' },
-  { type: 'text', label: 'Текст', icon: <Type size={24} />, color: '#666', category: 'text' },
-
   // AI / ML
   { type: 'llm-model', label: 'LLM модель', icon: <Brain size={24} />, color: '#ae3ec9', category: 'ai' },
   { type: 'vector-database', label: 'Векторная БД', icon: <Database size={24} />, color: '#748ffc', category: 'ai' },
@@ -822,7 +818,6 @@ const categoryLabels: Record<ComponentCategory, string> = {
   monitoring: 'Мониторинг',
   integration: 'Интеграция',
   communication: 'Коммуникации',
-  text: 'Текст',
   ai: 'AI / ML',
   roles: 'Команда и Роли',
   management: 'Управление архитектурой',

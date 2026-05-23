@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Handle, Position, NodeProps, useStore, NodeResizer } from 'reactflow';
-import { StickyNote, Link as LinkIcon, Link2, Sparkles, CheckCircle, AlertTriangle, Settings } from 'lucide-react';
+import { StickyNote, Link as LinkIcon, Link2, Sparkles, CheckCircle, AlertTriangle, Settings, Minimize2, Maximize2 } from 'lucide-react';
 import { renderFormattedText, handleTextareaTab } from '../utils/textUtils';
 import { ComponentLink } from '../types';
 
@@ -13,6 +13,12 @@ const colors = [
     { id: 'orange', bg: '#fff7e6', border: '#ffd591', label: 'Оранжевый' },
     { id: 'cyan', bg: '#e6fffb', border: '#87e8de', label: 'Бирюзовый' },
     { id: 'gray', bg: '#f5f5f5', border: '#d9d9d9', label: 'Серый' },
+    { id: 'pink', bg: '#fff0f6', border: '#ffadd2', label: 'Розовый' },
+    { id: 'lime', bg: '#fcffe6', border: '#eaff8f', label: 'Лаймовый' },
+    { id: 'indigo', bg: '#f0f5ff', border: '#adc6ff', label: 'Индиго' },
+    { id: 'volcano', bg: '#fff2e8', border: '#ffbb96', label: 'Вулкан' },
+    { id: 'mint', bg: '#e6ffec', border: '#8ce8a3', label: 'Мятный' },
+    { id: 'lavender', bg: '#f0e6ff', border: '#b388ff', label: 'Лавандовый' },
 ];
 
 const NoteNode: React.FC<NodeProps & {
@@ -128,16 +134,16 @@ const NoteNode: React.FC<NodeProps & {
     return (
         <div
             style={{
-                width: '100%',
-                height: '100%',
                 boxSizing: 'border-box',
-                padding: isSimple ? '4px' : '16px',
-                borderRadius: '24px',
+                padding: isSimple ? '4px' : data.collapsed ? '8px' : '16px',
+                borderRadius: data.collapsed ? '12px' : '24px',
                 backgroundColor: bgColor,
                 border: `1px solid ${borderColor}`,
                 color: '#000000',
-                minWidth: isSimple ? '40px' : '150px',
-                minHeight: isSimple ? '40px' : '80px',
+                minWidth: isSimple ? '40px' : data.collapsed ? '60px' : '150px',
+                minHeight: isSimple ? '40px' : data.collapsed ? '60px' : '80px',
+                width: data.collapsed ? '60px' : '100%',
+                height: data.collapsed ? '60px' : '100%',
                 maxWidth: '100%',
                 boxShadow: selected ? '0 0 0 2px #ffe58f80' : (isHovered ? '0 4px 15px rgba(0,0,0,0.15)' : '0 2px 12px rgba(0,0,0,0.12)'),
                 position: 'relative',
@@ -157,7 +163,7 @@ const NoteNode: React.FC<NodeProps & {
             onMouseLeave={() => setIsHovered(false)}
             onDoubleClick={handleDoubleClick}
         >
-            <NodeResizer
+            {!data.collapsed && <NodeResizer
                 color="#ffd666"
                 isVisible={selected}
                 minWidth={150}
@@ -182,52 +188,40 @@ const NoteNode: React.FC<NodeProps & {
                         })
                     );
                 }}
-            />
+            />}
 
-            {!isSimple && isHovered && (
-                <div style={{
-                    position: 'absolute',
-                    top: '-24px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    display: 'flex',
-                    gap: '6px',
-                    padding: '4px 8px',
-                    backgroundColor: '#fff',
-                    borderRadius: '20px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                    zIndex: 20,
-                    opacity: 0.95
-                }}>
-                    {colors.map(c => (
-                        <div
-                            key={c.id}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleColorClick(c.bg);
-                            }}
-                            style={{
-                                width: '16px',
-                                height: '16px',
-                                borderRadius: '50%',
-                                backgroundColor: c.bg,
-                                border: `1px solid ${c.border}`,
-                                cursor: 'pointer',
-                                transform: data.customColor === c.bg || (!data.customColor && c.id === 'yellow') ? 'scale(1.2)' : 'scale(1)',
-                                boxShadow: data.customColor === c.bg || (!data.customColor && c.id === 'yellow') ? '0 0 0 2px #4dabf7' : 'none',
-                                transition: 'all 0.2s'
-                            }}
-                            title={c.label}
-                        />
-                    ))}
-                </div>
-            )}
+
 
             {!isSimple && (
-                <div style={{ position: 'absolute', top: '12px', right: '12px' }}>
+                <div style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 10 }}>
                     {!isSimple && (
-                        <div style={{ display: 'flex', gap: '4px', opacity: isHovered ? 1 : 0, transition: 'opacity 0.2s' }}>
-                            {data.link && (
+                        <div style={{ display: 'flex', gap: '4px', opacity: isHovered || data.collapsed ? 1 : 0, transition: 'opacity 0.2s' }}>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const nextCollapsed = !data.collapsed;
+                                    window.dispatchEvent(
+                                        new CustomEvent('nodeDataUpdate', {
+                                            detail: { nodeId: id, data: { collapsed: nextCollapsed } },
+                                        })
+                                    );
+                                }}
+                                style={{
+                                    background: 'rgba(0,0,0,0.05)',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    color: '#888',
+                                    padding: '2px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                }}
+                                title={data.collapsed ? 'Развернуть' : 'Свернуть'}
+                            >
+                                {data.collapsed ? <Maximize2 size={12} /> : <Minimize2 size={12} />}
+                            </button>
+                            {!data.collapsed && data.link && (
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
@@ -249,57 +243,61 @@ const NoteNode: React.FC<NodeProps & {
                                     <LinkIcon size={12} />
                                 </button>
                             )}
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (onLinkConfigClick) onLinkConfigClick(id);
-                                }}
-                                style={{
-                                    background: 'rgba(0,0,0,0.05)',
-                                    border: 'none',
-                                    borderRadius: '4px',
-                                    color: data.link ? '#51cf66' : '#888',
-                                    padding: '2px',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
-                                title={data.link ? 'Изменить ссылку' : 'Добавить ссылку'}
-                            >
-                                <Link2 size={12} />
-                            </button>
+                            {!data.collapsed && (
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (onLinkConfigClick) onLinkConfigClick(id);
+                                    }}
+                                    style={{
+                                        background: 'rgba(0,0,0,0.05)',
+                                        border: 'none',
+                                        borderRadius: '4px',
+                                        color: data.link ? '#51cf66' : '#888',
+                                        padding: '2px',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                    }}
+                                    title={data.link ? 'Изменить ссылку' : 'Добавить ссылку'}
+                                >
+                                    <Link2 size={12} />
+                                </button>
+                            )}
 
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation()
-                                    const nextStatus = !data.status ? 'new' : data.status === 'new' ? 'existing' : data.status === 'existing' ? 'refinement' : undefined
-                                    const event = new CustomEvent('componentStatusChange', {
-                                        detail: { nodeId: id, status: nextStatus },
-                                    })
-                                    window.dispatchEvent(event)
-                                }}
-                                style={{
-                                    background: 'rgba(0,0,0,0.05)',
-                                    border: 'none',
-                                    borderRadius: '4px',
-                                    color: data.status === 'new' ? '#40c057' : data.status === 'existing' ? '#339af0' : data.status === 'refinement' ? '#fab005' : '#888',
-                                    padding: '2px',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
-                                title={`Статус: ${data.status === 'new' ? 'Новый' : data.status === 'existing' ? 'Существующий' : data.status === 'refinement' ? 'Требует доработки' : 'По умолчанию'}`}
-                            >
-                                {data.status === 'new' ? <Sparkles size={12} /> : data.status === 'existing' ? <CheckCircle size={12} /> : data.status === 'refinement' ? <AlertTriangle size={12} /> : <Settings size={12} />}
-                            </button>
+                            {!data.collapsed && (
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        const nextStatus = !data.status ? 'new' : data.status === 'new' ? 'existing' : data.status === 'existing' ? 'refinement' : undefined
+                                        const event = new CustomEvent('componentStatusChange', {
+                                            detail: { nodeId: id, status: nextStatus },
+                                        })
+                                        window.dispatchEvent(event)
+                                    }}
+                                    style={{
+                                        background: 'rgba(0,0,0,0.05)',
+                                        border: 'none',
+                                        borderRadius: '4px',
+                                        color: data.status === 'new' ? '#40c057' : data.status === 'existing' ? '#339af0' : data.status === 'refinement' ? '#fab005' : '#888',
+                                        padding: '2px',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                    }}
+                                    title={`Статус: ${data.status === 'new' ? 'Новый' : data.status === 'existing' ? 'Существующий' : data.status === 'refinement' ? 'Требует доработки' : 'По умолчанию'}`}
+                                >
+                                    {data.status === 'new' ? <Sparkles size={12} /> : data.status === 'existing' ? <CheckCircle size={12} /> : data.status === 'refinement' ? <AlertTriangle size={12} /> : <Settings size={12} />}
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>
             )}
 
-            {isSimple ? (
+            {isSimple || data.collapsed ? (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
                     <StickyNote size={24} color="#ffd666" />
                 </div>

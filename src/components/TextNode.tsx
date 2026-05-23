@@ -64,9 +64,9 @@ const TextNode: React.FC<NodeProps> = ({ id, data, selected }) => {
                 display: 'flex',
                 flexDirection: 'column',
                 cursor: isEditing ? 'text' : 'pointer',
-                border: selected ? '1px dashed #4dabf7' : '1px solid transparent',
+                border: '1px solid transparent',
                 borderRadius: '4px',
-                backgroundColor: selected ? 'rgba(77, 171, 247, 0.05)' : 'transparent',
+                backgroundColor: 'transparent',
                 transition: 'all 0.2s',
             }}
             onDoubleClick={handleDoubleClick}

@@ -25,7 +25,7 @@ export default function FilePanel({
   workspaces,
   activeWorkspaceId,
   onExportActivityDiagram,
-  onLoadNewTab
+  onLoadNewTab,
 }: FilePanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isOpen, setIsOpen] = useState(false)
@@ -152,7 +152,7 @@ export default function FilePanel({
 
   return (
     <>
-      <div ref={menuRef} style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 1000 }}>
+      <div ref={menuRef} style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 1000, display: 'flex', gap: '10px' }}>
         <input
           ref={fileInputRef}
           type="file"
@@ -160,6 +160,7 @@ export default function FilePanel({
           onChange={handleFileSelect}
           style={{ display: 'none' }}
         />
+
 
         {/* Кнопка меню */}
         <button
