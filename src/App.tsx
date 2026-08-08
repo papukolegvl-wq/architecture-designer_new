@@ -2003,17 +2003,17 @@ function App() {
       if (reactFlowInstanceRef.current) {
         const centerX = window.innerWidth / 2;
         const centerY = window.innerHeight / 2;
-        
+
         const jitterX = (Math.random() - 0.5) * 40;
         const jitterY = (Math.random() - 0.5) * 40;
 
-        const position = reactFlowInstanceRef.current.screenToFlowPosition({ 
-          x: centerX + jitterX, 
-          y: centerY + jitterY 
+        const position = reactFlowInstanceRef.current.screenToFlowPosition({
+          x: centerX + jitterX,
+          y: centerY + jitterY
         });
-        
+
         const newNodeId = `${type}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
-        
+
         const isShape = type === 'shape';
         const isText = type === 'text';
         const isNote = type === 'note';
@@ -6016,7 +6016,7 @@ function App() {
         onNewTab={handleNewTab}
         onTabRename={handleTabRename}
       />
-      <QuickToolsMenu onAddQuickNode={handleAddQuickNode} />
+
       {showPalette && (
         <ComponentPalette
           onComponentClick={handleAddComponentClick}

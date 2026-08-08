@@ -322,6 +322,24 @@ export const components: Component[] = [
   { type: 'data-source', label: 'Data Source', icon: <Database size={24} />, color: '#adb5bd', category: 'data' },
   { type: 'json', label: 'JSON Document', icon: <FileJson size={24} />, color: '#fcc419', category: 'data' },
   { type: 'xml', label: 'XML Document', icon: <FileCode size={24} />, color: '#ff922b', category: 'data' },
+  { type: 'dbt', label: 'dbt', icon: <DatabaseZap size={24} />, color: '#f59f00', category: 'data' },
+  { type: 'spark', label: 'Apache Spark', icon: <Zap size={24} />, color: '#f59f00', category: 'data' },
+  { type: 'hadoop', label: 'Hadoop', icon: <Database size={24} />, color: '#ffd43b', category: 'data' },
+  { type: 'airflow', label: 'Airflow', icon: <Workflow size={24} />, color: '#20c997', category: 'data' },
+  { type: 'airbyte', label: 'Airbyte', icon: <RefreshCw size={24} />, color: '#fa5252', category: 'data' },
+  { type: 'fivetran', label: 'Fivetran', icon: <ArrowRight size={24} />, color: '#22b8cf', category: 'data' },
+  { type: 'nifi', label: 'Apache NiFi', icon: <Workflow size={24} />, color: '#20c997', category: 'data' },
+  { type: 'dagster', label: 'Dagster', icon: <Activity size={24} />, color: '#4c6ef5', category: 'data' },
+  { type: 'prefect', label: 'Prefect', icon: <Rocket size={24} />, color: '#15aabf', category: 'data' },
+  { type: 'flink', label: 'Apache Flink', icon: <Zap size={24} />, color: '#fd7e14', category: 'data' },
+  { type: 'snowflake', label: 'Snowflake', icon: <Database size={24} />, color: '#339af0', category: 'data' },
+  { type: 'databricks', label: 'Databricks', icon: <Box size={24} />, color: '#fd7e14', category: 'data' },
+  { type: 'trino', label: 'Trino / Presto', icon: <DatabaseZap size={24} />, color: '#be4bdb', category: 'data' },
+  { type: 'clickhouse-node', label: 'ClickHouse', icon: <Database size={24} />, color: '#fcc419', category: 'data' },
+  { type: 'bigquery', label: 'BigQuery', icon: <Database size={24} />, color: '#4c6ef5', category: 'data' },
+  { type: 'data-product', label: 'Data Product', icon: <Package size={24} />, color: '#ae3ec9', category: 'data' },
+  { type: 'data-contract', label: 'Data Contract', icon: <ScrollText size={24} />, color: '#38d9a9', category: 'data' },
+  { type: 'mdm', label: 'MDM', icon: <Users size={24} />, color: '#20c997', category: 'data' },
 
   // Безопасность
   { type: 'firewall', label: 'Межсетевой экран', icon: <Shield size={24} />, color: '#dc3545', category: 'security' },
@@ -335,6 +353,9 @@ export const components: Component[] = [
   { type: 'secret-key', label: 'Secret Key', icon: <KeyRound size={24} />, color: '#e03131', category: 'security' },
   { type: 'encryption-service', label: 'Encryption', icon: <Lock size={24} />, color: '#c92a2a', category: 'security' },
   { type: 'hashing-service', label: 'Hashing', icon: <Fingerprint size={24} />, color: '#868e96', category: 'security' },
+  { type: 'rbac', label: 'RBAC', icon: <ShieldCheck size={24} />, color: '#37b24d', category: 'security' },
+  { type: 'abac', label: 'ABAC', icon: <ShieldAlert size={24} />, color: '#f03e3e', category: 'security' },
+  { type: 'data-masking', label: 'Data Masking', icon: <EyeOff size={24} />, color: '#495057', category: 'security' },
 
   // Разработка
   { type: 'service', label: 'Сервис', icon: <Server size={24} />, color: '#4dabf7', category: 'development' },
@@ -355,6 +376,11 @@ export const components: Component[] = [
   { type: 'logging', label: 'Логирование', icon: <FileText size={24} />, color: '#ffa94d', category: 'monitoring' },
   { type: 'analytics-service', label: 'Аналитика', icon: <BarChart3 size={24} />, color: '#339af0', category: 'monitoring' },
   { type: 'business-intelligence', label: 'Business Intelligence', icon: <BarChart3 size={24} />, color: '#4dabf7', category: 'monitoring' },
+  { type: 'superset', label: 'Apache Superset', icon: <BarChart3 size={24} />, color: '#38d9a9', category: 'monitoring' },
+  { type: 'tableau', label: 'Tableau', icon: <BarChart3 size={24} />, color: '#1c7ed6', category: 'monitoring' },
+  { type: 'powerbi', label: 'PowerBI', icon: <BarChart3 size={24} />, color: '#fcc419', category: 'monitoring' },
+  { type: 'looker', label: 'Looker', icon: <Search size={24} />, color: '#4c6ef5', category: 'monitoring' },
+  { type: 'metabase', label: 'Metabase', icon: <BarChart3 size={24} />, color: '#339af0', category: 'monitoring' },
   { type: 'status-page', label: 'Status Page', icon: <Monitor size={24} />, color: '#37b24d', category: 'monitoring' },
   { type: 'profiler', label: 'Profiling Service', icon: <Gauge size={24} />, color: '#f59f00', category: 'monitoring' },
 
@@ -368,6 +394,7 @@ export const components: Component[] = [
   { type: 'integration-platform', label: 'Платформа интеграций', icon: <GitBranch size={24} />, color: '#9c88ff', category: 'integration' },
   { type: 'api-client', label: 'API клиент', icon: <LinkIcon size={24} />, color: '#4dabf7', category: 'integration' },
   { type: 'api-documentation', label: 'Документация API', icon: <FileCode size={24} />, color: '#339af0', category: 'integration' },
+  { type: 'kafka', label: 'Kafka', icon: <Layers size={24} />, color: '#333', category: 'integration' },
 
   // Организация
   { type: 'system', label: 'Система', icon: <Layers size={24} />, color: '#4dabf7', category: 'infrastructure' },
